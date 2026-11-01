@@ -6,11 +6,15 @@ Users will be able to ask natural language questions, enter short keywords, and 
 
 ## Project Status
 
-The project is in its initial development stage.
+The implementation branch includes terminal chat, a Streamlit chat interface, RSS ingestion from VnExpress and Tuoi Tre, SQLite storage, alias normalization, TF IDF retrieval and optional grounded responses through a configured language model API.
 
-A local prototype has been demonstrated with a terminal interface, a Streamlit interface, synthetic sports records, and basic keyword matching. The application source files have not yet been published to this repository. This README describes the project direction and the intended development process.
+Without API credentials, the application displays labeled source excerpts. The language model path requires a user supplied provider configuration and has not been validated against a live provider in this environment.
 
-Live data collection, structured match results, semantic retrieval, LLM integration, model training, and public application deployment are planned features. They are not currently available through this repository.
+The training module supports a separate supervised intent classification experiment using a user supplied labeled dataset. No trained classifier or measured model quality is claimed. The classifier is not yet connected to answer routing.
+
+RSS coverage is limited. Structured match APIs, comprehensive historical retrieval, strict event time filtering, semantic embeddings and HDFS or Spark jobs remain future work. Source ID validation checks citation format but cannot prove that every generated claim is supported. Human evaluation remains necessary.
+
+See [Setup and Operation](docs/SETUP.md) for executable installation instructions and [Training Guide](docs/TRAINING.md) for the supervised learning workflow.
 
 ## Problem Statement
 
