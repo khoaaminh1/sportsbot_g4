@@ -235,9 +235,10 @@
         "baotintuc.vn"
       ],
       "verified": false,
-      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "notes": "2026-11-03: feed URL returns HTTP 404 (3 failed runs in a row, reported by the monitor). Disabled until the correct RSS URL is found (plan task 2, LTN).",
       "sitemaps": [],
-      "sitemap_include": null
+      "sitemap_include": null,
+      "enabled": false
     },
     {
       "id": "znews_the_thao",
@@ -251,9 +252,10 @@
         "znews.vn"
       ],
       "verified": false,
-      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "notes": "2026-11-03: feed URL returns HTTP 404 (3 failed runs in a row, reported by the monitor). Disabled until the correct RSS URL is found (plan task 2, LTN).",
       "sitemaps": [],
-      "sitemap_include": null
+      "sitemap_include": null,
+      "enabled": false
     },
     {
       "id": "vov_the_thao",
