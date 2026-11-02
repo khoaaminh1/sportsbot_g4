@@ -1,5 +1,5 @@
 # ml
 
-Datasets, labeling guide, hand-labeled sets, training and evaluation of Model A (sport-category classifier) and Model B (query intent), model cards. Owner: LTN.
+Datasets, labeling guide, hand-labeled sets, training and evaluation of Model A (sport-category classifier) and Model B (query intent), model cards. Owners: VNP (training, evaluation), LTN (hand labels). Specification: `docs/handoff/VNP.md`, task 7.
 
-Status: **planned (Phase 4)**. Nothing is implemented yet.
+Status: **not started** (plan task 7).

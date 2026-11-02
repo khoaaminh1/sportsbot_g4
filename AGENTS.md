@@ -3,7 +3,7 @@
 Instructions for humans and AI coding agents working in this repository. Keep this file short; details live in `docs/`.
 
 ## Project
-Vietnam SportsBot: a multilingual (Vietnamese, English, more) sports news chatbot. News is collected from RSS feeds, permitted pages and sports APIs, processed with HDFS + Spark (Bronze/Silver/Gold), indexed for hybrid retrieval, and answered with RAG plus citations. Read first: `README.md`, `docs/decisions/`, `docs/contracts/`.
+Vietnam SportsBot: a multilingual (Vietnamese, English, more) sports news chatbot. News is collected from RSS feeds, permitted pages and sports APIs, processed with HDFS + Spark (Bronze/Silver/Gold), indexed for hybrid retrieval, and answered with RAG plus citations. Read first: `README.md`, `docs/TEAM_ONBOARDING.md`, `docs/DATA.md`, `docs/decisions/`, `docs/contracts/`. Team handoffs: `docs/handoff/`.
 
 ## Before you start any task
 1. `git pull`, read the issue and its acceptance criteria. If something is missing or contradictory, ask in the issue; do not guess.
@@ -15,7 +15,7 @@ Vietnam SportsBot: a multilingual (Vietnamese, English, more) sports news chatbo
 |---|---|---|
 | `infra/` | HDFS, Spark, PostgreSQL config and migrations | TMK, VNP |
 | `pipelines/` | Collectors, Bronze writer, Spark jobs, dedup, enrichment, exports | VNP, LTN |
-| `ml/` | Datasets, labels, classifier training and evaluation | LTN |
+| `ml/` | Datasets, labels, classifier training and evaluation | VNP (training), LTN (labels) |
 | `agent/` | Query understanding, retrieval, evidence checks, prompts, LLM client | TMK |
 | `backend/` | FastAPI service; must match `docs/contracts/api.openapi.yaml` | TMK |
 | `evaluation/` | Golden set, metrics, run files, reports | LTN, TMK |
@@ -28,6 +28,8 @@ Vietnam SportsBot: a multilingual (Vietnamese, English, more) sports news chatbo
 - `make up-core` / `make up-bigdata` / `make down` Docker stack
 - `make test-integration` tests against the running core stack
 - `make spark-smoke` Spark job writing and reading Parquet on HDFS
+- `make up-demo` / `make crawl-stats` / `make ask Q="..."` streaming stack, corpus counts, chatbot
+- `make db-import FILE=...` / `make bronze-load FILE=...` load TMK's data snapshots (`docs/DATA.md`)
 Run `make lint test` before every commit; CI runs the same.
 
 ## Conventions
@@ -35,7 +37,8 @@ Run `make lint test` before every commit; CI runs the same.
 - Conventional Commits: `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`.
 - Configuration comes from environment variables listed in `.env.example`; add new ones there with a safe placeholder.
 - Logs are structured (JSON by default) and carry the request id; errors use the shared error schema.
-- The LLM is always called through an OpenAI-compatible client configured by `LLM_*` variables; never hard-code a vendor, model or URL.
+- The chat LLM is called only through `agent/src/sportsbot_agent/clients/llm_router.py` (free Gemini models via the OpenAI-compatible API, configured by `GEMINI_*`/`LLM_*` variables); never hard-code a key, model or URL.
+- Data never goes into git (public repository, publishers' copyright): see `docs/DATA.md`.
 - Answers come only from retrieved evidence, cite sources with links and publication times, and say so when evidence is insufficient.
 - Update docs and contracts in the same PR as the code that changes them.
 

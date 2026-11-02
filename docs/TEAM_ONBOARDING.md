@@ -81,7 +81,11 @@ Demo page: http://localhost:8000/app/ · API docs: http://localhost:8000/docs ·
 
 ## 5. Use TMK's data instead of crawling yourself
 
-### Recommended: the private Kaggle dataset (versioned)
+Default: TMK puts the snapshot files in the team's Google Drive folder. What each file is and
+how to load it (PostgreSQL, HDFS for Spark, pandas): **[docs/DATA.md](DATA.md)**.
+VNP: also read **[docs/handoff/VNP.md](handoff/VNP.md)**.
+
+### Optional later: a private Kaggle dataset (versioned)
 One-time, each member: Kaggle account → Settings → API → **Create New Token**; put it in your
 `.env` as `KAGGLE_API_TOKEN=...` (or save the legacy `kaggle.json` in `~/.kaggle/`, `chmod 600`).
 Everyone sets the same `KAGGLE_DATASET=<owner>/sportsbot-corpus` (TMK tells you the value).
@@ -104,8 +108,7 @@ In a Kaggle notebook (VNP): "Add data" → the team dataset; read
 (`spark.read.json(path)`), one article per line. The dataset must stay **private**: the full
 text belongs to the publishers.
 
-### Without Kaggle (files over Google Drive)
-TMK exports (on the crawler PC):
+### Making the files (TMK, on the crawler PC)
 ```bash
 make db-export       # data/snapshots/sportsbot-<date>.sql.gz  (articles, sources, runs)
 make bronze-export   # data/snapshots/bronze-<date>.tgz        (archived full text, for Spark)
