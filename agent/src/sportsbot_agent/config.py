@@ -47,9 +47,9 @@ class AgentConfig:
         "gemini-3.6-flash",
         "gemini-3.5-flash-lite",
         "gemini-3.1-flash-lite",
-        "gemini-2.5-flash-lite",
     )
     llm_cooldown_seconds: float = 65.0
+    llm_reasoning_effort: str = "low"
 
     # Advanced RAG (hybrid.py): PostgreSQL keyword + Qdrant vectors + reranker.
     database_url: str = (
@@ -79,6 +79,7 @@ class AgentConfig:
             gemini_base_url=(env.get("GEMINI_BASE_URL") or d.gemini_base_url).rstrip("/"),
             gemini_models=_list(env, "GEMINI_MODELS", d.gemini_models),
             llm_cooldown_seconds=_float(env, "LLM_COOLDOWN_SECONDS", d.llm_cooldown_seconds),
+            llm_reasoning_effort=env.get("LLM_REASONING_EFFORT", d.llm_reasoning_effort).strip(),
             database_url=env.get("DATABASE_URL") or d.database_url,
             qdrant_url=env.get("QDRANT_URL") or d.qdrant_url,
             embedding_base_url=env.get("EMBEDDING_BASE_URL") or d.embedding_base_url,

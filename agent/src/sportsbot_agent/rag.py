@@ -78,6 +78,7 @@ def build_rag(
                 max_tokens=config.llm_max_tokens,
                 timeout=config.llm_timeout_seconds,
                 cooldown_seconds=config.llm_cooldown_seconds,
+                reasoning_effort=config.llm_reasoning_effort,
             )
     closers = [embedder, qdrant] + ([reranker] if reranker else [])
     return RagService(retriever, router, top_k=config.top_k, closers=closers)

@@ -58,6 +58,10 @@ class ChatRouter:
     max_tokens: int = 600
     timeout: float = 60.0
     cooldown_seconds: float = 65.0
+    # Gemini 3.x models "think" before answering and the thinking uses the max_tokens budget:
+    # with a small budget the reply can come back empty. "low" keeps answers fast and complete;
+    # "" sends nothing (server default). Dropped automatically if a model rejects it.
+    reasoning_effort: str = "low"
     transport: httpx.BaseTransport | None = None
     clock: Callable[[], float] = time.monotonic
     state: dict[str, TargetState] = field(default_factory=dict)
@@ -90,7 +94,9 @@ class ChatRouter:
             for t in self.targets
         ]
 
-    def _call(self, target: ChatTarget, messages: list[Message]) -> httpx.Response:
+    def _call(
+        self, target: ChatTarget, messages: list[Message], *, with_reasoning: bool = True
+    ) -> httpx.Response:
         headers = {"Content-Type": "application/json"}
         if target.api_key:
             headers["Authorization"] = f"Bearer {target.api_key}"
@@ -101,6 +107,8 @@ class ChatRouter:
             "max_tokens": self.max_tokens,
             "stream": False,
         }
+        if with_reasoning and self.reasoning_effort:
+            payload["reasoning_effort"] = self.reasoning_effort
         with httpx.Client(timeout=self.timeout, transport=self.transport) as client:
             return client.post(
                 f"{target.base_url.rstrip('/')}/chat/completions", json=payload, headers=headers
@@ -112,6 +120,8 @@ class ChatRouter:
             st = self.state[target.name]
             try:
                 resp = self._call(target, messages)
+                if resp.status_code == 400 and "reasoning" in resp.text.lower():
+                    resp = self._call(target, messages, with_reasoning=False)
             except httpx.HTTPError as exc:
                 st.failures += 1
                 st.cooled_until = self.clock() + 30
@@ -141,10 +151,16 @@ class ChatRouter:
                 errors.append(f"{target.name}: HTTP {resp.status_code}")
                 continue
             try:
-                text = resp.json()["choices"][0]["message"]["content"] or ""
-            except (ValueError, KeyError, IndexError, TypeError):
+                choice = resp.json()["choices"][0]
+                text = (choice.get("message") or {}).get("content") or ""
+            except (ValueError, KeyError, IndexError, TypeError, AttributeError):
                 st.failures += 1
                 errors.append(f"{target.name}: bad response")
+                continue
+            if not text.strip():
+                # e.g. all tokens spent on thinking (finish_reason "length"): try the next model
+                st.failures += 1
+                errors.append(f"{target.name}: empty reply ({choice.get('finish_reason')})")
                 continue
             st.successes += 1
             self.last_target = target.name
