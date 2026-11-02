@@ -100,3 +100,29 @@ def test_stats_and_runs_for_the_live_panel(engine):
     assert repo.runs_since(mine[-1]["run_id"], 5) == []
     with engine.begin() as conn:
         conn.execute(text("DELETE FROM collection_runs WHERE source_id = :s"), {"s": SOURCE})
+
+
+def test_disabled_sources_are_not_counted_as_active(engine):
+    repo = PostgresNewsRepository(engine)
+    before = repo.stats()["sources_active"]
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO sources (source_id, name, kind, url, enabled) "
+                "VALUES ('itest_disabled', 'Off', 'rss', 'https://off.example/rss', false)"
+            )
+        )
+        conn.execute(
+            text(
+                "INSERT INTO collection_runs (source_id, status, finished_at) "
+                "VALUES ('itest_disabled', 'success', now())"
+            )
+        )
+    try:
+        stats = repo.stats()
+        assert stats["sources_active"] == before
+        assert stats["sources_active"] <= stats["sources_enabled"]
+    finally:
+        with engine.begin() as conn:
+            conn.execute(text("DELETE FROM collection_runs WHERE source_id = 'itest_disabled'"))
+            conn.execute(text("DELETE FROM sources WHERE source_id = 'itest_disabled'"))

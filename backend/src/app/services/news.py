@@ -165,9 +165,10 @@ class PostgresNewsRepository:
               (SELECT count(DISTINCT language) FROM articles WHERE content IS NOT NULL)
                 AS languages,
               (SELECT count(*) FROM sources WHERE enabled) AS sources_enabled,
-              (SELECT count(DISTINCT source_id) FROM collection_runs
-                WHERE status = 'success' AND started_at > now() - interval '2 hours')
-                AS sources_active,
+              (SELECT count(DISTINCT r.source_id) FROM collection_runs r
+                JOIN sources s ON s.source_id = r.source_id AND s.enabled
+                WHERE r.status = 'success' AND r.started_at > now() - interval '2 hours')
+                AS sources_active,  -- disabled sources with recent runs are not counted
               (SELECT max(ingested_at) FROM articles) AS newest_ingested_at
         """
         with self.engine.connect() as conn:
