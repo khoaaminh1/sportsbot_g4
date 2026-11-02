@@ -22,8 +22,21 @@ from sportsbot_pipelines.ingestion.state import State
 logger = logging.getLogger(__name__)
 
 
-def due(source: Source, last_run: datetime | None, now: datetime) -> bool:
-    return last_run is None or now - last_run >= timedelta(minutes=source.interval_minutes)
+MAX_BACKOFF = timedelta(hours=6)
+
+
+def wait_for(source: Source, failures: int = 0) -> timedelta:
+    """Interval before the next run. Circuit breaker: from the 3rd failure in a row the wait
+    doubles each time (capped at 6 hours), so a broken site is not hammered; one success
+    resets it. Other sources are not affected."""
+    base = timedelta(minutes=source.interval_minutes)
+    if failures < 3:
+        return base
+    return min(base * 2 ** (failures - 2), MAX_BACKOFF)
+
+
+def due(source: Source, last_run: datetime | None, now: datetime, failures: int = 0) -> bool:
+    return last_run is None or now - last_run >= wait_for(source, failures)
 
 
 def run_forever(
@@ -53,7 +66,9 @@ def run_forever(
         for source in sources:
             if stop.is_set():
                 break
-            if due(source, state.last_run_at(source.id), now()):
+            if due(
+                source, state.last_run_at(source.id), now(), state.consecutive_failures(source.id)
+            ):
                 collect_source(source, client, state, writer, max_items=max_items, publish=publish)
         stop.wait(tick_seconds)
     logger.info("scheduler_stopped")

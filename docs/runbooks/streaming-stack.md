@@ -62,6 +62,33 @@ docker compose --profile core --profile stream up -d --scale extractor=3 extract
 
 VnExpress answers only from Vietnamese IP addresses: run the crawler from Vietnam.
 
+## 2b. Monitoring and alerts
+
+The `monitor` service (started by `make up-stream`) checks every 15 minutes and sends a
+message when something goes wrong, and again when it is fixed:
+
+| Alert | Meaning |
+|---|---|
+| `source_failing:<id>` | 3+ failed runs in a row; the scheduler backs off (doubling wait, max 6 h) |
+| `source_stale:<id>` | no successful run for 3 h |
+| `no_new_articles` | nothing stored for 2 h |
+| `embedding_stalled` | articles grow but Qdrant does not, for 30 min |
+| `qdrant_down` | Qdrant unreachable |
+| `dead_letters_spike` | 50+ rejected articles since the last check (top reasons listed) |
+
+Set one or both channels in `.env`, then `make up-stream` and `make alert-test`:
+- Discord: channel → Edit Channel → Integrations → Webhooks → New Webhook → Copy URL →
+  `ALERT_DISCORD_WEBHOOK_URL=...`
+- Telegram: @BotFather → /newbot → token → `ALERT_TELEGRAM_BOT_TOKEN=...`; add the bot to the
+  group, send a message, open `https://api.telegram.org/bot<token>/getUpdates` and copy
+  `chat.id` → `ALERT_TELEGRAM_CHAT_ID=...`
+
+`make monitor-once` runs one check now and prints the snapshot.
+
+Keep it running unattended (Windows): Docker Desktop → Settings → General → "Start Docker
+Desktop when you sign in"; Windows → Settings → System → Power → Screen and sleep → "Never"
+for sleep when plugged in. Containers restart by themselves (`restart: unless-stopped`).
+
 ## 3. Ask questions
 
 ```bash
@@ -79,7 +106,7 @@ Windows PCs keep the Docker services (CPU); they are the tested path (`linux/amd
 
 ```bash
 brew install llama.cpp
-llama-server -m models/bge-m3-q8_0.gguf --embedding --pooling cls -c 8192 -b 8192 -ub 8192 --port 8091 &
+llama-server -m models/bge-m3-Q8_0.gguf --embedding --pooling cls -c 8192 -b 8192 -ub 8192 --port 8091 &
 llama-server -m models/bge-reranker-v2-m3-Q8_0.gguf --reranking --embedding --pooling rank -c 8192 -b 8192 -ub 8192 --port 8092 &
 # in .env:
 #   STACK_EMBEDDING_BASE_URL=http://host.docker.internal:8091
@@ -105,7 +132,7 @@ make bronze-ls               # source=extracted/... files written by consumer-ar
 | `llm-check`: a Gemini model "model not found" | The name changed; edit `GEMINI_MODELS` in `.env`. |
 | Many `http_403` dead letters for one site | The site blocks crawlers: disable the source in `sources.json`. |
 | `embedder` container exits immediately | Model file missing: `make models`; check `ls models/`. |
-| Embedder logs HTTP 500 `unordered_map::at` | Old GGUF without a newline token; fixed in code (line breaks are removed before embedding). Then `make reindex`. |
+| Embedder logs HTTP 500 `unordered_map::at` | Old BGE-M3 GGUF (tokenizer entries missing). `git pull`, `make models` (downloads `bge-m3-Q8_0.gguf`), `make up-ai`, `make reindex`. The client also skips single bad chunks now. |
 | `consumer-semantic` logs `dependency_unavailable_gave_up` | The embedder or Qdrant was down for 10+ minutes. Start them, then `make reindex` (builds only missing vectors). |
 | Dead letters with `network_error` / `"retryable": true` | Temporary network problem or 429/5xx. `make replay-dead-letters` sends them through again. |
 | A site's article pages are blocked by the network (TLS reset, also with `curl`) | Set `"extract": false` for that source in `sources.json`: title + feed summary are stored instead (done for BBC on 2026-11-03). |

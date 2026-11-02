@@ -446,3 +446,13 @@ def test_rss_only_source_stores_feed_summary_without_fetching():
     short = {**_discovered(2), "summary_html": "<p>Hi</p>"}
     make_handler(client, bus, MemoryDedup(), extract=fake_extract(), rss_only={"fixture_vi"})(short)
     assert bus.values(topics.DEAD_LETTER)[0]["reason"] == "summary_too_short"
+
+
+def test_semantic_consumer_skips_chunks_the_embedder_rejects():
+    class PartialEmbedder:
+        def embed(self, texts):
+            return [None if i == 0 else [1.0, 0.0] for i in range(len(texts))]
+
+    store = FakeStore()
+    semantic.make_handler(PartialEmbedder(), store, max_chars=300, overlap_chars=50)(_extracted(1))
+    assert store.points and all(p["payload"]["article_id"] == "id1" for p in store.points.values())

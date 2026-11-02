@@ -7,7 +7,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p models
 
-EMBEDDING_GGUF_URL="${EMBEDDING_GGUF_URL:-https://huggingface.co/vonjack/bge-m3-gguf/resolve/main/bge-m3-q8_0.gguf}"
+# smarttasks build: recent conversion, retrieval quality measured through llama.cpp. The older
+# vonjack/bge-m3-gguf file lacks tokenizer entries (llama.cpp HTTP 500 "unordered_map::at").
+EMBEDDING_GGUF_URL="${EMBEDDING_GGUF_URL:-https://huggingface.co/smarttasks/bge-m3-GGUF/resolve/main/bge-m3-Q8_0.gguf}"
 RERANK_GGUF_URL="${RERANK_GGUF_URL:-https://huggingface.co/gpustack/bge-reranker-v2-m3-GGUF/resolve/main/bge-reranker-v2-m3-Q8_0.gguf}"
 
 fetch() {
@@ -29,6 +31,6 @@ fetch() {
   echo "done: $out (${size_mb} MB)"
 }
 
-fetch "$EMBEDDING_GGUF_URL" bge-m3-q8_0.gguf 500
+fetch "$EMBEDDING_GGUF_URL" bge-m3-Q8_0.gguf 500
 fetch "$RERANK_GGUF_URL" bge-reranker-v2-m3-Q8_0.gguf 500
 echo "Models ready. Start them with: make up-ai"

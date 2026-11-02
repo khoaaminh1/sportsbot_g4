@@ -26,6 +26,14 @@
 - llama.cpp serves BGE-M3's dense vectors only (no sparse or ColBERT outputs); the keyword side
   comes from PostgreSQL instead.
 
+## Update 2026-11-03 (first run on the team PC)
+The first BGE-M3 file (`vonjack/bge-m3-gguf`, converted with an old llama.cpp) loads with
+"SPM vocabulary, but newline token not found" and fails with HTTP 500 `unordered_map::at` on
+line breaks and on some other characters. Changes: the default file is now
+`smarttasks/bge-m3-GGUF` `bge-m3-Q8_0.gguf`; clients send single-line text; a batch that fails
+is retried one input at a time, then with symbols/emoji removed, and a chunk that still fails
+is skipped (logged) instead of blocking the stream.
+
 ## Consequences
 - No Python ML runtime in the serving path; the same two containers run on macOS and Windows.
 - CPU-only inside Docker on a Mac: embedding a large backlog is slow. Measure articles per

@@ -56,6 +56,12 @@ class PipelineSettings(BaseSettings):
     embedding_base_url: str = "http://localhost:8091"
     embedding_model: str = "bge-m3"
 
+    # Monitoring and alerts (monitoring/). Empty = alerts only in the monitor's log.
+    monitor_interval_seconds: float = Field(default=900.0, ge=60)
+    alert_discord_webhook_url: str = ""
+    alert_telegram_bot_token: str = ""
+    alert_telegram_chat_id: str = ""
+
     @field_validator("hdfs_webhdfs_url")
     @classmethod
     def _strip_slash(cls, value: str) -> str:

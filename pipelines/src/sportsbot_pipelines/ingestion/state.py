@@ -43,6 +43,7 @@ class State(Protocol):
     def save_run(self, run: RunRecord) -> None: ...
     def set_robots(self, source_id: str, allowed: bool) -> None: ...
     def last_run_at(self, source_id: str) -> datetime | None: ...
+    def consecutive_failures(self, source_id: str) -> int: ...
 
 
 @dataclass
@@ -79,6 +80,14 @@ class MemoryState:
     def last_run_at(self, source_id: str) -> datetime | None:
         times = [r.started_at for r in self.runs if r.source_id == source_id]
         return max(times) if times else None
+
+    def consecutive_failures(self, source_id: str) -> int:
+        count = 0
+        for run in reversed([r for r in self.runs if r.source_id == source_id]):
+            if run.status != "failed":
+                break
+            count += 1
+        return count
 
 
 class PostgresState:
@@ -204,3 +213,19 @@ class PostgresState:
                 text("SELECT last_run_at FROM collector_state WHERE source_id = :s"),
                 {"s": source_id},
             ).scalar()
+
+    def consecutive_failures(self, source_id: str) -> int:
+        with self.engine.connect() as conn:
+            statuses = conn.execute(
+                text(
+                    "SELECT status FROM collection_runs WHERE source_id = :s "
+                    "ORDER BY started_at DESC LIMIT 20"
+                ),
+                {"s": source_id},
+            ).scalars()
+            count = 0
+            for status in statuses:
+                if status != "failed":
+                    break
+                count += 1
+            return count
