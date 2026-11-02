@@ -15,7 +15,8 @@
   embeddings very close to f16 (published cosine ≥ 0.999 for one BGE-M3 GGUF build).
 
 ## Decision
-- `embedder` and `reranker` services (profile `ai`) run `ghcr.io/ggml-org/llama.cpp:server`
+- `embedder` and `reranker` services (profile `ai`) run `ghcr.io/ggml-org/llama.cpp:server-v0.5.0` (pinned release; versioned tags include
+  linux/arm64)
   with the GGUF files from `./models` (`make models`). The image is configurable
   (`LLAMA_CPP_IMAGE`); on a Mac a native `llama-server` (Homebrew, Metal) can replace them via
   `STACK_EMBEDDING_BASE_URL` / `STACK_RERANK_BASE_URL`.
