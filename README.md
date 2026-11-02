@@ -1,144 +1,287 @@
 # Vietnam SportsBot
 
-Vietnam SportsBot is a Big Data course project developed by Group 4. The project aims to provide a conversational assistant for Vietnamese sports news and events, with support for Vietnamese and English questions.
+![Status: planning](https://img.shields.io/badge/status-phase%201%20planning-lightgrey.svg)
+![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)
+![Course: Big Data](https://img.shields.io/badge/course-Big%20Data-orange.svg)
 
-Users will be able to ask natural language questions, enter short keywords, and receive relevant information with links to the original sources.
+A real-time multilingual sports news chatbot. It continuously collects sports news from RSS feeds, permitted websites and sports APIs, processes it through a Big Data pipeline (HDFS + Apache Spark), and answers natural-language questions in **Vietnamese or English** using retrieval-augmented generation (RAG). Every answer cites the original articles with links and publication times, and says so when the evidence is missing or conflicting.
 
-## Project Status
+Initial focus: **Vietnamese football and volleyball**, with basketball, tennis and badminton next. The architecture is built to add sports, sources and languages later.
 
-The project is in its initial development stage.
+> **Status (2026-11-02): Phase 1, repository audit and planning.** No application code is published in this repository yet. Everything below marked *planned* describes the agreed design, not working features. Implemented features will be marked as such, with the command that demonstrates them. Plan and decisions: [Phase 1 technical assessment](https://claude.ai/artifact/7ZYx8ciw2dSwvCWihkrqvk).
 
-A local prototype has been demonstrated with a terminal interface, a Streamlit interface, synthetic sports records, and basic keyword matching. The application source files have not yet been published to this repository. This README describes the project direction and the intended development process.
+## Table of contents
 
-Live data collection, structured match results, semantic retrieval, LLM integration, model training, and public application deployment are planned features. They are not currently available through this repository.
+1. [What it does](#what-it-does)
+2. [Architecture in one picture](#architecture-in-one-picture)
+3. [Implementation status](#implementation-status)
+4. [Repository map](#repository-map)
+5. [Data pipeline: Bronze, Silver, Gold](#data-pipeline-bronze-silver-gold)
+6. [Data sources](#data-sources)
+7. [AI and machine learning](#ai-and-machine-learning)
+8. [Technology stack](#technology-stack)
+9. [Quick start](#quick-start)
+10. [API (planned)](#api-planned)
+11. [Evaluation](#evaluation)
+12. [Roadmap](#roadmap)
+13. [Working on this repo](#working-on-this-repo)
+14. [Team](#team)
+15. [Honesty rules](#honesty-rules)
+16. [Academic context and licence](#academic-context-and-licence)
 
-## Problem Statement
+## What it does
 
-Sports information is distributed across news websites, competition pages, and data services. Users may describe the same team or event using different names, abbreviations, or languages.
+1. **Collects** new sports articles every 15–60 minutes per source (RSS first, official APIs second, permitted page extraction last). Each source has its own interval, and the collector respects robots.txt, terms of service and rate limits.
+2. **Processes** them in hourly Spark micro-batches over HDFS: it cleans, validates, detects the language, removes exact and near-duplicate stories, classifies the sport and tags teams, athletes and competitions.
+3. **Answers** questions such as:
+   - "Tin bóng đá mới nhất hôm nay?" / "What are the latest football news today?"
+   - "Give me the latest news about the Vietnam national football team."
+   - "Show me recent volleyball news in Vietnam."
+   - "What happened in Manchester United's latest match?"
+4. **Shows its evidence.** Each answer lists the source articles with links and `published_at` times, and labels old news as old.
+5. **Refuses to invent.** The bot never states a match result, statistic, transfer or injury that is absent from the retrieved evidence. When sources disagree, it shows the conflict and both sources. When a question is ambiguous (for example "Vietnam vs Indonesia": which team, age group, competition?), it asks for clarification.
 
-The project addresses the challenge of collecting this information, maintaining its freshness, retrieving relevant evidence, and presenting an answer that users can verify.
+"Real time" here means **near real time**: an article becomes searchable about one hour after collection, limited by how often each source publishes. Freshness lag is measured and reported, not assumed.
 
-A question about the result of a Vietnam versus Indonesia match may require additional context, such as the date, competition, age group, or team category. The assistant should identify ambiguity and request clarification when necessary.
+## Architecture in one picture
 
-## Objectives
+```mermaid
+flowchart LR
+  subgraph Collect["1. Collect (every 15-60 min)"]
+    SRC[RSS / permitted pages / sports APIs] --> COL[Collector: scheduler, robots.txt, retries]
+  end
+  subgraph Process["2. HDFS + Spark (hourly)"]
+    BR[(Bronze: raw JSONL)] --> SI[(Silver: clean, dedup, language)]
+    SI --> GO[(Gold: enriched Parquet)]
+    GO <--> ML[ML training: Models A and B]
+  end
+  subgraph Serve["3. Serve"]
+    PG[(PostgreSQL)]
+    QD[(Qdrant vectors)]
+    BM[(BM25 index)]
+  end
+  subgraph Answer["4. Answer"]
+    UI[React UI] --> API[FastAPI]
+    API --> AG[Agent: intent, time, hybrid retrieval, evidence check]
+    AG --> LLM[LLM, external, OpenAI-compatible]
+  end
+  COL --> BR
+  GO --> PG & QD & BM
+  AG --> QD & BM
+  API --> PG
+```
 
-1. Collect sports news and event information from selected RSS feeds, permitted website pages, and sports APIs.
-2. Preserve source URLs, publication times, collection times, and data provenance.
-3. Clean collected records and prevent duplicate storage.
-4. Support Vietnamese and English questions and keywords.
-5. Retrieve relevant news and structured event records.
-6. Generate answers supported by identifiable sources.
-7. Provide terminal and browser interfaces that share the same processing logic.
-8. Apply HDFS and Spark to data storage, processing, and analysis.
-9. Evaluate retrieval quality, answer grounding, freshness, and response time.
+The request path never reads HDFS or runs Spark. HDFS keeps every raw and processed record, so any layer can be rebuilt. PostgreSQL, Qdrant and the BM25 index are serving copies refreshed after each Gold run.
 
-## Initial Scope
+## Implementation status
 
-The initial target is Vietnamese football and volleyball, including domestic competitions and Vietnamese teams participating in international events.
+| Component | Status | Evidence |
+|---|---|---|
+| Project brief and Phase 1 assessment | Done | This README, [assessment](https://claude.ai/artifact/7ZYx8ciw2dSwvCWihkrqvk) |
+| Local prototype (terminal + Streamlit, synthetic records, keyword matching) | Exists locally, **not published** | To be pushed to a branch for audit |
+| Docker stack, CI, contracts | Planned (Phase 2) | — |
+| Collectors, HDFS, Spark Bronze/Silver/Gold | Planned (Phase 3) | — |
+| Classifier, multilingual retrieval, RAG | Planned (Phase 4) | — |
+| FastAPI backend | Planned (Phase 5) | — |
+| Web frontend | Planned (Phase 6) | — |
 
-Vietnamese and English are the initial supported language targets. Additional sports, sources, and languages may be introduced after the core workflow has been evaluated.
+## Repository map
 
-Coverage depends on the connected sources and their available historical data. The project does not claim complete coverage of every sports website or event.
+Planned layout (created in Phase 2). Each Python module has its own `src/` package, `requirements.txt`, tests and `AGENTS.md`.
 
-## Intended User Experience
+| Path | Purpose | Owner |
+|---|---|---|
+| `infra/` | HDFS, Spark and PostgreSQL configuration and migrations | TMK, VNP |
+| `pipelines/` | Collectors, Bronze writer, Spark Silver/Gold jobs, deduplication, enrichment, exports, scaling scripts | VNP, LTN |
+| `pipelines/sources.yaml` | Source registry: URL, language, interval, robots.txt result, licence notes | LTN |
+| `ml/` | Datasets, labeling guide, training and evaluation of the classifiers, model cards | LTN |
+| `agent/` | Query understanding, time parsing, hybrid retrieval, evidence and conflict checks, prompts, LLM client | TMK |
+| `backend/` | FastAPI service exposing the API contract | TMK |
+| `evaluation/` | Golden question set, retrieval and answer metrics, committed run files, reports | LTN, TMK |
+| `frontend/` | Web UI (Phase 6) | LTN, TMK |
+| `docs/` | Contracts, architecture decision records (ADRs), plan, runbooks, reports, journals | All |
+| `.github/` | CI, issue and PR templates, CODEOWNERS | TMK |
+| `data/` | Local data, logs and indexes (git-ignored, never committed) | — |
 
-Users may search for a team, competition, athlete, or event using a short phrase or a conversational question.
+## Data pipeline: Bronze, Silver, Gold
 
-The assistant should distinguish between news requests, match result questions, schedule questions, and standings questions.
+| Layer | Location | Format | Contents |
+|---|---|---|---|
+| Bronze | `hdfs:///sportsbot/bronze/source=<id>/ingest_date=<date>/ingest_hour=<hh>/` | JSON Lines (gzip) | Raw items exactly as fetched, with source URL, original timestamps, `collected_at`, HTTP status, collector version |
+| Silver | `hdfs:///sportsbot/silver/articles/` | Parquet | Cleaned, validated, language-tagged, deduplicated articles; rejected records go to `silver/_rejected/` with a reason code |
+| Gold | `hdfs:///sportsbot/gold/` | Parquet, partitioned by `sport` and `published_date` | Enriched articles (sport category, teams, athletes, competition) and analytics tables (volume per source, freshness lag, duplicate rate, top entities) |
 
-For event results, the response should identify the teams or participants, competition, event date, verified result, and supporting source. The system should verify the result even when the question assumes a particular team won.
+**Processing steps (planned):**
 
-If several events match a question, the assistant should ask for clarification or clearly identify which event the answer describes. If evidence is insufficient, it should state that limitation.
+1. Normalize timestamps to UTC, keeping the original string.
+2. Strip HTML, canonicalize URLs, detect language.
+3. Validate against `docs/contracts/article.schema.json`.
+4. Exact deduplication with `content_hash` (SHA-256 of normalized title + body) and canonical URL.
+5. Near-duplicate clustering with Spark `MinHashLSH`, so the same story from two outlets shares a `story_cluster_id` and both stay citable.
+6. Enrichment: trained sport classifier, alias-dictionary entity tagging.
+7. Export new Gold rows to PostgreSQL, Qdrant and the BM25 index.
 
-## Proposed Architecture
+Only new partitions are processed (incremental ingestion with per-source watermarks).
 
-1. Source adapters collect records from configured RSS feeds and APIs.
-2. Raw storage preserves the collected data and provenance.
-3. Processing validates fields, normalizes timestamps, and removes duplicates.
-4. Curated storage contains records suitable for retrieval and analysis.
-5. Query processing identifies entities, intent, and time constraints.
-6. Retrieval selects relevant articles or structured event records.
-7. The language model generates a response using the retrieved evidence.
-8. The interface presents the answer with source links and timestamps.
+**Article schema** (fields may be empty when a source does not provide them; missing metadata is never invented):
 
-The terminal interface and Streamlit interface will use shared application services.
+`article_id`, `title`, `content`, `summary`, `source_name`, `source_url`, `published_at`, `collected_at`, `language`, `sport_category`, `teams`, `athletes`, `competition`, `content_hash`.
 
-## Data and Big Data Processing
+**Big Data experiments (planned).** The same Spark jobs run at 10,000, 100,000 and 1,000,000 records. Each run records input, output, duplicate and rejected counts, duration, throughput, storage size per layer and errors. Two setups are compared:
 
-SQLite is the initial local storage choice for the application prototype.
+- Spark `local[*]` on one machine.
+- A Spark standalone cluster with 2 workers over a 2-DataNode HDFS.
 
-HDFS is planned for storing raw and curated datasets. Spark is planned for cleaning, deduplication, transformation, and reporting. Curated datasets may be stored in Parquet format and exported into the application retrieval store.
+Both run on one host, so they are reported as **single-machine / pseudo-distributed**, not as a production cluster. Our collectors will not reach 1M real sports articles during the course. The large runs therefore use real public Vietnamese news corpora (UIT-ViON, VNTC, binhvq news-corpus), always labeled "public historical corpus, not collected by SportsBot". Synthetic data is used only for tests and is always labeled.
 
-Processing reports should record input counts, output counts, rejected records, duplicate counts, execution times, and known limitations.
+## Data sources
 
-The local Hadoop environment represents a teaching setup. Running services on one computer does not demonstrate the capacity of a production distributed cluster.
+RSS feeds and official APIs come first. Page extraction is enabled per source only after checking robots.txt and the terms of service. Full text is stored for internal processing; the bot displays only a title, a short excerpt and a link to the original.
 
-## NLP and Language Models
+| Source | Language | Type | Coverage | Status |
+|---|---|---|---|---|
+| VnExpress Thể thao | Vietnamese | RSS | All sports | Candidate; feed URL to verify |
+| Tuổi Trẻ, Thanh Niên, Dân Trí, VTC News | Vietnamese | RSS | All sports, incl. volleyball | Candidates; feed URLs to verify |
+| VFF, VPF, VFV official sites | Vietnamese | Official pages | Football, volleyball | Candidates; robots.txt to check |
+| VnExpress International | English | RSS / pages | Vietnamese sport in English | Candidate |
+| BBC Sport | English | RSS | Football, tennis, basketball | Candidate |
+| MARCA | Spanish | RSS | Football | Candidate |
+| L'Équipe, Maxifoot | French | RSS | Football | Candidates |
+| API-Football (API-Sports) | — | REST API, free tier 100 requests/day | Fixtures, results, standings | Candidate; V.League coverage to verify |
 
-The primary question answering approach is Retrieval Augmented Generation, or RAG. New information is added to the retrieval store rather than requiring the language model to be trained again after every event.
+The final list, with intervals and licence notes, will live in `pipelines/sources.yaml` and `docs/data-sources.md`.
 
-Planned NLP tasks include entity normalization, abbreviation handling, intent classification, time expression interpretation, and multilingual semantic retrieval.
+## AI and machine learning
 
-An optional supervised component is an intent classifier trained on labeled Vietnamese and English questions. A baseline may use TF IDF features and Logistic Regression. Training, validation, and test data should be separated, with similar questions kept from leaking across splits.
+**RAG pipeline (planned):**
 
-Training a foundation language model from scratch is outside the intended scope. LLM fine tuning is not a prerequisite for the initial application.
+1. Understand the query: intent, sport, teams, athletes, competition, time window ("hôm nay", "last weekend").
+2. Retrieve with hybrid search: BM25 (Vietnamese word segmentation plus an accent-stripped copy, for queries typed without diacritics) and multilingual dense vectors (`intfloat/multilingual-e5-small`), fused with reciprocal rank fusion and filtered by sport, language and date.
+3. Check the evidence. With nothing relevant, the bot says so; with conflicting sources, it shows the conflict.
+4. Generate a grounded answer with an LLM behind an OpenAI-compatible interface, in the user's language, with citations and timestamps.
 
-## Planned Technology Stack
+**Trained models (planned):**
 
-1. Ubuntu 24.04 through WSL2 for the development environment.
-2. Python 3.12 for application development.
-3. Streamlit for the browser interface.
-4. Python argparse and Rich for the terminal interface.
-5. Feedparser and HTTPX for data collection.
-6. Beautiful Soup for permitted HTML extraction.
-7. SQLite for initial application storage.
-8. Scikit learn for baseline retrieval and classification.
-9. Multilingual embeddings for semantic retrieval.
-10. An LLM API for evidence based answer generation.
-11. Hadoop HDFS and Apache Spark for Big Data workflows.
-12. Git and GitHub for version control and collaboration.
+| Model | Task | Baseline | Improved | Notes |
+|---|---|---|---|---|
+| A (mandatory) | Sport category of an article: football, volleyball, basketball, tennis, badminton, other | Character n-gram TF-IDF + logistic regression (Spark MLlib, and scikit-learn as a check) | Multilingual-e5 embeddings + logistic regression | Hand-labeled test set (~600 articles); time-based and story-cluster splits to prevent leakage |
+| B (second) | Query intent: latest news, match result, schedule, standings, athlete update, other | TF-IDF + logistic regression | Embeddings + logistic regression | ~600–900 hand-written Vietnamese and English questions |
 
-Exact application dependencies will be documented when the source code is published.
+Fine-tuning `xlm-roberta-base` is optional and will be kept only if it beats the improved model by a margin set before the run. **No LLM is trained or fine-tuned in this project.** Entity tagging uses alias dictionaries and time expressions use rules; neither is presented as a trained model.
 
-## Development Roadmap
+## Technology stack
 
-1. Publish the existing local prototype and dependency file.
-2. Connect verified RSS sources and preserve raw records.
-3. Add SQLite storage and duplicate prevention.
-4. Replace synthetic records with collected articles.
-5. Add structured event data for results and schedules.
-6. Improve entity normalization and query interpretation.
-7. Add multilingual retrieval and grounded LLM responses.
-8. Integrate HDFS and Spark processing.
-9. Train and evaluate the optional intent classifier.
-10. Deploy the browser interface and document the demonstration workflow.
+| Layer | Technology | Why |
+|---|---|---|
+| Language | Python 3.11 | One language for collectors, Spark jobs, ML and API |
+| Collection | feedparser, httpx, trafilatura, APScheduler | RSS parsing, polite HTTP, article extraction, per-source schedules |
+| Distributed storage | Hadoop HDFS 3.x (1 NameNode, 2 DataNodes) | Bronze/Silver/Gold storage with replication |
+| Processing | Apache Spark (PySpark), Parquet, DuckDB for checks | Cleaning, dedup, enrichment, analytics, MLlib baseline |
+| Application data | PostgreSQL | Articles, sources, collection runs, conversations |
+| Retrieval | Qdrant, BM25, multilingual-e5-small | Hybrid multilingual search with metadata filters |
+| NLP / ML | underthesea or pyvi, lingua or fastText language ID, scikit-learn, Hugging Face transformers | Vietnamese segmentation, language detection, classifiers |
+| LLM | OpenAI-compatible client (hosted API or local Ollama; team decision pending) | Grounded answer generation |
+| Backend | FastAPI, Pydantic | Typed API with OpenAPI docs |
+| Frontend | React + Vite + TypeScript (Phase 6) | Responsive web UI over the API |
+| Infrastructure | Docker Compose, GitHub Actions, ruff, pytest | One-command stack, CI on every PR |
+
+Kafka, Airflow and Elasticsearch are deliberately **not** used: about 20 feeds polled every 15–60 minutes is not a stream, and one scheduler plus `spark-submit` is enough. Each choice will be recorded as an ADR in `docs/decisions/`.
+
+## Quick start
+
+> **Not available yet.** The commands below are the planned interface, delivered in Phase 2. They will be tested on a clean clone before this notice is removed.
+
+Requirements (planned): Docker with Compose v2, Python 3.11, Git. Windows users: run everything inside WSL2 (Ubuntu 24.04), because Spark needs Java 17+ and Hadoop does not run natively on Windows. The full stack needs about 8–10 GB of RAM (estimate); a lighter `core` profile runs without HDFS and Spark.
+
+```bash
+git clone https://github.com/khoaaminh1/sportsbot_g4.git
+cd sportsbot_g4
+cp .env.example .env          # fill in values; never commit .env
+make setup                    # dev tools and Python dependencies
+make up-core                  # PostgreSQL, Qdrant, backend  -> http://localhost:8000/health
+make up-bigdata               # HDFS (NameNode + 2 DataNodes) and Spark
+make lint test                # ruff + pytest, same as CI
+make down                     # stop all services (data volumes are kept)
+```
+
+## API (planned)
+
+FastAPI with OpenAPI documentation at `/docs`. The contract will be frozen in `docs/contracts/api.openapi.yaml` during Phase 2.
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /health` | Service and source health (including degraded sources) |
+| `POST /chat` | Ask a question; streamed answer with citations and timestamps |
+| `GET /news/latest` | Latest articles, filterable by sport and language |
+| `GET /news/search` | Keyword and semantic search |
+| `GET /categories` | Sports and article counts |
+| `GET /articles/{article_id}` | Article metadata, excerpt and original link |
+| `GET /conversations/{id}` | Conversation history |
 
 ## Evaluation
 
-Evaluation will include relevant article retrieval, correct event identification, accurate source attribution, handling of ambiguous questions, multilingual query performance, collection delay, and response time.
+All numbers will come from committed run files on a frozen data snapshot, with decision rules written before each run.
 
-The application should also be evaluated when no relevant data exists, when a source becomes unavailable, and when collection is repeated.
+- **Retrieval:** recall@5/10 and MRR for BM25, dense and hybrid, overall and per language (Vietnamese, English, cross-lingual), on a golden set of about 80 questions including unanswerable ones.
+- **Answers:** faithfulness, citation accuracy, timestamp presence, correct refusals.
+- **Classifiers:** macro-F1, per-class precision/recall/F1, confusion matrix, F1 per language.
+- **System:** p50/p95 latency of retrieval and full answers.
+- **Freshness:** lag from `published_at` to `collected_at`, and from `collected_at` to searchable.
+- **Robustness:** behaviour when no relevant data exists, when a source is down, and when collection is repeated.
 
-Measured results and reproducible run records will be added as development progresses.
+## Roadmap
 
-## Deployment Plan
+Proposed 11-week plan from 2026-11-02, pending the team's confirmation of the course deadline. Phases overlap; each ends with a gate merged from `develop` to `main` and a phase report.
 
-The terminal application is intended for technical demonstrations. The Streamlit application is intended for browser access and classroom testing.
+| Phase | Weeks | Content | Gate |
+|---|---|---|---|
+| 1. Repository audit | 1 | Audit of this repo and the reference architecture; technical assessment | Plan approved by the team |
+| 2. Core infrastructure | 1–2 | Docker stack, PostgreSQL, HDFS, Spark, CI, contracts, logging, config | Stack starts on a clean clone; CI green |
+| 3. Data engineering | 2–5 | Collectors, Bronze/Silver/Gold on HDFS, dedup, scaling experiments | 7 days of unattended real collection; scaling table |
+| 4. AI and ML | 4–7 | Classifiers, multilingual hybrid retrieval, RAG, evaluation | Models and RAG measured |
+| 5. Backend | 6–8 | FastAPI endpoints, conversation management, integration tests | All 13 backend completion criteria pass |
+| 6. Frontend | 8–9 | Chat, news feed, search, filters, article pages | UI uses the documented API only |
+| 7. Testing and deployment | 9–10 | End-to-end, load, data-pipeline tests; Docker deployment | Demo reproduced from a clean clone |
+| 8. Documentation | 10–11 | Guides, experiment reports, final report, contribution report | Report submitted |
 
-GitHub will store source code and documentation. Streamlit Community Cloud is the initial candidate for hosting the browser interface.
+Frontend work starts only after the backend completion criteria are verified, not just after the code is written.
 
-Continuous collection requires a running collector and persistent storage. Publishing a web interface alone does not guarantee continuous collection or durable data storage.
+## Working on this repo
 
-## Configuration and Data Handling
+- **Branches:** `main` (protected, release tags) and `develop` (integration). Feature branches are named `feature/<issue>-<slug>`, for example `feature/12-rss-collector`; fixes use `fix/...` and docs use `docs/...`.
+- **Commits:** [Conventional Commits](https://www.conventionalcommits.org/) in English, for example `feat: add VnExpress RSS collector`.
+- **Pull requests:** into `develop`, squash merge, CI green. Another member reviews contracts, schemas, Spark jobs and evaluation runs.
+- **Language:** all code, identifiers, logs, configuration, documentation, issues and PRs are in English. Collected news stays in its original language.
+- **Secrets:** configuration comes from environment variables listed in `.env.example`. Never commit `.env`, API keys, data files, model weights or notebook outputs.
+- **Decisions:** recorded as ADRs in `docs/decisions/`.
 
-API credentials must be stored outside version control using environment variables or deployment secrets.
+`CONTRIBUTING.md` and `AGENTS.md` (instructions for humans and AI coding agents) will be added in Phase 2.
 
-The repository should exclude virtual environments, private credentials, local databases, and collected data archives. Source selection and collection behavior must respect applicable access conditions and usage limits.
+## Team
 
-Synthetic records must remain clearly labeled. Generated answers should preserve the distinction between article publication time, event time, and collection time.
+Group 4.
 
-## Academic Context
+| Member | Code | Owns |
+|---|---|---|
+| Trần Minh Khoa (project lead) | TMK | Architecture, contracts, Docker stack, PostgreSQL, FastAPI backend, agent and RAG, integration, documentation |
+| Võ Ngọc Phú | VNP | HDFS, Bronze writer and scheduling, Spark Silver/Gold jobs, deduplication, exports, Big Data experiments |
+| Lê Tấn Nguyên | LTN | Source registry and collectors (with VNP), labeling, Models A and B, golden set, testing; frontend in Phase 6 |
 
-This project is developed for a Big Data course. The final report should explain the architecture, data provenance, processing decisions, evaluation results, failure cases, and limitations.
+## Honesty rules
 
-Any use of AI assistance in implementation or reporting should be documented according to the course requirements.
+These rules apply to the code, the reports and the presentation:
+
+- Collected data, benchmarks and training results are never fabricated.
+- Synthetic and public historical datasets are always labeled with their origin.
+- Single-machine or pseudo-distributed runs are never presented as a production cluster.
+- Implemented features are kept separate from planned ones in all documentation.
+- Publication time, event time and collection time are kept separate.
+- The chatbot states when information is unavailable instead of guessing.
+
+## Academic context and licence
+
+Developed for a Big Data course. The final report will explain the architecture, data provenance, processing decisions, evaluation results, failure cases and limitations. Use of AI assistance in implementation and reporting is documented as the course requires.
+
+Architectural reference: [scitech-rag-agent](https://github.com/Tdat10052499/scitech-rag-agent) (MIT), used as an engineering reference and adapted, not copied.
+
+Licence: to be decided by the team (a `LICENSE` file will be added). Collected articles remain the property of their publishers and are not redistributed.
