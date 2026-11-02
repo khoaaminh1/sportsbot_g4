@@ -132,12 +132,12 @@ db-import:  ## Load a snapshot: make db-import FILE=data/snapshots/x.sql.gz (REP
 
 bronze-export:  ## Archive the extracted-article Bronze files (for Spark) to data/snapshots/bronze-*.tgz
 	mkdir -p data/snapshots
-	docker run --rm -v sportsbot_bronze_data:/bronze:ro -v "$$PWD/data/snapshots:/out" alpine tar czf /out/bronze-$$(date +%Y%m%d-%H%M).tgz -C /bronze .
+	docker run --rm --user "$$(id -u):$$(id -g)" -v sportsbot_bronze_data:/bronze:ro -v "$$PWD/data/snapshots:/out" alpine tar czf /out/bronze-$$(date +%Y%m%d-%H%M).tgz -C /bronze .
 	@ls -lh data/snapshots | tail -n 3
 
 kaggle-export:  ## Corpus for the private Kaggle dataset: data/kaggle/{articles.jsonl.gz,sportsbot.sql.gz}
 	mkdir -p data/kaggle
-	$(COMPOSE) $(STREAM) run --rm --no-deps -v ./data/kaggle:/app/data/kaggle discover export-corpus --out /app/data/kaggle/articles.jsonl.gz
+	$(COMPOSE) $(STREAM) run --rm --no-deps --user "$$(id -u):$$(id -g)" -v ./data/kaggle:/app/data/kaggle discover export-corpus --out /app/data/kaggle/articles.jsonl.gz
 	$(COMPOSE) $(STREAM) exec -T postgres sh -c 'pg_dump -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" --clean --if-exists --no-owner' | gzip > data/kaggle/sportsbot.sql.gz
 	@ls -lh data/kaggle
 
@@ -157,7 +157,8 @@ llm-check:  ## Which Gemini models answer with your key, one tiny request each
 	PYTHONPATH=agent/src $(PYTHON) -m sportsbot_agent.llm_check
 
 export-labeling:  ## Random article sample to label by hand: make export-labeling N=400 -> data/labeling/
-	$(COMPOSE) $(STREAM) run --rm --no-deps -v ./data/labeling:/app/data/labeling discover export-sample --n $(or $(N),400) --out /app/data/labeling/sample.csv
+	mkdir -p data/labeling
+	$(COMPOSE) $(STREAM) run --rm --no-deps --user "$$(id -u):$$(id -g)" -v ./data/labeling:/app/data/labeling discover export-sample --n $(or $(N),400) --out /app/data/labeling/sample.csv
 
 ask-no-llm:  ## Retrieval only (no LLM): see which articles the RAG finds
 	PYTHONPATH=agent/src $(PYTHON) -m sportsbot_agent.ask --no-llm "$(Q)"
