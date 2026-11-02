@@ -1,6 +1,6 @@
 # Vietnam SportsBot
 
-![Status: planning](https://img.shields.io/badge/status-phase%201%20planning-lightgrey.svg)
+![Status: planning](https://img.shields.io/badge/status-phase%202%20infrastructure-blue.svg)
 ![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)
 ![Course: Big Data](https://img.shields.io/badge/course-Big%20Data-orange.svg)
 
@@ -8,7 +8,7 @@ A real-time multilingual sports news chatbot. It continuously collects sports ne
 
 Initial focus: **Vietnamese football and volleyball**, with basketball, tennis and badminton next. The architecture is built to add sports, sources and languages later.
 
-> **Status (2026-11-02): Phase 1, repository audit and planning.** No application code is published in this repository yet. Everything below marked *planned* describes the agreed design, not working features. Implemented features will be marked as such, with the command that demonstrates them. Plan and decisions: [Phase 1 technical assessment](https://claude.ai/artifact/7ZYx8ciw2dSwvCWihkrqvk).
+> **Status (2026-11-02): Phase 2, core infrastructure, done (pending merge).** The Docker stack (PostgreSQL, Qdrant, HDFS with 2 DataNodes, Spark), the backend foundation with health checks, the database schema, the frozen contracts and CI are implemented and verified in CI ([Phase 2 report](docs/reports/phase-2.md)). Data collection, ML, retrieval and the chatbot itself are still *planned*. Implemented features are marked as such, with the command that demonstrates them. Plan and decisions: [Phase 1 technical assessment](https://claude.ai/artifact/7ZYx8ciw2dSwvCWihkrqvk).
 
 ## Table of contents
 
@@ -18,7 +18,7 @@ Initial focus: **Vietnamese football and volleyball**, with basketball, tennis a
 4. [Repository map](#repository-map)
 5. [Data pipeline: Bronze, Silver, Gold](#data-pipeline-bronze-silver-gold)
 6. [Data sources](#data-sources)
-7. [AI and machine learning](#ai-and-machine-learning)
+7. [NLP pipeline](#nlp-pipeline) and [AI and machine learning](#ai-and-machine-learning)
 8. [Technology stack](#technology-stack)
 9. [Quick start](#quick-start)
 10. [API (planned)](#api-planned)
@@ -79,7 +79,8 @@ The request path never reads HDFS or runs Spark. HDFS keeps every raw and proces
 |---|---|---|
 | Project brief and Phase 1 assessment | Done | This README, [assessment](https://claude.ai/artifact/7ZYx8ciw2dSwvCWihkrqvk) |
 | Local prototype (terminal + Streamlit, synthetic records, keyword matching) | Exists locally, **not published** | To be pushed to a branch for audit |
-| Docker stack, CI, contracts | Planned (Phase 2) | — |
+| Docker stack (core + bigdata profiles), PostgreSQL schema, contracts, CI | **Implemented** (Phase 2) | `make up-core`, `make up-bigdata`, `make spark-smoke`; [Phase 2 report](docs/reports/phase-2.md) |
+| Backend foundation: config, JSON logging, errors, `/health` | **Implemented** (Phase 2) | `curl localhost:8000/health`; `make test` |
 | Collectors, HDFS, Spark Bronze/Silver/Gold | Planned (Phase 3) | — |
 | Classifier, multilingual retrieval, RAG | Planned (Phase 4) | — |
 | FastAPI backend | Planned (Phase 5) | — |
@@ -151,6 +152,25 @@ RSS feeds and official APIs come first. Page extraction is enabled per source on
 
 The final list, with intervals and licence notes, will live in `pipelines/sources.yaml` and `docs/data-sources.md`.
 
+## NLP pipeline
+
+Natural language processing runs through the whole system, from cleaning collected articles to understanding questions. Each task below is marked as trained (with its own evaluation) or rule/dictionary-based. All are **planned**.
+
+| NLP task | Where it runs | Method | Type | Evaluated by |
+|---|---|---|---|---|
+| Language identification | Silver Spark job | `lingua` or fastText `lid.176` | Pretrained | Accuracy on a labeled sample |
+| Text normalization (Unicode NFC, HTML removal, whitespace) | Silver Spark job | Rules | Rule-based | Unit tests |
+| Vietnamese word segmentation | BM25 indexing and queries | `underthesea` or `pyvi` | Pretrained | Retrieval recall, segmented vs syllable tokens |
+| Accent stripping | BM25 (queries typed without diacritics, e.g. "doi tuyen viet nam") | Rules | Rule-based | Retrieval recall on no-accent queries |
+| Near-duplicate detection | Silver Spark job | MinHash over word shingles (`MinHashLSH`) | Algorithmic | Precision on hand-checked pairs |
+| Sport-category text classification | Gold enrichment | TF-IDF baseline vs multilingual embeddings | **Trained (Model A)** | Macro-F1, per-language F1 |
+| Named entity recognition (teams, athletes, competitions) | Gold enrichment, query understanding | Alias dictionaries now; a pretrained Vietnamese NER model as a stretch goal | Dictionary (stretch: pretrained) | Precision / recall / F1 on a hand-labeled set |
+| Entity normalization (aliases, abbreviations: "ĐT Việt Nam", "Vietnam national team") | Gold enrichment, query understanding | Alias table mapping to one entity id | Dictionary | Unit tests, golden set |
+| Time expression parsing ("hôm nay", "tuần trước", "last weekend") | Query understanding | Rules to date ranges | Rule-based | Unit tests |
+| Query intent classification | Agent | TF-IDF baseline vs embeddings | **Trained (Model B)** | Macro-F1 |
+| Multilingual sentence embeddings | Semantic and cross-lingual search | `intfloat/multilingual-e5-small` | Pretrained | recall@k, MRR per language |
+| Grounded answer generation | Chat answers | LLM with retrieved evidence and citations | Pretrained (used as-is) | Faithfulness, citation accuracy |
+
 ## AI and machine learning
 
 **RAG pipeline (planned):**
@@ -189,9 +209,9 @@ Kafka, Airflow and Elasticsearch are deliberately **not** used: about 20 feeds p
 
 ## Quick start
 
-> **Not available yet.** The commands below are the planned interface, delivered in Phase 2. They will be tested on a clean clone before this notice is removed.
+> **Available since Phase 2.** Verified end to end in CI on a GitHub-hosted runner; not yet tried on every team laptop. Details and troubleshooting: [docs/runbooks/stack.md](docs/runbooks/stack.md).
 
-Requirements (planned): Docker with Compose v2, Python 3.11, Git. Windows users: run everything inside WSL2 (Ubuntu 24.04), because Spark needs Java 17+ and Hadoop does not run natively on Windows. The full stack needs about 8–10 GB of RAM (estimate); a lighter `core` profile runs without HDFS and Spark.
+Requirements: Docker with Compose v2.24+, Python 3.11, Git, `make`. Windows users: run everything inside WSL2 (Ubuntu 24.04), because Spark needs Java 17+ and Hadoop does not run natively on Windows. Measured idle memory for the whole stack is about 1.5 GiB (a running Spark job adds up to 2 GB); the `core` profile alone runs without HDFS and Spark.
 
 ```bash
 git clone https://github.com/khoaaminh1/sportsbot_g4.git
@@ -199,7 +219,9 @@ cd sportsbot_g4
 cp .env.example .env          # fill in values; never commit .env
 make setup                    # dev tools and Python dependencies
 make up-core                  # PostgreSQL, Qdrant, backend  -> http://localhost:8000/health
-make up-bigdata               # HDFS (NameNode + 2 DataNodes) and Spark
+make up-bigdata               # HDFS (NameNode + 2 DataNodes), Spark, /sportsbot dirs
+make spark-smoke              # Spark job writes and reads Parquet on HDFS
+make test-integration         # tests against the running core stack
 make lint test                # ruff + pytest, same as CI
 make down                     # stop all services (data volumes are kept)
 ```
@@ -210,7 +232,7 @@ FastAPI with OpenAPI documentation at `/docs`. The contract will be frozen in `d
 
 | Endpoint | Purpose |
 |---|---|
-| `GET /health` | Service and source health (including degraded sources) |
+| `GET /health/live`, `GET /health` | **Implemented.** Liveness, and readiness of PostgreSQL, Qdrant and HDFS |
 | `POST /chat` | Ask a question; streamed answer with citations and timestamps |
 | `GET /news/latest` | Latest articles, filterable by sport and language |
 | `GET /news/search` | Keyword and semantic search |
