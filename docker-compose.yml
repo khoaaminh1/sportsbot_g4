@@ -152,7 +152,8 @@ services:
     volumes:
       - ./pipelines:/opt/sportsbot/pipelines:ro
     healthcheck:
-      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/7077"]
+      # The master RPC port binds to the container hostname only; the web UI binds 0.0.0.0.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080"]
       interval: 5s
       timeout: 3s
       retries: 30
