@@ -28,7 +28,7 @@ SportsBot collects sports news (football, tennis, basketball, volleyball, badmin
 
 ```mermaid
 flowchart LR
-  S[sources.json<br/>48 feeds + sitemaps + section pages] --> D[Discovery]
+  S[sources.json<br/>45 feeds + sitemaps + section pages] --> D[Discovery]
   D --> K1[[Kafka<br/>articles.discovered]]
   K1 --> X[Extractor<br/>fetch, extract, dedup]
   X --> K2[[Kafka<br/>articles.extracted]]
