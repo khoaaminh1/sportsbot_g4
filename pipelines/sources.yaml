@@ -1,0 +1,95 @@
+# Source registry: the single source of truth for what SportsBot collects.
+# Loaded by sportsbot_pipelines.collectors.registry and mirrored into the `sources` table.
+#
+# Rules (README "Data sources", AGENTS.md):
+# - RSS and official APIs first; page extraction only where robots.txt and the terms allow it.
+# - `verified` is set to true only after `python -m sportsbot_pipelines sources check` fetched the
+#   feed successfully; record the date in `notes`. Unverified sources still run, and their failures
+#   are recorded in collection_runs.
+# - `domains`: article links outside these domains are dropped (from the prototype, PR #1).
+# - Full text is for internal processing only; users see title, excerpt and link.
+
+sources:
+  # --- Vietnamese ---------------------------------------------------------------
+  - id: vnexpress_the_thao
+    name: VnExpress Thể thao
+    kind: rss
+    url: https://vnexpress.net/rss/the-thao.rss
+    language: vi
+    interval_minutes: 30
+    domains: [vnexpress.net]
+    verified: false
+    notes: Used by the prototype (PR #1); listed by feed directories. All sports.
+
+  - id: tuoitre_the_thao
+    name: Tuổi Trẻ Thể thao
+    kind: rss
+    url: https://tuoitre.vn/rss/the-thao.rss
+    language: vi
+    interval_minutes: 30
+    domains: [tuoitre.vn]
+    verified: false
+    notes: Used by the prototype (PR #1). All sports, including volleyball.
+
+  # --- English ------------------------------------------------------------------
+  - id: bbc_sport_football
+    name: BBC Sport Football
+    kind: rss
+    url: https://feeds.bbci.co.uk/sport/football/rss.xml
+    language: en
+    interval_minutes: 30
+    domains: [bbc.co.uk, bbc.com]
+    verified: false
+    notes: Listed by feed directories (checked 2026-09-27 per feeder.co). Summaries only.
+
+  - id: bbc_sport_tennis
+    name: BBC Sport Tennis
+    kind: rss
+    url: https://feeds.bbci.co.uk/sport/tennis/rss.xml
+    language: en
+    interval_minutes: 60
+    domains: [bbc.co.uk, bbc.com]
+    verified: false
+    notes: Listed by feed directories.
+
+  - id: bbc_sport_basketball
+    name: BBC Sport Basketball
+    kind: rss
+    url: https://feeds.bbci.co.uk/sport/basketball/rss.xml
+    language: en
+    interval_minutes: 60
+    domains: [bbc.co.uk, bbc.com]
+    verified: false
+    notes: Listed by feed directories.
+
+  - id: guardian_football
+    name: The Guardian Football
+    kind: rss
+    url: https://www.theguardian.com/football/rss
+    language: en
+    interval_minutes: 60
+    domains: [theguardian.com]
+    verified: false
+    notes: Feed listed by feed directories; URL to confirm with `sources check`.
+
+  # --- Spanish ------------------------------------------------------------------
+  - id: marca_futbol
+    name: MARCA Fútbol
+    kind: rss
+    url: https://e00-marca.uecdn.es/rss/futbol.xml
+    language: es
+    interval_minutes: 60
+    domains: [marca.com]
+    verified: false
+    notes: Listed by feed directories.
+
+  # --- French -------------------------------------------------------------------
+  - id: lequipe_actu
+    name: L'Équipe Actualités
+    kind: rss
+    url: https://www.lequipe.fr/rss/actu_rss.xml
+    language: fr
+    interval_minutes: 60
+    domains: [lequipe.fr]
+    verified: false
+    notes: URL to confirm with `sources check`; disable if it fails.

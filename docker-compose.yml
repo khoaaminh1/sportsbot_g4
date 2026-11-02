@@ -2,6 +2,7 @@
 #   make up-core     PostgreSQL + Qdrant + backend               (profile: core)
 #   make up-bigdata  HDFS NameNode + 2 DataNodes + Spark         (profile: bigdata)
 #   make up          both
+#   make up-collect  the collector (scheduler) on top of both          (profile: collect)
 # Values come from .env (copy .env.example). Development settings only: no TLS, HDFS permissions
 # off, HDFS containers run as root so named volumes are writable.
 
@@ -179,6 +180,31 @@ services:
       interval: 5s
       timeout: 3s
       retries: 30
+
+  # -------------------------------------------------------------- collect ----
+  # Needs core (PostgreSQL) and bigdata (HDFS). Start with `make up-collect`.
+  collector:
+    build:
+      context: .
+      dockerfile: pipelines/Dockerfile
+    profiles: [collect]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-sportsbot}:${POSTGRES_PASSWORD:-change-me-local-only}@postgres:5432/${POSTGRES_DB:-sportsbot}
+      BRONZE_BACKEND: hdfs
+      HDFS_WEBHDFS_URL: http://namenode:9870
+    depends_on:
+      postgres:
+        condition: service_healthy
+      namenode:
+        condition: service_healthy
+      datanode1:
+        condition: service_healthy
+      datanode2:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   pg_data:

@@ -1,0 +1,11 @@
+# SYNTHETIC registry for tests and the CI end-to-end check: points at the fixture feed server.
+sources:
+  - id: fixture_vi
+    name: Fixture Thể thao (synthetic)
+    kind: rss
+    url: http://fixture-feed:8000/feed_vi.xml
+    language: vi
+    interval_minutes: 5
+    domains: [fixture.test]
+    verified: false
+    notes: Synthetic test source served by the fixture-feed container in CI.
