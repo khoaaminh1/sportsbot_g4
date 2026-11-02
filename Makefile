@@ -1,4 +1,4 @@
-.PHONY: help setup lint format test test-integration run up-core up-bigdata up up-collect collect-once sources-check bronze-ls articles-export chat chat-no-llm down ps logs hdfs-init hdfs-ls spark-smoke clean-volumes up-stream up-ai up-tools up-demo models discover-once backfill sources-sitemaps crawl-stats dead-letters logs-stream ask ask-no-llm llm-check export-labeling reindex replay-dead-letters monitor-once alert-test db-export db-import bronze-export kaggle-export kaggle-push kaggle-pull bronze-load
+.PHONY: help setup lint format test test-integration run up-core up-bigdata up up-collect collect-once sources-check bronze-ls articles-export chat chat-no-llm down ps logs hdfs-init hdfs-ls spark-smoke clean-volumes up-stream up-ai up-tools up-demo models discover-once backfill sources-sitemaps crawl-stats dead-letters logs-stream ask ask-no-llm llm-check export-labeling reindex replay-dead-letters monitor-once alert-test db-export db-import bronze-export kaggle-export kaggle-push kaggle-pull bronze-load up-team team-data
 
 # The project virtualenv when it exists (no need to activate it), else python3.
 PYTHON ?= $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
@@ -82,6 +82,17 @@ up-stream:  ## Start PostgreSQL, Qdrant, backend, Kafka, topics, discovery, extr
 
 up-ai:  ## Start the BGE-M3 embedder and bge-reranker (needs `make models` first)
 	$(COMPOSE) --profile ai up -d --wait embedder reranker
+
+up-team:  ## Teammates: PostgreSQL, Qdrant, backend, embedder, reranker; NO crawler (needs make models)
+	$(COMPOSE) --profile core --profile ai up -d --build --wait postgres qdrant backend embedder reranker
+
+team-data:  ## Teammates, one command: Kaggle download, start without crawler, import, build vectors
+	PYTHON=$(PYTHON) bash scripts/kaggle_dataset.sh pull
+	bash scripts/download_models.sh
+	$(MAKE) up-team
+	$(MAKE) db-import FILE=data/kaggle/sportsbot.sql.gz
+	$(MAKE) reindex
+	@echo "Ready: http://localhost:8000/app/ (no crawling on this machine)"
 
 up-tools:  ## Kafka UI on http://localhost:8085
 	$(COMPOSE) $(STREAM) --profile tools up -d kafka-ui

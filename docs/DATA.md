@@ -40,12 +40,11 @@ name is the snapshot time (local time of TMK's PC); cite it in every report.
 
 **Into PostgreSQL + Qdrant (to run the chatbot on the team corpus):**
 ```bash
-make up-demo
-docker compose --profile core --profile stream stop discover extractor consumer-operational consumer-semantic consumer-archive
-make db-import FILE=data/snapshots/sportsbot-<date>.sql.gz
-make reindex
+make team-data      # Kaggle download, models, start WITHOUT the crawler, import, build vectors
 ```
-Stopping the workers keeps your machine from crawling and changing the imported corpus.
+For a file received another way: `make up-team`, then
+`make db-import FILE=data/snapshots/sportsbot-<date>.sql.gz` and `make reindex`.
+`make up-team` does not start the crawler, so your copy of the corpus stays as imported.
 
 **Into HDFS (for the Spark jobs):**
 ```bash
