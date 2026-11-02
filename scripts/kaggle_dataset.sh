@@ -31,7 +31,7 @@ case "${1:-}" in
   "title": "SportsBot G4 corpus (private)",
   "id": "${KAGGLE_DATASET}",
   "licenses": [{"name": "other"}],
-  "description": "PRIVATE team dataset for a university Big Data project (Group 4). Sports news collected by SportsBot from public RSS feeds and article pages, respecting robots.txt. Full text is copyrighted by the publishers and is shared only inside the team for research; do not make this dataset public. Files: articles.jsonl.gz (one article per line), sportsbot.sql.gz (PostgreSQL dump for make db-import), export-summary.json."
+  "description": "PRIVATE team dataset for a university Big Data project (Group 4). Sports news collected by SportsBot from public RSS feeds and article pages, respecting robots.txt. Full text is copyrighted by the publishers and is shared only inside the team for research; do not make this dataset public. Files: articles.jsonl.gz (one article per line), sportsbot.sql.gz (PostgreSQL dump for make db-import), bronze.tgz (Bronze archive for make bronze-load), export-summary.json."
 }
 META
     fi

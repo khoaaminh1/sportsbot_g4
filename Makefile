@@ -1,4 +1,4 @@
-.PHONY: help setup lint format test test-integration run up-core up-bigdata up up-collect collect-once sources-check bronze-ls articles-export chat chat-no-llm down ps logs hdfs-init hdfs-ls spark-smoke clean-volumes up-stream up-ai up-tools up-demo models discover-once backfill sources-sitemaps crawl-stats dead-letters logs-stream ask ask-no-llm llm-check export-labeling reindex replay-dead-letters monitor-once alert-test db-export db-import bronze-export kaggle-export kaggle-push kaggle-pull
+.PHONY: help setup lint format test test-integration run up-core up-bigdata up up-collect collect-once sources-check bronze-ls articles-export chat chat-no-llm down ps logs hdfs-init hdfs-ls spark-smoke clean-volumes up-stream up-ai up-tools up-demo models discover-once backfill sources-sitemaps crawl-stats dead-letters logs-stream ask ask-no-llm llm-check export-labeling reindex replay-dead-letters monitor-once alert-test db-export db-import bronze-export kaggle-export kaggle-push kaggle-pull bronze-load
 
 # The project virtualenv when it exists (no need to activate it), else python3.
 PYTHON ?= $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
@@ -132,13 +132,22 @@ db-import:  ## Load a snapshot: make db-import FILE=data/snapshots/x.sql.gz (REP
 
 bronze-export:  ## Archive the extracted-article Bronze files (for Spark) to data/snapshots/bronze-*.tgz
 	mkdir -p data/snapshots
-	docker run --rm -v sportsbot_bronze_data:/bronze:ro -v "$$PWD/data/snapshots:/out" alpine tar czf /out/bronze-$$(date +%Y%m%d-%H%M).tgz -C /bronze .
+	docker run --rm --user "$$(id -u):$$(id -g)" -v sportsbot_bronze_data:/bronze:ro -v "$$PWD/data/snapshots:/out" alpine tar czf /out/bronze-$$(date +%Y%m%d-%H%M).tgz -C /bronze .
 	@ls -lh data/snapshots | tail -n 3
+
+bronze-load:  ## Put a Bronze archive into HDFS: make bronze-load FILE=data/snapshots/bronze-<date>.tgz (after make up-bigdata)
+	@test -n "$(FILE)" || (echo "usage: make bronze-load FILE=data/snapshots/bronze-<date>.tgz" && exit 2)
+	rm -rf data/bronze-load && mkdir -p data/bronze-load && tar xzf "$(FILE)" -C data/bronze-load
+	$(COMPOSE) --profile bigdata cp data/bronze-load/. namenode:/tmp/bronze-load
+	$(COMPOSE) --profile bigdata exec -T namenode bash -c 'hdfs dfs -mkdir -p /sportsbot/bronze && hdfs dfs -put -f /tmp/bronze-load/* /sportsbot/bronze/ && rm -rf /tmp/bronze-load'
+	rm -rf data/bronze-load
+	$(COMPOSE) --profile bigdata exec -T namenode hdfs dfs -count -h /sportsbot/bronze/source=extracted
 
 kaggle-export:  ## Corpus for the private Kaggle dataset: data/kaggle/{articles.jsonl.gz,sportsbot.sql.gz}
 	mkdir -p data/kaggle
-	$(COMPOSE) $(STREAM) run --rm --no-deps -v ./data/kaggle:/app/data/kaggle discover export-corpus --out /app/data/kaggle/articles.jsonl.gz
+	$(COMPOSE) $(STREAM) run --rm --no-deps --user "$$(id -u):$$(id -g)" -v ./data/kaggle:/app/data/kaggle discover export-corpus --out /app/data/kaggle/articles.jsonl.gz
 	$(COMPOSE) $(STREAM) exec -T postgres sh -c 'pg_dump -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" --clean --if-exists --no-owner' | gzip > data/kaggle/sportsbot.sql.gz
+	docker run --rm --user "$$(id -u):$$(id -g)" -v sportsbot_bronze_data:/bronze:ro -v "$$PWD/data/kaggle:/out" alpine tar czf /out/bronze.tgz -C /bronze .
 	@ls -lh data/kaggle
 
 kaggle-push:  ## Upload data/kaggle as a new version of the PRIVATE dataset KAGGLE_DATASET
@@ -157,7 +166,8 @@ llm-check:  ## Which Gemini models answer with your key, one tiny request each
 	PYTHONPATH=agent/src $(PYTHON) -m sportsbot_agent.llm_check
 
 export-labeling:  ## Random article sample to label by hand: make export-labeling N=400 -> data/labeling/
-	$(COMPOSE) $(STREAM) run --rm --no-deps -v ./data/labeling:/app/data/labeling discover export-sample --n $(or $(N),400) --out /app/data/labeling/sample.csv
+	mkdir -p data/labeling
+	$(COMPOSE) $(STREAM) run --rm --no-deps --user "$$(id -u):$$(id -g)" -v ./data/labeling:/app/data/labeling discover export-sample --n $(or $(N),400) --out /app/data/labeling/sample.csv
 
 ask-no-llm:  ## Retrieval only (no LLM): see which articles the RAG finds
 	PYTHONPATH=agent/src $(PYTHON) -m sportsbot_agent.ask --no-llm "$(Q)"
