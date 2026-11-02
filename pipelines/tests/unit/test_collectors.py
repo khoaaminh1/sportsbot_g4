@@ -29,8 +29,10 @@ NOW = datetime(2026, 11, 2, 2, 0, tzinfo=UTC)
 def test_repository_registry_is_valid():
     registry = load_registry(REPO / "pipelines" / "sources.yaml")
     enabled = registry.enabled()
-    assert len(enabled) >= 8
-    assert {s.language for s in enabled} >= {"vi", "en", "es", "fr"}
+    # Phase 3 acceptance: at least 3 languages. French is disabled until a source accepts us.
+    assert len(enabled) >= 6
+    assert {s.language for s in enabled} >= {"vi", "en", "es"}
+    assert all(s.timezone for s in enabled)
 
 
 def test_registry_rejects_duplicates_and_bad_values(source):
@@ -38,6 +40,8 @@ def test_registry_rejects_duplicates_and_bad_values(source):
         Registry(sources=[source, source])
     with pytest.raises(ValueError):
         Source(**{**source.model_dump(), "interval_minutes": 1})
+    with pytest.raises(ValueError, match="timezone"):
+        Source(**{**source.model_dump(), "timezone": "Mars/Olympus"})
     with pytest.raises(ValueError, match="no collector"):
         Source(**{**source.model_dump(), "kind": "page"})
 
@@ -85,6 +89,7 @@ def test_parse_feed_keeps_valid_items_and_counts_drops(feed_bytes, source):
     assert first.canonical_url == "https://news.fixture.test/bong-da/bai-1.html"
     assert first.published_at == "2026-11-02T01:30:00+00:00"  # +0700 converted to UTC
     assert first.published_raw == "Mon, 02 Nov 2026 08:30:00 +0700"  # original kept
+    assert first.published_tz_assumed is False
     assert first.collected_at == "2026-11-02T02:00:00+00:00"
     assert first.tags == ["Bóng đá"]
     assert "<b>" in first.summary_html  # Bronze keeps the raw HTML

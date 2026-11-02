@@ -17,9 +17,10 @@ sources:
     url: https://vnexpress.net/rss/the-thao.rss
     language: vi
     interval_minutes: 30
+    timezone: Asia/Ho_Chi_Minh
     domains: [vnexpress.net]
     verified: false
-    notes: Used by the prototype (PR #1); listed by feed directories. All sports.
+    notes: "Used by the prototype (PR #1). Live check 2026-11-02 from a GitHub runner (US) returned HTTP 404; re-check from Vietnam with `make sources-check` before relying on it."
 
   - id: tuoitre_the_thao
     name: Tuổi Trẻ Thể thao
@@ -27,9 +28,10 @@ sources:
     url: https://tuoitre.vn/rss/the-thao.rss
     language: vi
     interval_minutes: 30
+    timezone: Asia/Ho_Chi_Minh
     domains: [tuoitre.vn]
-    verified: false
-    notes: Used by the prototype (PR #1). All sports, including volleyball.
+    verified: true
+    notes: "Used by the prototype (PR #1). Live check 2026-11-02: 50 entries, but 0 dates parsed by feedparser; dates now parsed by collectors/dates.py (re-check)."
 
   # --- English ------------------------------------------------------------------
   - id: bbc_sport_football
@@ -38,9 +40,10 @@ sources:
     url: https://feeds.bbci.co.uk/sport/football/rss.xml
     language: en
     interval_minutes: 30
+    timezone: Europe/London
     domains: [bbc.co.uk, bbc.com]
-    verified: false
-    notes: Listed by feed directories (checked 2026-09-27 per feeder.co). Summaries only.
+    verified: true
+    notes: "Live check 2026-11-02: 74 entries, 68 usable, all dated. Summaries only."
 
   - id: bbc_sport_tennis
     name: BBC Sport Tennis
@@ -48,9 +51,10 @@ sources:
     url: https://feeds.bbci.co.uk/sport/tennis/rss.xml
     language: en
     interval_minutes: 60
+    timezone: Europe/London
     domains: [bbc.co.uk, bbc.com]
-    verified: false
-    notes: Listed by feed directories.
+    verified: true
+    notes: "Live check 2026-11-02: 55 entries, all usable and dated."
 
   - id: bbc_sport_basketball
     name: BBC Sport Basketball
@@ -58,9 +62,10 @@ sources:
     url: https://feeds.bbci.co.uk/sport/basketball/rss.xml
     language: en
     interval_minutes: 60
+    timezone: Europe/London
     domains: [bbc.co.uk, bbc.com]
-    verified: false
-    notes: Listed by feed directories.
+    verified: true
+    notes: "Live check 2026-11-02: 17 entries, all usable and dated."
 
   - id: guardian_football
     name: The Guardian Football
@@ -68,9 +73,10 @@ sources:
     url: https://www.theguardian.com/football/rss
     language: en
     interval_minutes: 60
+    timezone: Europe/London
     domains: [theguardian.com]
-    verified: false
-    notes: Feed listed by feed directories; URL to confirm with `sources check`.
+    verified: true
+    notes: "Live check 2026-11-02: 59 entries, all usable and dated."
 
   # --- Spanish ------------------------------------------------------------------
   - id: marca_futbol
@@ -79,9 +85,10 @@ sources:
     url: https://e00-marca.uecdn.es/rss/futbol.xml
     language: es
     interval_minutes: 60
+    timezone: Europe/Madrid
     domains: [marca.com]
-    verified: false
-    notes: Listed by feed directories.
+    verified: true
+    notes: "Live check 2026-11-02: 47 entries, all usable and dated."
 
   # --- French -------------------------------------------------------------------
   - id: lequipe_actu
@@ -90,6 +97,8 @@ sources:
     url: https://www.lequipe.fr/rss/actu_rss.xml
     language: fr
     interval_minutes: 60
+    timezone: Europe/Paris
+    enabled: false
     domains: [lequipe.fr]
     verified: false
-    notes: URL to confirm with `sources check`; disable if it fails.
+    notes: "Live check 2026-11-02: HTTP 403 (access refused). Disabled: we do not work around refusals. A French replacement source is still needed."

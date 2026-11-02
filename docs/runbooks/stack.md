@@ -41,5 +41,24 @@ Measured idle in CI (GitHub-hosted runner, 2026-11-02, details in `docs/reports/
 - **Spark job cannot reach HDFS:** paths must use `hdfs://namenode:8020/...`; the job runs inside the Compose network, not on the host.
 - **Changed `.env` but nothing happened:** recreate the service, e.g. `docker compose up -d backend`.
 
+## Collector (Phase 3)
+```bash
+make sources-check              # which feeds answer right now (robots.txt, HTTP status, items, dates)
+make up-collect                 # PostgreSQL + HDFS + collector scheduler (runs until make down)
+make collect-once               # one pass now, without waiting for the scheduler
+make bronze-ls                  # Bronze files in HDFS
+docker compose --profile core exec postgres psql -U sportsbot -d sportsbot \
+  -c "SELECT source_id, status, http_status, items_new, error FROM collection_runs ORDER BY run_id DESC LIMIT 20"
+```
+Set `COLLECTOR_CONTACT` in `.env` to a team email: it goes into the User-Agent so site owners can reach us.
+
+| Symptom | Meaning / fix |
+|---|---|
+| `status = skipped`, error mentions robots.txt | The site disallows the feed path. Disable the source; do not work around it. |
+| `http_status = 403` | Access refused. Disable the source and note it in `sources.yaml`. |
+| `http_status = 404` | Feed URL changed or not served to this location. Re-check from Vietnam; update the URL. |
+| `http_status = 304`, `items_new = 0` | Normal: the feed has not changed since the last run. |
+| `WebHdfsError ... expected 307` | HDFS not running or `hdfs-init` not run: `make up-bigdata`. |
+
 ## Stopping
 `make down` keeps data in named volumes. `make clean-volumes` deletes PostgreSQL, Qdrant and HDFS data.

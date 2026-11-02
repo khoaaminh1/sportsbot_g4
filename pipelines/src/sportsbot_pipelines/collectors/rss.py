@@ -15,10 +15,11 @@ from typing import Any
 import feedparser
 
 from sportsbot_pipelines import __version__
+from sportsbot_pipelines.collectors.dates import parse_date
 from sportsbot_pipelines.collectors.registry import Source
 from sportsbot_pipelines.collectors.urls import article_id, canonical_url, host_allowed
 
-BRONZE_SCHEMA_VERSION = 1
+BRONZE_SCHEMA_VERSION = 2  # 2: published_tz_assumed
 
 
 @dataclass
@@ -35,6 +36,7 @@ class BronzeRecord:
     summary_html: str | None
     published_raw: str | None
     published_at: str | None  # UTC RFC 3339, None when absent or unparseable
+    published_tz_assumed: bool | None  # True: raw date had no offset, source timezone applied
     updated_raw: str | None
     authors: list[str] = field(default_factory=list)
     tags: list[str] = field(default_factory=list)
@@ -102,6 +104,14 @@ def parse_feed(
             result.dropped_duplicate += 1
             continue
         seen.add(rid)
+        published_raw = entry.get("published") or None
+        parsed_date = parse_date(published_raw, source.timezone)
+        if parsed_date is not None:
+            published_at, tz_assumed = parsed_date.iso(), parsed_date.tz_assumed
+        else:
+            # Last resort: feedparser's own parser (it treats offset-less dates as UTC).
+            published_at = _utc(entry.get("published_parsed"))
+            tz_assumed = None if published_at is None else True
         result.records.append(
             BronzeRecord(
                 record_id=rid,
@@ -114,8 +124,9 @@ def parse_feed(
                 canonical_url=link,
                 title=title,
                 summary_html=entry.get("summary"),
-                published_raw=entry.get("published") or None,
-                published_at=_utc(entry.get("published_parsed")),
+                published_raw=published_raw,
+                published_at=published_at,
+                published_tz_assumed=tz_assumed,
                 # dict.get: FeedParserDict.get("updated") falls back to "published".
                 updated_raw=dict.get(entry, "updated") or None,
                 authors=[a.get("name") for a in entry.get("authors", []) if a.get("name")],

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Literal
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import yaml
 from pydantic import BaseModel, Field, HttpUrl, field_validator, model_validator
@@ -17,6 +18,8 @@ class Source(BaseModel):
     language: str = Field(pattern=r"^[a-z]{2}$")
     interval_minutes: int = Field(ge=5, le=24 * 60)
     domains: list[str] = Field(min_length=1)
+    # IANA timezone the source publishes in; applied to dates that carry no offset.
+    timezone: str = "UTC"
     enabled: bool = True
     verified: bool = False
     notes: str = ""
@@ -25,6 +28,15 @@ class Source(BaseModel):
     @classmethod
     def _lower_domains(cls, value: list[str]) -> list[str]:
         return [d.strip().lower().lstrip(".") for d in value if d.strip()]
+
+    @field_validator("timezone")
+    @classmethod
+    def _valid_tz(cls, value: str) -> str:
+        try:
+            ZoneInfo(value)
+        except (ZoneInfoNotFoundError, ValueError) as exc:
+            raise ValueError(f"unknown timezone: {value}") from exc
+        return value
 
     @model_validator(mode="after")
     def _only_rss_for_now(self) -> Source:

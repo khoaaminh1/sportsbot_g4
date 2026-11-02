@@ -85,6 +85,10 @@ def cmd_sources_check(settings: PipelineSettings) -> int:
                     entries=parsed.entries_total,
                     usable=len(parsed.records),
                     with_date=sum(1 for r in parsed.records if r.published_at),
+                    tz_assumed=sum(1 for r in parsed.records if r.published_tz_assumed),
+                    date_sample=next(
+                        (r.published_raw for r in parsed.records if r.published_raw), None
+                    ),
                     error=parsed.feed_error,
                 )
             except RobotsDisallowed as exc:
