@@ -15,6 +15,13 @@ import httpx
 BGE_M3_DIM = 1024
 
 
+def flatten(text: str) -> str:
+    """One line, single spaces. Some GGUF conversions of BGE-M3 / bge-reranker have no newline
+    token, and llama.cpp then fails on any input with a line break (HTTP 500
+    "unordered_map::at"). Line breaks carry no meaning for these models, so drop them."""
+    return " ".join(text.split())
+
+
 class EmbeddingError(Exception):
     pass
 
@@ -40,7 +47,7 @@ class EmbeddingClient:
     def embed(self, texts: list[str]) -> list[list[float]]:
         vectors: list[list[float]] = []
         for start in range(0, len(texts), self.batch_size):
-            batch = [t[: self.max_chars] for t in texts[start : start + self.batch_size]]
+            batch = [flatten(t)[: self.max_chars] for t in texts[start : start + self.batch_size]]
             try:
                 resp = self._http.post("/v1/embeddings", json={"model": self.model, "input": batch})
             except httpx.HTTPError as exc:

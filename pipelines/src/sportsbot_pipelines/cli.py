@@ -15,6 +15,8 @@ consume operational  articles.extracted -> PostgreSQL
 consume semantic     articles.extracted -> chunks -> BGE-M3 -> Qdrant
 consume archive      articles.extracted -> Bronze full-text files (HDFS)
 stats                corpus counts per source (PostgreSQL) and vectors (Qdrant)
+reindex [--all]      build missing vectors from PostgreSQL (all with --all)
+replay [--reasons]   send retryable extract dead letters back to articles.discovered
 export-sample        random articles as CSV for hand labeling (sport category, golden set)
 """
 
@@ -244,6 +246,7 @@ def cmd_extract(settings: PipelineSettings) -> int:
             PostgresDedup(engine),
             min_chars=settings.extract_min_chars,
             timezones={s.id: s.timezone for s in registry.sources},
+            rss_only={s.id for s in registry.sources if not s.extract},
         )
         run_consumer(
             settings.kafka_bootstrap_servers,
@@ -300,6 +303,67 @@ def cmd_consume(settings: PipelineSettings, which: str) -> int:
     run_consumer(
         settings.kafka_bootstrap_servers, group, topics.EXTRACTED, handler, stage=which, bus=bus
     )
+    return 0
+
+
+def cmd_reindex(settings: PipelineSettings, rebuild_all: bool) -> int:
+    from sqlalchemy import text
+
+    from sportsbot_agent.clients.embeddings import BGE_M3_DIM, EmbeddingClient
+    from sportsbot_agent.clients.qdrant import QdrantClient
+    from sportsbot_pipelines.consumers.semantic import make_handler
+
+    engine = create_engine(settings.database_url, pool_pre_ping=True)
+    qdrant = QdrantClient(settings.qdrant_url)
+    qdrant.ensure_collection(BGE_M3_DIM)
+    handler = make_handler(
+        EmbeddingClient(settings.embedding_base_url, settings.embedding_model),
+        qdrant,
+        max_chars=settings.chunk_max_chars,
+        overlap_chars=settings.chunk_overlap_chars,
+    )
+    with engine.connect() as conn:
+        rows = (
+            conn.execute(
+                text(
+                    "SELECT article_id, title, content, source_id, source_name, source_url, "
+                    "published_at, language FROM articles WHERE content IS NOT NULL "
+                    "ORDER BY published_at DESC NULLS LAST"
+                )
+            )
+            .mappings()
+            .all()
+        )
+    done = skipped = 0
+    for r in rows:
+        if not rebuild_all and qdrant.count_article(r["article_id"]) > 0:
+            skipped += 1
+            continue
+        handler(
+            {
+                "article_id": r["article_id"],
+                "title": r["title"],
+                "text": r["content"],
+                "source_id": r["source_id"],
+                "source_name": r["source_name"],
+                "url": r["source_url"],
+                "published_at": r["published_at"].isoformat() if r["published_at"] else None,
+                "language": r["language"],
+            }
+        )
+        done += 1
+        if done % 50 == 0:
+            print(json.dumps({"progress": {"embedded": done, "skipped": skipped}}), flush=True)
+    print(json.dumps({"summary": {"articles": len(rows), "embedded": done, "skipped": skipped}}))
+    return 0
+
+
+def cmd_replay(settings: PipelineSettings, reasons: str | None) -> int:
+    from sportsbot_pipelines.streaming.replay import read_dead_letters, replay
+
+    wanted = {r.strip() for r in reasons.split(",") if r.strip()} if reasons else None
+    result = replay(read_dead_letters(settings.kafka_bootstrap_servers), _bus(settings), wanted)
+    print(json.dumps({"summary": result}))
     return 0
 
 
@@ -403,6 +467,10 @@ def main(argv: list[str] | None = None) -> int:
     con = sub.add_parser("consume")
     con.add_argument("which", choices=["operational", "semantic", "archive"])
     sub.add_parser("stats")
+    rei = sub.add_parser("reindex")
+    rei.add_argument("--all", action="store_true", help="re-embed every article")
+    rep = sub.add_parser("replay")
+    rep.add_argument("--reasons", help="comma-separated reasons (default: retryable ones)")
     exp = sub.add_parser("export-sample")
     exp.add_argument("--n", type=int, default=400)
     exp.add_argument("--out", default="data/labeling/sample.csv")
@@ -430,6 +498,10 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_consume(settings, args.which)
     if args.command == "stats":
         return cmd_stats(settings)
+    if args.command == "reindex":
+        return cmd_reindex(settings, args.all)
+    if args.command == "replay":
+        return cmd_replay(settings, args.reasons)
     if args.command == "export-sample":
         return cmd_export_sample(settings, args.n, args.out, args.seed)
     if args.command == "collect":

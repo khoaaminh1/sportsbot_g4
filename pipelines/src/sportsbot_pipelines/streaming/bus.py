@@ -12,6 +12,7 @@ import json
 import logging
 import signal
 import threading
+import time
 import traceback
 from collections import defaultdict
 from collections.abc import Callable
@@ -148,8 +149,15 @@ def run_consumer(
     bus: Bus,
     stop: threading.Event | None = None,
     batch_log_every: int = 100,
+    max_transient_seconds: float = 600.0,
 ) -> None:
-    """Consume `topic` forever (until SIGTERM/SIGINT), committing after each handled message."""
+    """Consume `topic` forever (until SIGTERM/SIGINT), committing after each handled message.
+
+    A `TransientError` is retried with backoff for up to `max_transient_seconds` (kept below
+    Kafka's max.poll.interval.ms, 15 minutes); after that the message goes to the dead-letter
+    topic with reason `dependency_unavailable` and the consumer moves on. Such messages can be
+    rebuilt later (`make reindex` for vectors, `make replay-dead-letters` for extraction).
+    """
     from confluent_kafka import Consumer, KafkaError
 
     stop = stop or threading.Event()
@@ -190,10 +198,26 @@ def run_consumer(
                 continue
             ok = None
             wait = 2.0
+            started = time.monotonic()
             while ok is None and not stop.is_set():
                 try:
                     ok = _safe_handle(bus, handler, value, stage=stage)
                 except TransientError as exc:
+                    if time.monotonic() - started + wait > max_transient_seconds:
+                        bus.publish(
+                            topics.DEAD_LETTER,
+                            str(value.get("source_id") or "unknown"),
+                            {
+                                **dead_letter(stage, "dependency_unavailable", value, str(exc)),
+                                "retryable": True,
+                            },
+                        )
+                        logger.error(
+                            "dependency_unavailable_gave_up",
+                            extra={"stage": stage, "error": str(exc)[:200]},
+                        )
+                        ok = False
+                        break
                     logger.warning(
                         "dependency_unavailable_retrying",
                         extra={"stage": stage, "error": str(exc)[:200], "retry_in": wait},

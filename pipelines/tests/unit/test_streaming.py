@@ -390,3 +390,59 @@ def test_semantic_outage_is_transient_not_dead_lettered():
     with pytest.raises(TransientError):
         bus.drain(topics.EXTRACTED, "g", handle, stage="semantic")
     assert not bus.values(topics.DEAD_LETTER)
+
+
+def test_network_errors_are_retryable_dead_letters_and_replayable():
+    from sportsbot_pipelines.streaming.replay import replay, should_replay
+
+    bus = MemoryBus()
+    msg = _discovered(1)
+    handle = make_handler(
+        FakeClient({msg["canonical_url"]: FetchError("robots.txt unreachable: ConnectError")}),
+        bus,
+        MemoryDedup(),
+        extract=fake_extract(),
+    )
+    handle(msg)
+    [dead] = bus.values(topics.DEAD_LETTER)
+    assert dead["reason"] == "network_error" and dead["retryable"] is True
+    assert should_replay(dead)
+    assert should_replay({**dead, "reason": "http_error", "retryable": None})  # legacy shape
+    assert not should_replay({**dead, "reason": "too_short", "retryable": False})
+    assert should_replay({**dead, "reason": "too_short", "retryable": False}, {"too_short"})
+    assert not should_replay({**dead, "stage": "semantic"})
+    out = MemoryBus()
+    assert replay([dead, {**dead, "retryable": False, "reason": "x"}], out) == {
+        "dead_letters_read": 2,
+        "replayed": 1,
+    }
+    assert out.values(topics.DISCOVERED)[0]["article_id"] == "id1"
+
+
+def test_http_429_is_retryable_404_is_not():
+    for status, retryable in ((429, True), (503, True), (404, False)):
+        bus = MemoryBus()
+        msg = _discovered(1)
+        make_handler(
+            FakeClient({msg["canonical_url"]: FetchError("x", status=status)}),
+            bus,
+            MemoryDedup(),
+            extract=fake_extract(),
+        )(msg)
+        assert bus.values(topics.DEAD_LETTER)[0]["retryable"] is retryable
+
+
+def test_rss_only_source_stores_feed_summary_without_fetching():
+    bus = MemoryBus()
+    msg = {
+        **_discovered(1),
+        "summary_html": "<p>Arsenal win at Anfield for the first time since 2012.</p>",
+    }
+    client = FakeClient({})
+    make_handler(client, bus, MemoryDedup(), extract=fake_extract(), rss_only={"fixture_vi"})(msg)
+    [out] = bus.values(topics.EXTRACTED)
+    assert client.fetched == [] and out["extractor"] == "rss_summary"
+    assert out["text"] == "Arsenal win at Anfield for the first time since 2012."
+    short = {**_discovered(2), "summary_html": "<p>Hi</p>"}
+    make_handler(client, bus, MemoryDedup(), extract=fake_extract(), rss_only={"fixture_vi"})(short)
+    assert bus.values(topics.DEAD_LETTER)[0]["reason"] == "summary_too_short"

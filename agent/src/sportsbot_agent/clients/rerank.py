@@ -10,6 +10,8 @@ from dataclasses import dataclass
 
 import httpx
 
+from sportsbot_agent.clients.embeddings import flatten
+
 
 class RerankError(Exception):
     pass
@@ -44,8 +46,8 @@ class RerankClient:
             return []
         payload = {
             "model": self.model,
-            "query": query,
-            "documents": [d[: self.max_chars] for d in documents],
+            "query": flatten(query),
+            "documents": [flatten(d)[: self.max_chars] for d in documents],
             "top_n": top_n or len(documents),
         }
         try:

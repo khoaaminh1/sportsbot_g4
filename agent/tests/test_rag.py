@@ -317,3 +317,22 @@ def test_router_sends_reasoning_effort_and_skips_empty_replies():
     assert sent[0]["reasoning_effort"] == "low"
     assert "reasoning_effort" not in sent[-1]  # retried without it after the 400
     assert router.status()[0]["failures"] == 1
+
+
+def test_clients_send_inputs_without_line_breaks():
+    # Regression (2026-11-03, TMK's PC): the BGE-M3 GGUF has no newline token, so llama.cpp
+    # answered HTTP 500 "unordered_map::at" for every chunk containing a line break.
+    bodies: list[dict] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        bodies.append(body)
+        if request.url.path == "/v1/rerank":
+            return httpx.Response(200, json={"results": [{"index": 0, "relevance_score": 1.0}]})
+        return httpx.Response(200, json={"data": [{"index": 0, "embedding": [1.0, 0.0]}]})
+
+    transport = httpx.MockTransport(handler)
+    EmbeddingClient("http://e", transport=transport).embed(["Tiêu đề\n\nĐoạn 1\nĐoạn  2"])
+    RerankClient("http://r", transport=transport).rerank("câu\nhỏi", ["a\n\nb"])
+    assert bodies[0]["input"] == ["Tiêu đề Đoạn 1 Đoạn 2"]
+    assert bodies[1]["query"] == "câu hỏi" and bodies[1]["documents"] == ["a b"]
