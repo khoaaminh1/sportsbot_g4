@@ -1,0 +1,31 @@
+{
+  "_origin": "SYNTHETIC test fixtures written by hand to exercise the schema. Not collected news; ids, hashes and URLs are made up.",
+  "items": [
+    {
+      "article_id": "3f2a9c1e5b7d4e8a9c217d4e5f6a8b90",
+      "title": "Synthetic example: national team training update",
+      "content": "Synthetic body text used only in tests.",
+      "summary": "Synthetic summary.",
+      "source_id": "example_source",
+      "source_name": "Example Source",
+      "source_url": "https://example.com/sport/synthetic-1",
+      "published_at": "2026-11-01T10:15:00Z",
+      "collected_at": "2026-11-01T10:31:07Z",
+      "language": "vi",
+      "sport_category": "football",
+      "teams": ["Vietnam"],
+      "athletes": [],
+      "competition": null,
+      "content_hash": "a3c1f0e2b4d6a8c0e2f4a6b8c0d2e4f6a8b0c2d4e6f8a0b2c4d6e8f0a2b4c6d8",
+      "story_cluster_id": null
+    },
+    {
+      "article_id": "0b1c2d3e4f5a6b7c",
+      "title": "Synthetic example with only the required fields",
+      "source_name": "Example Source",
+      "source_url": "http://example.org/a?id=2",
+      "collected_at": "2026-11-02T00:00:00+07:00",
+      "content_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ]
+}

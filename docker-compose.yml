@@ -1,0 +1,187 @@
+# Vietnam SportsBot local stack (ADR 0002).
+#   make up-core     PostgreSQL + Qdrant + backend               (profile: core)
+#   make up-bigdata  HDFS NameNode + 2 DataNodes + Spark         (profile: bigdata)
+#   make up          both
+# Values come from .env (copy .env.example). Development settings only: no TLS, HDFS permissions
+# off, HDFS containers run as root so named volumes are writable.
+
+name: sportsbot
+
+services:
+  # ---------------------------------------------------------------- core ----
+  postgres:
+    image: postgres:16-alpine
+    profiles: [core]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sportsbot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-local-only}
+      POSTGRES_DB: ${POSTGRES_DB:-sportsbot}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      # SQL files here run once, on a new volume (see infra/postgres/migrations/001_init.sql).
+      - ./infra/postgres/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  qdrant:
+    image: qdrant/qdrant:v1.19.2
+    profiles: [core]
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    healthcheck:
+      # The image has no curl or wget; bash can open a TCP connection by itself.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/6333"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    profiles: [core]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # Inside the stack these always point at the Compose services.
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-sportsbot}:${POSTGRES_PASSWORD:-change-me-local-only}@postgres:5432/${POSTGRES_DB:-sportsbot}
+      QDRANT_URL: http://qdrant:6333
+      # Set STACK_HDFS_WEBHDFS_URL=http://namenode:9870 in .env when the bigdata profile runs too.
+      HDFS_WEBHDFS_URL: ${STACK_HDFS_WEBHDFS_URL:-}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+
+  # ------------------------------------------------------------- bigdata ----
+  namenode:
+    image: apache/hadoop:3.4.1
+    profiles: [bigdata]
+    hostname: namenode
+    user: root
+    command: ["hdfs", "namenode"]
+    env_file: [infra/hdfs/hadoop.env]
+    environment:
+      # The image formats the NameNode on first start when this directory does not exist yet.
+      ENSURE_NAMENODE_DIR: /hadoop/dfs/name
+    ports:
+      - "9870:9870"   # NameNode web UI and WebHDFS
+    volumes:
+      - namenode_data:/hadoop/dfs
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9870"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  datanode1:
+    image: apache/hadoop:3.4.1
+    profiles: [bigdata]
+    hostname: datanode1
+    user: root
+    command: ["hdfs", "datanode"]
+    env_file: [infra/hdfs/hadoop.env]
+    volumes:
+      - datanode1_data:/hadoop/dfs
+    depends_on:
+      namenode:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9864"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  datanode2:
+    image: apache/hadoop:3.4.1
+    profiles: [bigdata]
+    hostname: datanode2
+    user: root
+    command: ["hdfs", "datanode"]
+    env_file: [infra/hdfs/hadoop.env]
+    volumes:
+      - datanode2_data:/hadoop/dfs
+    depends_on:
+      namenode:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9864"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  # One-shot: creates /sportsbot/{bronze,silver,gold,_smoke}. Run with `make hdfs-init`.
+  hdfs-init:
+    image: apache/hadoop:3.4.1
+    profiles: [bigdata]
+    user: root
+    command: ["bash", "/opt/sportsbot/init-dirs.sh"]
+    env_file: [infra/hdfs/hadoop.env]
+    volumes:
+      - ./infra/hdfs/init-dirs.sh:/opt/sportsbot/init-dirs.sh:ro
+    depends_on:
+      namenode:
+        condition: service_healthy
+      datanode1:
+        condition: service_healthy
+      datanode2:
+        condition: service_healthy
+    restart: "no"
+
+  spark-master:
+    image: apache/spark:3.5.3-scala2.12-java17-python3-ubuntu
+    profiles: [bigdata]
+    hostname: spark-master
+    command:
+      ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master", "--host", "spark-master"]
+    environment:
+      SPARK_NO_DAEMONIZE: "true"
+    ports:
+      - "8080:8080"   # Spark master web UI
+    volumes:
+      - ./pipelines:/opt/sportsbot/pipelines:ro
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/7077"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  spark-worker:
+    image: apache/spark:3.5.3-scala2.12-java17-python3-ubuntu
+    profiles: [bigdata]
+    hostname: spark-worker
+    command:
+      ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.worker.Worker",
+       "spark://spark-master:7077", "--cores", "2", "--memory", "2g"]
+    environment:
+      SPARK_NO_DAEMONIZE: "true"
+    ports:
+      - "8081:8081"   # Spark worker web UI
+    volumes:
+      - ./pipelines:/opt/sportsbot/pipelines:ro
+    depends_on:
+      spark-master:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8081"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  pg_data:
+  qdrant_data:
+  namenode_data:
+  datanode1_data:
+  datanode2_data:
