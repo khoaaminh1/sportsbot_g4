@@ -33,12 +33,13 @@ def discovered_message(record: BronzeRecord, discovered_via: str = "rss") -> dic
     }
 
 
-def bus_publisher(bus: Bus, discovered_via: str = "rss") -> Publisher:
+def bus_publisher(bus: Bus, discovered_via: str | None = "rss") -> Publisher:
+    """Publish records to articles.discovered; None labels each by its source_kind."""
+
     def publish(records: Iterable[BronzeRecord]) -> None:
         for record in records:
-            bus.publish(
-                topics.DISCOVERED, record.source_id, discovered_message(record, discovered_via)
-            )
+            via = discovered_via or record.source_kind
+            bus.publish(topics.DISCOVERED, record.source_id, discovered_message(record, via))
         bus.flush()
 
     return publish

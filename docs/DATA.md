@@ -60,6 +60,7 @@ Jobs live in `pipelines/spark/jobs/` (mounted in the Spark containers at
 **With pandas:**
 ```python
 import pandas as pd
+
 df = pd.read_json("data/snapshots/articles.jsonl.gz", lines=True)
 ```
 
@@ -69,7 +70,7 @@ df = pd.read_json("data/snapshots/articles.jsonl.gz", lines=True)
 `article_id` (sha256 of the canonical URL), `source_id`, `source_name`, `language` (ISO 639-1,
 from the page or the source), `title`, `text` (full extracted text, or the feed summary for
 RSS-only sources such as BBC), `summary`, `url`, `published_at`, `collected_at`,
-`ingested_at`, `extracted_at` (RFC 3339, UTC), `word_count`, `discovered_via` (`rss` |
+`ingested_at`, `extracted_at` (RFC 3339, UTC), `word_count`, `discovered_via` (`rss` | `listing` |
 `sitemap`), `content_hash` (sha256 of the normalised text), `sport_category` (null until the
 classifier exists).
 

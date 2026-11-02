@@ -46,11 +46,18 @@ The `discover` service polls every RSS source on its interval by itself. To go f
 make discover-once                       # one RSS pass now
 make sources-sitemaps                    # print Sitemap: URLs from each site's robots.txt
 # copy useful sitemap URLs into pipelines/sources.json ("sitemaps", "sitemap_include"), then:
-make backfill SINCE=2026-10-01 MAX=3000  # queue older sports articles from sitemaps
+make backfill SINCE=2026-10-01 MAX=3000  # queue older sports articles (sitemaps + listings)
+make backfill SINCE=2026-10-01 MAX=3000 SOURCE=dantri_the_thao  # one source only
 make crawl-stats                         # articles per source, chunks in Qdrant
 make dead-letters                        # why some articles were rejected
 make logs-stream                         # follow the workers
 ```
+
+Sites whose article URLs have no section path (VnExpress, Tuoi Tre, VietNamNet) cannot filter
+their sitemaps to sports, so their `listing` entry walks the paginated sports section instead
+(`/the-thao`, `/the-thao-p2`, ...) up to `max_pages`, stopping after two pages without new links.
+Listing pages carry no dates, so `SINCE` does not limit them. Each source prints a JSON line
+with `found` and `queued`; running backfill again queues only URLs not seen before.
 
 Politeness is not optional: robots.txt is respected and each site gets at most one request
 every `MIN_SECONDS_BETWEEN_REQUESTS_PER_HOST` seconds (default 3). With 20 sites that is up to
