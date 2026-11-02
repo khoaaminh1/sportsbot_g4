@@ -62,7 +62,7 @@ Decisions: [ADR 0005 streaming with Kafka](docs/decisions/0005-streaming-pipelin
 | Golden questions and retrieval evaluation | **To do** (plan task 4, 8) | — |
 | Real models (BGE-M3, reranker) and real sites, end to end | **Not run yet** (plan task 1) | — |
 
-Tests: `make test` runs 160+ unit and contract tests; `make test-integration` runs the database and stack tests.
+Tests: `make test` runs 157 unit and contract tests (2026-11-02); `make test-integration` runs the database and stack tests.
 
 ## Quick start (demo)
 
