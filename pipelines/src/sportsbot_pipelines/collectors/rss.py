@@ -8,6 +8,7 @@ the date converted to UTC (when parseable), and ingestion metadata. Cleaning hap
 from __future__ import annotations
 
 import calendar
+import html
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from typing import Any
@@ -95,7 +96,8 @@ def parse_feed(
         if not host_allowed(link, source.domains):
             result.dropped_foreign_domain += 1
             continue
-        title = (entry.get("title") or "").strip()
+        # Some feeds (Thanh Niên) escape entities twice: "đ&aacute;y" must become "đáy".
+        title = html.unescape((entry.get("title") or "").strip())
         if not title:
             result.dropped_no_title += 1
             continue

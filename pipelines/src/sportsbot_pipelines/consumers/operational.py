@@ -62,7 +62,7 @@ def html_to_text(value: str | None) -> str | None:
 def row_from_message(m: dict[str, Any]) -> dict[str, Any]:
     return {
         "article_id": m["article_id"],
-        "title": m["title"],
+        "title": html.unescape(m["title"]),
         "content": m["text"],
         "summary": html_to_text(m.get("summary_html")) or m["text"][:400],
         "source_id": m["source_id"],

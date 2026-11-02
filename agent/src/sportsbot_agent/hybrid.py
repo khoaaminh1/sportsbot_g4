@@ -16,6 +16,7 @@ so `answer.answer_question` works with either retriever.
 
 from __future__ import annotations
 
+import html
 import logging
 import time
 from dataclasses import dataclass, field
@@ -164,7 +165,7 @@ class PostgresKeywordSearch:
         return [
             Candidate(
                 article_id=r["article_id"],
-                title=r["title"],
+                title=html.unescape(r["title"]),
                 passage=r["passage"] or "",
                 source_name=r["source_name"],
                 url=r["source_url"],
@@ -193,7 +194,7 @@ class QdrantVectorSearch:
                 continue
             best[aid] = Candidate(
                 article_id=aid,
-                title=pl.get("title", ""),
+                title=html.unescape(pl.get("title", "")),
                 passage=pl.get("text", ""),
                 source_name=pl.get("source_name", ""),
                 url=pl.get("url", ""),

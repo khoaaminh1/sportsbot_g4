@@ -7,6 +7,7 @@ full stored text (copyright; see docs/contracts/api.openapi.yaml, ArticleSummary
 from __future__ import annotations
 
 import base64
+import html
 from datetime import datetime
 from typing import Any, Protocol
 
@@ -27,7 +28,7 @@ def to_summary(row: dict[str, Any]) -> dict[str, Any]:
     excerpt = row.get("excerpt")
     return {
         "article_id": row["article_id"],
-        "title": row["title"],
+        "title": html.unescape(row["title"]),  # rows stored before 2026-11-03 may be escaped
         "excerpt": excerpt[:400] if excerpt else None,
         "source_name": row["source_name"],
         "source_url": row["source_url"],
