@@ -6,6 +6,7 @@ Used by the FastAPI backend (`/api/v1/chat`) and the terminal (`make ask`).
 from __future__ import annotations
 
 import time
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
@@ -17,6 +18,7 @@ from sportsbot_agent.clients.qdrant import QdrantClient
 from sportsbot_agent.clients.rerank import RerankClient
 from sportsbot_agent.config import AgentConfig
 from sportsbot_agent.hybrid import HybridRetriever, PostgresKeywordSearch, QdrantVectorSearch
+from sportsbot_agent.memory import Turn, condense_question, recent
 
 
 @dataclass
@@ -26,12 +28,22 @@ class RagService:
     top_k: int = 5
     closers: list[Any] = field(default_factory=list)
 
-    def ask(self, question: str) -> tuple[Answer, dict[str, Any]]:
+    def ask(self, question: str, history: Sequence[Turn] = ()) -> tuple[Answer, dict[str, Any]]:
+        """Answer `question`; `history` holds the earlier turns of the same conversation."""
         t0 = time.perf_counter()
+        turns = recent(history)
+        query = condense_question(question, turns, self.router) if turns else question
         answer = answer_question(
-            question, self.retriever, self.router, top_k=self.top_k, now=datetime.now(UTC)
+            question,
+            self.retriever,
+            self.router,
+            top_k=self.top_k,
+            now=datetime.now(UTC),
+            history=turns,
+            search_query=query,
         )
         meta = {
+            "search_query": query if query != question else None,
             "retrieval": self.retriever.last_trace,
             "llm": getattr(self.router, "last_target", None)
             if answer.mode == "generated"

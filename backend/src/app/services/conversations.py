@@ -12,6 +12,26 @@ class ConversationStore:
     def __init__(self, engine: Engine) -> None:
         self.engine = engine
 
+    def history(self, conversation_id: str, turns: int = 4) -> list[tuple[str, str]]:
+        """The last `turns` (question, answer) pairs of a conversation, oldest first."""
+        with self.engine.connect() as conn:
+            rows = conn.execute(
+                text(
+                    "SELECT role, content FROM messages WHERE conversation_id = :id "
+                    "ORDER BY created_at DESC, message_id DESC LIMIT :n"
+                ),
+                {"id": conversation_id, "n": turns * 2},
+            ).all()
+        pairs: list[tuple[str, str]] = []
+        pending: str | None = None  # assistant reply waiting for its question (newest first)
+        for role, content in rows:
+            if role == "assistant":
+                pending = content
+            elif pending is not None:
+                pairs.append((content, pending))
+                pending = None
+        return pairs[::-1]
+
     def save(self, question: str, response: dict[str, Any]) -> None:
         cid = response["conversation_id"]
         with self.engine.begin() as conn:

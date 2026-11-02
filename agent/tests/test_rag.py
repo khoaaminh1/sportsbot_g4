@@ -20,6 +20,7 @@ from sportsbot_agent.clients.rerank import RerankClient, RerankResult
 from sportsbot_agent.config import AgentConfig
 from sportsbot_agent.hybrid import Candidate, HybridRetriever, rrf_fuse
 from sportsbot_agent.llm_client import LLMError, Message
+from sportsbot_agent.memory import Turn, condense_question
 from sportsbot_agent.rag import RagService, answer_to_dict
 
 
@@ -146,6 +147,53 @@ def test_no_evidence_means_no_llm_call():
     retriever = HybridRetriever(keyword=StaticSearch([]), vector=None, reranker=None)
     answer = answer_question("Ai vô địch Wimbledon?", retriever, llm)
     assert answer.mode == "no_evidence" and llm.prompts == []
+
+
+# ------------------------------------------------------------ conversation memory -----
+
+
+class ScriptedLLM:
+    def __init__(self, replies: list[str | Exception]) -> None:
+        self.replies = replies
+        self.prompts: list[list[Message]] = []
+
+    def chat(self, messages):
+        self.prompts.append(messages)
+        reply = self.replies.pop(0)
+        if isinstance(reply, Exception):
+            raise reply
+        return reply
+
+
+ROONEY = [Turn("Rooney đá cho đội nào? [1]", "Wayne Rooney từng đá cho Manchester United [1].")]
+
+
+def test_follow_up_is_rewritten_before_retrieval():
+    search = StaticSearch([cand("a", "Wayne Rooney 41 tuổi.")])
+    retriever = HybridRetriever(keyword=search, vector=None, reranker=None)
+    llm = ScriptedLLM(["Wayne Rooney bao nhiêu tuổi", "Wayne Rooney 41 tuổi [1]."])
+    answer, meta = RagService(retriever, llm).ask("Anh ấy bao nhiêu tuổi?", ROONEY)  # type: ignore[arg-type]
+    assert search.calls == [["wayne", "rooney", "tuoi"]]
+    assert meta["search_query"] == "Wayne Rooney bao nhiêu tuổi"
+    assert answer.mode == "generated"
+    prompt = llm.prompts[1][1].content
+    assert "Earlier conversation" in prompt and "Manchester United" in prompt
+    assert "Manchester United [1]" not in prompt  # old citation numbers are removed
+
+
+def test_condense_falls_back_without_a_usable_rewrite():
+    assert condense_question("Anh ấy bao nhiêu tuổi?", ROONEY, None).startswith("Rooney")
+    failing = ScriptedLLM([LLMError("quota")])
+    assert "Rooney" in condense_question("Anh ấy bao nhiêu tuổi?", ROONEY, failing)
+    assert "Rooney" in condense_question("Anh ấy?", ROONEY, ScriptedLLM(["  \n "]))
+    assert condense_question("Kết quả V-League?", [], ScriptedLLM([])) == "Kết quả V-League?"
+
+
+def test_new_conversation_makes_one_llm_call():
+    retriever = HybridRetriever(keyword=StaticSearch([cand("a")]), vector=None, reranker=None)
+    llm = ScriptedLLM(["Tin [1]."])
+    _, meta = RagService(retriever, llm).ask("Kết quả V-League hôm qua?")  # type: ignore[arg-type]
+    assert len(llm.prompts) == 1 and meta["search_query"] is None
 
 
 # ---------------------------------------------------------------- LLM router -----
