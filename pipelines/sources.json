@@ -171,8 +171,8 @@
       "domains": [
         "thanhnien.vn"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "verified": true,
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result. Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -187,8 +187,8 @@
       "domains": [
         "dantri.com.vn"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result. Backfill config 2026-11-03: sitemap URLs from `make sources-sitemaps` on TMK's PC: monthly article sitemaps; sports URLs carry /the-thao/ (seen 2026-11-03).",
+      "verified": true,
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result. Backfill config 2026-11-03: sitemap URLs from `make sources-sitemaps` on TMK's PC: monthly article sitemaps; sports URLs carry /the-thao/ (seen 2026-11-03). Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [
         "https://dantri.com.vn/sitemaps/Article-2026-09-01.xml",
         "https://dantri.com.vn/sitemaps/Article-2026-10-01.xml",
@@ -207,8 +207,8 @@
       "domains": [
         "vietnamnet.vn"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result. Backfill: flat article URLs; walks /the-thao-pageN (page index starts at 1 for the second page, seen 2026-11-03).",
+      "verified": true,
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result. Backfill: flat article URLs; walks /the-thao-pageN (page index starts at 1 for the second page, seen 2026-11-03). Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null,
       "listing": {
@@ -230,10 +230,11 @@
       "domains": [
         "nld.com.vn"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "verified": true,
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result. Disabled 2026-11-03: `make sources-check` found 50 entries but 0 usable; the feed now redirects (302) to https://tuoitre.vn/nld/rss/the-thao.rss, so its links fall outside nld.com.vn and would overlap with Tuoi Tre.",
       "sitemaps": [],
-      "sitemap_include": null
+      "sitemap_include": null,
+      "enabled": false
     },
     {
       "id": "laodong_the_thao",
@@ -246,10 +247,11 @@
       "domains": [
         "laodong.vn"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "verified": true,
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result. Disabled 2026-11-03: `make sources-check` returned HTTP 200 with 0 entries.",
       "sitemaps": [],
-      "sitemap_include": null
+      "sitemap_include": null,
+      "enabled": false
     },
     {
       "id": "baotintuc_the_thao",
@@ -296,8 +298,8 @@
       "domains": [
         "vov.vn"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result. Backfill config 2026-11-03: sitemap URLs from `make sources-sitemaps` on TMK's PC: news sitemap; URL pattern not yet checked.",
+      "verified": true,
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result. Backfill config 2026-11-03: sitemap URLs from `make sources-sitemaps` on TMK's PC: news sitemap; URL pattern not yet checked. Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [
         "https://vov.vn/news-sitemap.xml"
       ],
@@ -315,8 +317,8 @@
         "bbc.co.uk",
         "bbc.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result. 2026-11-03: www.bbc.co.uk article pages are unreachable from the team network in Vietnam (TLS connection reset, also with curl outside Docker); feeds.bbci.co.uk works. extract=false: title + feed summary only.",
+      "verified": true,
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result. 2026-11-03: www.bbc.co.uk article pages are unreachable from the team network in Vietnam (TLS connection reset, also with curl outside Docker); feeds.bbci.co.uk works. extract=false: title + feed summary only. Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null,
       "extract": false
@@ -332,8 +334,8 @@
       "domains": [
         "theguardian.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result. Backfill config 2026-11-03: sitemap URLs from `make sources-sitemaps` on TMK's PC: Google News sitemap: about the last two days only.",
+      "verified": true,
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result. Backfill config 2026-11-03: sitemap URLs from `make sources-sitemaps` on TMK's PC: Google News sitemap: about the last two days only. Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [
         "https://www.theguardian.com/sitemaps/news.xml"
       ],
@@ -350,8 +352,8 @@
       "domains": [
         "espn.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "verified": true,
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result. Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -366,8 +368,8 @@
       "domains": [
         "skysports.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result. Backfill config 2026-11-03: sitemap URLs from `make sources-sitemaps` on TMK's PC: news sitemap from the sitemap index; URL pattern not yet checked.",
+      "verified": true,
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result. Backfill config 2026-11-03: sitemap URLs from `make sources-sitemaps` on TMK's PC: news sitemap from the sitemap index; URL pattern not yet checked. Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [
         "https://www.skysports.com/sitemap/sitemap-news.xml"
       ],
@@ -384,8 +386,8 @@
       "domains": [
         "as.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "verified": true,
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result. Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -400,8 +402,8 @@
       "domains": [
         "mundodeportivo.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result. Backfill config 2026-11-03: sitemap URLs from `make sources-sitemaps` on TMK's PC: monthly news sitemaps (gzip); URL pattern not yet checked.",
+      "verified": true,
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result. Backfill config 2026-11-03: sitemap URLs from `make sources-sitemaps` on TMK's PC: monthly news sitemaps (gzip); URL pattern not yet checked. Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [
         "https://www.mundodeportivo.com/sitemap-noticias-202609.xml.gz",
         "https://www.mundodeportivo.com/sitemap-noticias-202610.xml.gz"
@@ -419,8 +421,8 @@
       "domains": [
         "france24.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "verified": true,
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result. Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -435,8 +437,8 @@
       "domains": [
         "theguardian.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-03 for sport coverage beyond football (tennis); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "verified": true,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (tennis); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -451,8 +453,8 @@
       "domains": [
         "theguardian.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-03 for sport coverage beyond football (F1); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "verified": true,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (F1); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -467,8 +469,8 @@
       "domains": [
         "theguardian.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-03 for sport coverage beyond football (basketball); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "verified": true,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (basketball); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -483,8 +485,8 @@
       "domains": [
         "theguardian.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-03 for sport coverage beyond football (American football); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "verified": true,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (American football); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -499,8 +501,8 @@
       "domains": [
         "theguardian.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-03 for sport coverage beyond football (cricket); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "verified": true,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (cricket); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -515,8 +517,8 @@
       "domains": [
         "theguardian.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-03 for sport coverage beyond football (rugby); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "verified": true,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (rugby); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -531,8 +533,8 @@
       "domains": [
         "theguardian.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-03 for sport coverage beyond football (cycling); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "verified": true,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (cycling); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -547,8 +549,8 @@
       "domains": [
         "theguardian.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-03 for sport coverage beyond football (golf); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "verified": true,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (golf); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -563,8 +565,8 @@
       "domains": [
         "theguardian.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-03 for sport coverage beyond football (athletics); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "verified": true,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (athletics); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -579,8 +581,8 @@
       "domains": [
         "theguardian.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-03 for sport coverage beyond football (boxing); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "verified": true,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (boxing); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -596,8 +598,8 @@
         "bbc.co.uk",
         "bbc.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-03 for sport coverage beyond football (F1); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. extract=false like the other BBC feeds (article pages are blocked from the team network).",
+      "verified": true,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (F1); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. extract=false like the other BBC feeds (article pages are blocked from the team network). Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null,
       "extract": false
@@ -614,8 +616,8 @@
         "bbc.co.uk",
         "bbc.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-03 for sport coverage beyond football (athletics); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. extract=false like the other BBC feeds (article pages are blocked from the team network).",
+      "verified": true,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (athletics); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. extract=false like the other BBC feeds (article pages are blocked from the team network). Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null,
       "extract": false
@@ -632,8 +634,8 @@
         "bbc.co.uk",
         "bbc.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-03 for sport coverage beyond football (cricket); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. extract=false like the other BBC feeds (article pages are blocked from the team network).",
+      "verified": true,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (cricket); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. extract=false like the other BBC feeds (article pages are blocked from the team network). Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null,
       "extract": false
@@ -650,8 +652,8 @@
         "bbc.co.uk",
         "bbc.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-03 for sport coverage beyond football (golf); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. extract=false like the other BBC feeds (article pages are blocked from the team network).",
+      "verified": true,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (golf); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. extract=false like the other BBC feeds (article pages are blocked from the team network). Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null,
       "extract": false
@@ -668,8 +670,8 @@
         "bbc.co.uk",
         "bbc.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-03 for sport coverage beyond football (rugby); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. extract=false like the other BBC feeds (article pages are blocked from the team network).",
+      "verified": true,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (rugby); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. extract=false like the other BBC feeds (article pages are blocked from the team network). Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null,
       "extract": false
@@ -686,8 +688,8 @@
         "bbc.co.uk",
         "bbc.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-03 for sport coverage beyond football (cycling); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. extract=false like the other BBC feeds (article pages are blocked from the team network).",
+      "verified": true,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (cycling); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. extract=false like the other BBC feeds (article pages are blocked from the team network). Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null,
       "extract": false
@@ -704,8 +706,8 @@
         "bbc.co.uk",
         "bbc.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-03 for sport coverage beyond football (boxing); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. extract=false like the other BBC feeds (article pages are blocked from the team network).",
+      "verified": true,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (boxing); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. extract=false like the other BBC feeds (article pages are blocked from the team network). Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null,
       "extract": false
@@ -722,8 +724,8 @@
         "bbc.co.uk",
         "bbc.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-03 for sport coverage beyond football (snooker); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. extract=false like the other BBC feeds (article pages are blocked from the team network).",
+      "verified": true,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (snooker); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. extract=false like the other BBC feeds (article pages are blocked from the team network). Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null,
       "extract": false
@@ -740,8 +742,8 @@
         "bbc.co.uk",
         "bbc.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-03 for sport coverage beyond football (swimming); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. extract=false like the other BBC feeds (article pages are blocked from the team network).",
+      "verified": true,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (swimming); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. extract=false like the other BBC feeds (article pages are blocked from the team network). Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null,
       "extract": false
@@ -757,8 +759,8 @@
       "domains": [
         "espn.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-03 (basketball). Fetched from outside Vietnam on 2026-11-03: valid RSS, 18 items. Run `make sources-check` from Vietnam to confirm.",
+      "verified": true,
+      "notes": "Added 2026-11-03 (basketball). Fetched from outside Vietnam on 2026-11-03: valid RSS, 18 items. Run `make sources-check` from Vietnam to confirm. Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -773,8 +775,8 @@
       "domains": [
         "espn.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-03 for sport coverage beyond football (American football); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "verified": true,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (American football); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -789,8 +791,8 @@
       "domains": [
         "espn.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-03 for sport coverage beyond football (baseball); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "verified": true,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (baseball); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -805,8 +807,8 @@
       "domains": [
         "espn.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-03 for sport coverage beyond football (ice hockey); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "verified": true,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (ice hockey); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -821,8 +823,8 @@
       "domains": [
         "espn.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-03 for sport coverage beyond football (golf); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "verified": true,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (golf); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -837,8 +839,8 @@
       "domains": [
         "espn.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-03 for sport coverage beyond football (tennis); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "verified": true,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (tennis); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -853,8 +855,8 @@
       "domains": [
         "espn.com"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-03 for sport coverage beyond football (motorsport); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "verified": true,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (motorsport); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -869,8 +871,8 @@
       "domains": [
         "thethaovanhoa.vn"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-03: listed on https://thethaovanhoa.vn/rss.htm as the general sports feed (all sports). Run `make sources-check` to confirm.",
+      "verified": true,
+      "notes": "Added 2026-11-03: listed on https://thethaovanhoa.vn/rss.htm as the general sports feed (all sports). Run `make sources-check` to confirm. Checked 2026-11-03 with `make sources-check` from Vietnam (TMK's PC): status ok.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -885,10 +887,11 @@
       "domains": [
         "vtv.vn"
       ],
-      "verified": false,
-      "notes": "Added 2026-11-03 for sport coverage beyond football (all sports, Vietnamese); URL guessed from the site's RSS pattern, not yet fetched. Run `make sources-check`; disable it if the status is not ok.",
+      "verified": true,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (all sports, Vietnamese); URL guessed from the site's RSS pattern, not yet fetched. Run `make sources-check`; disable it if the status is not ok. Disabled 2026-11-03: `make sources-check` from Vietnam returned HTTP 404 (the URL was guessed).",
       "sitemaps": [],
-      "sitemap_include": null
+      "sitemap_include": null,
+      "enabled": false
     }
   ]
 }
