@@ -144,3 +144,13 @@ make bronze-ls               # source=extracted/... files written by consumer-ar
 | Dead letters with `network_error` / `"retryable": true` | Temporary network problem or 429/5xx. `make replay-dead-letters` sends them through again. |
 | A site's article pages are blocked by the network (TLS reset, also with `curl`) | Set `"extract": false` for that source in `sources.json`: title + feed summary are stored instead (done for BBC on 2026-11-03). |
 | Kafka does not start after changing `CLUSTER_ID` | Remove its volume: `docker volume rm sportsbot_kafka_data`. |
+
+## Reboots and power cuts
+
+Every long-running service has `restart: unless-stopped`, so after the PC restarts and Docker
+Desktop starts (it starts when the Windows user signs in), the whole stack comes back by itself:
+PostgreSQL, Qdrant, Kafka, backend, embedder, reranker and the workers. Containers created before
+this setting existed keep their old policy: run `make up-demo` once to recreate them.
+`make down` stops the stack on purpose; it then stays down until the next `make up-demo`.
+Articles published while the PC was off may have left the RSS feeds; fill the gap with
+`make backfill SINCE=<day the PC went off>`.

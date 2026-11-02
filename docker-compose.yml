@@ -13,6 +13,7 @@ name: sportsbot
 services:
   # ---------------------------------------------------------------- core ----
   postgres:
+    restart: unless-stopped  # come back after a reboot (24/7 crawler PC)
     image: postgres:16-alpine
     profiles: [core]
     environment:
@@ -32,6 +33,7 @@ services:
       retries: 20
 
   qdrant:
+    restart: unless-stopped  # come back after a reboot (24/7 crawler PC)
     image: qdrant/qdrant:v1.19.2
     profiles: [core]
     ports:
@@ -46,6 +48,7 @@ services:
       retries: 20
 
   backend:
+    restart: unless-stopped  # come back after a reboot (24/7 crawler PC)
     build:
       context: .
       dockerfile: backend/Dockerfile
@@ -217,6 +220,7 @@ services:
   # -------------------------------------------------------------- stream ----
   # Kafka in KRaft mode (no ZooKeeper), one broker. Host clients use localhost:9094.
   kafka:
+    restart: unless-stopped  # come back after a reboot (24/7 crawler PC)
     image: apache/kafka:3.9.1
     profiles: [stream]
     hostname: kafka
@@ -362,6 +366,7 @@ services:
   # CPU inside Docker. On a Mac, a native `llama-server` (brew install llama.cpp) uses the GPU
   # and is several times faster: see docs/runbooks/streaming-stack.md.
   embedder:
+    restart: unless-stopped  # come back after a reboot (24/7 crawler PC)
     image: ${LLAMA_CPP_IMAGE:-ghcr.io/ggml-org/llama.cpp:server-v0.5.0}
     profiles: [ai]
     command:
@@ -379,6 +384,7 @@ services:
       retries: 30
 
   reranker:
+    restart: unless-stopped  # come back after a reboot (24/7 crawler PC)
     image: ${LLAMA_CPP_IMAGE:-ghcr.io/ggml-org/llama.cpp:server-v0.5.0}
     profiles: [ai]
     command:
