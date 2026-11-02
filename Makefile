@@ -1,6 +1,7 @@
 .PHONY: help setup lint format test test-integration run up-core up-bigdata up up-collect collect-once sources-check bronze-ls articles-export chat chat-no-llm down ps logs hdfs-init hdfs-ls spark-smoke clean-volumes up-stream up-ai up-tools up-demo models discover-once backfill sources-sitemaps crawl-stats dead-letters logs-stream ask ask-no-llm llm-check export-labeling reindex replay-dead-letters monitor-once alert-test
 
-PYTHON ?= python
+# The project virtualenv when it exists (no need to activate it), else python3.
+PYTHON ?= $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
 
 # Host commands (make ask, make test-integration, ...) see the same settings as the stack.
 ifneq (,$(wildcard .env))
