@@ -30,7 +30,7 @@ class RerankClient:
         model: str = "bge-reranker-v2-m3",
         *,
         timeout: float = 60.0,
-        max_chars: int = 2000,
+        max_chars: int = 1200,  # the reranker cost grows with text length; CPU-bound
         transport: httpx.BaseTransport | None = None,
     ) -> None:
         self.model = model

@@ -31,8 +31,8 @@ def _list(env: Mapping[str, str], key: str, default: tuple[str, ...]) -> tuple[s
 
 @dataclass(frozen=True)
 class AgentConfig:
-    llm_timeout_seconds: float = 60.0
-    llm_max_tokens: int = 600
+    llm_timeout_seconds: float = 30.0
+    llm_max_tokens: int = 1500
     llm_temperature: float = 0.1
     articles_dir: Path = REPO_ROOT / "data" / "articles"
     top_k: int = 5
@@ -62,6 +62,7 @@ class AgentConfig:
     rerank_model: str = "bge-reranker-v2-m3"
     rerank_min_score: float = -2.0
     retrieval_candidates: int = 30
+    rerank_top: int = 12
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> AgentConfig:
@@ -88,4 +89,5 @@ class AgentConfig:
             rerank_model=env.get("RERANK_MODEL") or d.rerank_model,
             rerank_min_score=_float(env, "RERANK_MIN_SCORE", d.rerank_min_score),
             retrieval_candidates=_int(env, "RETRIEVAL_CANDIDATES", d.retrieval_candidates),
+            rerank_top=_int(env, "RERANK_TOP", d.rerank_top),
         )

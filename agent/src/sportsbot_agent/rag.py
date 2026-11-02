@@ -64,6 +64,7 @@ def build_rag(
         vector=QdrantVectorSearch(embedder, qdrant),
         reranker=reranker,
         candidates_per_stage=config.retrieval_candidates,
+        rerank_top=config.rerank_top,
         min_rerank_score=config.rerank_min_score,
     )
     router = None

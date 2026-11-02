@@ -366,7 +366,7 @@ services:
     profiles: [ai]
     command:
       ["-m", "/models/${EMBEDDING_GGUF:-bge-m3-Q8_0.gguf}", "--embedding", "--pooling", "cls",
-       "-c", "8192", "-b", "8192", "-ub", "8192", "--alias", "bge-m3",
+       "-c", "8192", "-b", "8192", "-ub", "8192", "-t", "${EMBEDDER_THREADS:-6}", "--alias", "bge-m3",
        "--host", "0.0.0.0", "--port", "8080"]
     ports:
       - "8091:8080"
@@ -383,7 +383,7 @@ services:
     profiles: [ai]
     command:
       ["-m", "/models/${RERANK_GGUF:-bge-reranker-v2-m3-Q8_0.gguf}", "--reranking", "--embedding",
-       "--pooling", "rank", "-c", "8192", "-b", "8192", "-ub", "8192",
+       "--pooling", "rank", "-c", "8192", "-b", "8192", "-ub", "8192", "-t", "${RERANKER_THREADS:-6}",
        "--alias", "bge-reranker-v2-m3", "--host", "0.0.0.0", "--port", "8080"]
     ports:
       - "8092:8080"
