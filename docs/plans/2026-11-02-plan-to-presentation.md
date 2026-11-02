@@ -1,4 +1,4 @@
-# Speed Run to the Presentation (Tuesday 10 November 2026) — Implementation Plan
+# Plan to the Presentation (Tuesday 10 November 2026)
 
 > **For agentic workers (TMK and VNP use Claude):** implement one task at a time, test first
 > (red, then green), and do not mark a step done without the command output. Steps use
@@ -10,8 +10,8 @@ collection, a Big Data batch layer, one trained and evaluated model, and a chatb
 only from stored articles with links and publication times.
 
 **Architecture:** Team diagram (ADR 0005): RSS/sitemaps → Kafka → extractor → PostgreSQL +
-Qdrant (BGE-M3) → hybrid RAG with reranker (ADR 0007) → Gemini models in rotation, Ollama
-fallback (ADR 0006) → FastAPI (SSE chat, WebSocket news) → demo page. A third consumer archives
+Qdrant (BGE-M3) → hybrid RAG with reranker (ADR 0007) → free Gemini models in rotation
+(ADR 0006) → FastAPI (SSE chat, WebSocket news) → demo page. A third consumer archives
 extracted articles to HDFS; Spark builds Silver/Gold and the experiments from it.
 
 **Tech stack:** Python 3.11, Kafka 3.9 (KRaft), PostgreSQL 16, Qdrant 1.19, llama.cpp (GGUF),
@@ -40,7 +40,7 @@ pipeline diagram (2026-11-02).
    include them (Task 4).
 4. A question the corpus cannot answer → "no evidence", no LLM call, no invented facts. Golden
    set has 15 such questions (Task 4); Task 8 measures refusals.
-5. All Gemini models out of quota during the demo → Ollama answers or excerpts are shown.
+5. All Gemini models out of quota during the demo → article excerpts with links are shown.
    Task 10 rehearses with `GEMINI_API_KEY` removed.
 
 ---
@@ -160,7 +160,7 @@ screenshot), what is next, what blocks them. TMK merges at most once a day after
 
 - [ ] Slides (LTN drafts, TMK and VNP fill numbers): problem, diagram, live crawl numbers, Kafka UI, Spark results, classifier, RAG evaluation, demo, limitations, honesty notes.
 - [ ] Demo script (TMK): 3 questions that work, 1 the corpus cannot answer, 1 typed without diacritics; the live news feed updating.
-- [ ] Rehearsal with `GEMINI_API_KEY` removed (Ollama or excerpts must still work).
+- [ ] Rehearsal with `GEMINI_API_KEY` removed (excerpts with links must still be shown).
 - [ ] Backup video of the full demo (Mon 9).
 
 ## Cut list (in this order, if a gate is missed)

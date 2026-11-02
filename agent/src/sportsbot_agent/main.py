@@ -15,8 +15,8 @@ import sys
 import time
 
 from sportsbot_agent.answer import Answer, answer_question
+from sportsbot_agent.clients.llm_router import ChatRouter, build_targets
 from sportsbot_agent.config import AgentConfig
-from sportsbot_agent.llm_client import LLMClient
 from sportsbot_agent.retrieval import BM25Index
 from sportsbot_agent.store import load_articles
 
@@ -62,11 +62,12 @@ def run(config: AgentConfig, questions: list[str] | None = None, no_llm: bool = 
         )
         return 2
     index = BM25Index(articles)
-    llm = None if no_llm else LLMClient(config)
-    print(
-        f"SportsBot prototype: {len(articles)} stored articles | "
-        f"model {'(none: excerpts only)' if no_llm else config.llm_model} | /exit to quit"
+    targets = build_targets(
+        config.gemini_api_key, config.gemini_base_url, list(config.gemini_models)
     )
+    llm = None if no_llm or not targets else ChatRouter(targets)
+    models = ", ".join(t.model for t in targets) if llm else "(none: excerpts only)"
+    print(f"SportsBot prototype: {len(articles)} stored articles | models {models} | /exit to quit")
 
     def ask(raw: str) -> None:
         question, error = validate_question(raw, config.max_question_chars)
@@ -79,24 +80,20 @@ def run(config: AgentConfig, questions: list[str] | None = None, no_llm: bool = 
         )
         print(format_answer(answer, time.perf_counter() - t0))
 
-    try:
-        if questions:
-            for q in questions:
-                print(f"\n> {q}")
-                ask(q)
+    if questions:
+        for q in questions:
+            print(f"\n> {q}")
+            ask(q)
+        return 0
+    while True:
+        try:
+            raw = input("\nYou: ")
+        except (EOFError, KeyboardInterrupt):
+            print()
             return 0
-        while True:
-            try:
-                raw = input("\nYou: ")
-            except (EOFError, KeyboardInterrupt):
-                print()
-                return 0
-            if raw.strip().lower() in EXIT_WORDS:
-                return 0
-            ask(raw)
-    finally:
-        if llm:
-            llm.close()
+        if raw.strip().lower() in EXIT_WORDS:
+            return 0
+        ask(raw)
 
 
 def main(argv: list[str] | None = None) -> int:

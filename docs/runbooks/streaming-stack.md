@@ -22,7 +22,7 @@ Put it only in `.env`; never in code, commits or chat messages.
 ```bash
 make up-demo        # PostgreSQL, Qdrant, backend, Kafka + topics, workers, embedder, reranker
 make ps             # all "running"/"healthy"; kafka-init exits after creating the topics
-make llm-check      # which Gemini models answer with your key (and Ollama, if running)
+make llm-check      # which Gemini models answer with your key
 ```
 
 Open:

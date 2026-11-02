@@ -1,6 +1,6 @@
-# Runbook: terminal chat prototype (Ollama, answers only from stored articles)
+# Runbook: terminal chat prototype (BM25, answers only from stored articles)
 
-The prototype answers sports questions **only from articles SportsBot has collected**, and lists the articles it used with their links and publication times. If no stored article matches, it says so and does not call the model. Code: `agent/src/sportsbot_agent/`. Decision: [ADR 0004](../decisions/0004-local-llm-ollama.md).
+The prototype answers sports questions **only from articles SportsBot has collected**, and lists the articles it used with their links and publication times. If no stored article matches, it says so and does not call the model. Code: `agent/src/sportsbot_agent/`. Decisions: [ADR 0004](../decisions/0004-local-llm-ollama.md) (grounding rules), [ADR 0006](../decisions/0006-llm-gemini-model-rotation.md) (Gemini models). The full RAG is `make ask` ([streaming-stack runbook](streaming-stack.md)).
 
 ## How it works
 1. Load stored articles (Bronze records exported from HDFS) from `data/articles/`.
@@ -13,34 +13,18 @@ The prototype answers sports questions **only from articles SportsBot has collec
 | Module | Role |
 |---|---|
 | `config.py` | Settings from environment variables (below) |
-| `llm_client.py` | OpenAI-compatible client (Ollama), clear errors: server down, model missing, timeout |
+| `clients/llm_router.py` | Free Gemini models tried in turn (OpenAI-compatible API) |
 | `store.py` | Loads stored articles (JSON Lines, plain or gzip) |
 | `retrieval.py` | Accent-insensitive BM25 keyword search |
 | `answer.py` | Grounded answer, citation check, fallbacks |
 | `main.py` | Terminal program (interactive or one question) |
 
-## Requirements (measured on TMK's Mac, 2026-11-02)
-| Item | Value |
-|---|---|
-| Machine | MacBook with Apple M2 Pro (10 CPU cores, 16 GPU cores), 16 GB RAM, macOS 26.5.2 |
-| Python | 3.11.4 |
-| Ollama | 0.40.13, running as the Ollama app (`ollama serve`) |
-| Model | `llama3:latest` (Llama 3, 8B, Q4_0, 4.7 GB on disk) |
-| Speed | 37 tokens/s; first request 10.2 s including 5.6 s model load, next one 2.3 s |
-
-Any machine that runs Ollama works: macOS (Apple Silicon or Intel), Windows, Linux. An 8B model needs about 5-6 GB of free memory (estimate); a 3B model about 3 GB.
-
-## Install Ollama
-- **macOS / Windows:** download the installer from https://ollama.com/download and start the app. It serves on `http://localhost:11434`.
-- **Check:** `ollama --version` and `curl http://localhost:11434/api/version`.
-- **Download a model** (needs approval in this project because of size): `ollama pull llama3` (4.7 GB).
-- **List models:** `ollama list`.
-
 ## Run the prototype
-From the repository root, with the virtual environment active (`source .venv/bin/activate`; on Windows `.venv\Scripts\activate`):
+Put `GEMINI_API_KEY` in `.env` (without it, the prototype shows excerpts only). From the
+repository root, with the virtual environment active:
 
 ```bash
-make setup                 # once: installs agent/requirements.txt (httpx) too
+make setup                 # once
 make up-collect            # PostgreSQL + HDFS + collector (or skip if already collecting)
 make collect-once          # collect now instead of waiting for the scheduler
 make articles-export       # copy stored articles from HDFS to data/articles/
@@ -48,31 +32,24 @@ make chat                  # interactive chat; type /exit to quit
 ```
 
 One question: `PYTHONPATH=agent/src python -m sportsbot_agent.main "Tin mới nhất về đội tuyển Việt Nam?"`.
-Without the model (shows matching excerpts only): `make chat-no-llm`.
-Windows PowerShell (no make): `$env:PYTHONPATH="agent/src"; python -m sportsbot_agent.main`.
+Without the model (matching excerpts only): `make chat-no-llm`.
 
-## Change the model or server
-All settings are environment variables; nothing is hard-coded for one machine.
-
+## Settings
 | Variable | Default | Meaning |
 |---|---|---|
-| `LLM_BASE_URL` | `http://localhost:11434/v1` | OpenAI-compatible endpoint (Ollama on this machine) |
-| `LLM_MODEL` | `llama3:latest` | Any model shown by `ollama list` |
-| `LLM_TIMEOUT_SECONDS` | `120` | Wait limit per answer |
-| `LLM_MAX_TOKENS` | `400` | Answer length limit |
-| `LLM_TEMPERATURE` | `0.1` | Low = more literal answers |
+| `GEMINI_API_KEY` | empty | Free key from https://aistudio.google.com/apikey |
+| `GEMINI_MODELS` | see `.env.example` | Models tried in order |
+| `LLM_TIMEOUT_SECONDS` | `60` | Wait limit per answer |
+| `LLM_MAX_TOKENS` | `600` | Answer length limit |
 | `ARTICLES_DIR` | `data/articles` | Folder with stored articles |
 | `RETRIEVAL_TOP_K` | `5` | Articles given to the model |
 
-Example: `LLM_MODEL=qwen2.5:7b make chat`. To use the Windows PC's Ollama from the Mac: `LLM_BASE_URL=http://<pc-ip>:11434/v1` (Ollama must be set to listen on the network on the PC).
-
-## Measured model behaviour (2026-11-02, before grounding)
-Asked directly, without articles, `llama3` answered fluent but **wrong** facts about the Vietnam national team: it claimed a Vietnamese player scored at a World Cup (Vietnam has never played one) and listed a midfielder as a goalkeeper. English answers were broadly correct. This is why the prototype answers only from stored articles and checks citations.
+## Why grounding (measured 2026-11-02 with the earlier local model)
+Asked directly, without articles, the local `llama3` 8B answered fluent but **wrong** facts about the Vietnam national team (a World Cup goal that never happened; a midfielder called a goalkeeper). This is why every model only sees stored articles and must cite them.
 
 ## Known limitations
 - **Stopgap data path:** articles are exported from HDFS Bronze to a local file; Phase 3b/5 replace this with Gold tables in PostgreSQL and real indexes.
 - **Keyword search only:** no semantic or cross-language search yet (a Vietnamese question finds Vietnamese articles, not English ones). Phase 4 adds multilingual vectors (hybrid retrieval).
 - **Short evidence:** RSS summaries are short; some questions get `INSUFFICIENT_EVIDENCE` even when the full article would answer.
 - **Citations are checked for form, not truth:** a cited sentence can still misstate its article. Faithfulness evaluation is a Phase 4 task.
-- **Model quality:** `llama3` writes weak Vietnamese; compare models (for example `qwen2.5:7b`) with a decision rule fixed before the run.
 - **No conversation memory** and no time understanding ("today", "last week") yet.

@@ -63,8 +63,6 @@ services:
       # a Mac: Metal GPU), e.g. STACK_EMBEDDING_BASE_URL=http://host.docker.internal:8091
       EMBEDDING_BASE_URL: ${STACK_EMBEDDING_BASE_URL:-http://embedder:8080}
       RERANK_BASE_URL: ${STACK_RERANK_BASE_URL:-http://reranker:8080}
-      # Ollama (last fallback after the Gemini models) runs on the host, not in Docker.
-      LLM_BASE_URL: ${STACK_LLM_BASE_URL:-http://host.docker.internal:11434/v1}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:

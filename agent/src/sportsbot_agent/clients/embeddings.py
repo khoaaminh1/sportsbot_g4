@@ -1,8 +1,8 @@
 """BGE-M3 embeddings through an OpenAI-compatible `/v1/embeddings` endpoint.
 
 The stack serves BGE-M3 (GGUF, Q8_0) with llama.cpp `llama-server --embedding --pooling cls`
-(see docker-compose.yml, service `embedder`). Any server with the same API works: Ollama
-(`bge-m3`), LM Studio, or a native llama-server on the Mac (Metal) for more speed.
+(see docker-compose.yml, service `embedder`). A native llama-server on the Mac (Metal)
+serves the same API faster.
 BGE-M3 needs no query/passage prefix; vectors have 1024 dimensions.
 """
 

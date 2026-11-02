@@ -1,12 +1,12 @@
 # Vietnam SportsBot
 
-![Status: speed run](https://img.shields.io/badge/status-speed%20run%20to%2010%20Nov-blue.svg)
+![Status: presentation 10 Nov](https://img.shields.io/badge/presentation-10%20Nov%202026-blue.svg)
 ![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)
 ![Course: Big Data](https://img.shields.io/badge/course-Big%20Data-orange.svg)
 
 A near-real-time multilingual sports news chatbot. It collects sports news from Vietnamese and international sites, streams it through Kafka into PostgreSQL and a vector index, archives it to HDFS for Spark processing, and answers questions in **Vietnamese or English** only from the articles it has collected. Every answer cites its sources with links and publication times; without evidence, the bot says so instead of guessing.
 
-> **Status (2026-11-02, branch `feature/stream-rag-skeleton`).** Presentation: **Tuesday 10 November 2026**. The pipeline from the team diagram is implemented as a working skeleton and tested (unit tests, PostgreSQL 16, Qdrant 1.19, and a CI job through a real Kafka broker). It has **not yet run on a team laptop with real news sites and the real models**: that is step 1 of the [plan](docs/plans/2026-11-02-speedrun-to-presentation.md). Spark Silver/Gold, the classifier and the evaluation are still to do. Earlier phases: [Phase 1 assessment](docs/plan/phase-1-assessment.md), [Phase 2 report](docs/reports/phase-2.md).
+> **Status (2026-11-02, branch `feature/stream-rag-skeleton`).** Presentation: **Tuesday 10 November 2026**. The pipeline from the team diagram is implemented as a working skeleton and tested (unit tests, PostgreSQL 16, Qdrant 1.19, and a CI job through a real Kafka broker). It has **not yet run on a team laptop with real news sites and the real models**: that is step 1 of the [plan](docs/plans/2026-11-02-plan-to-presentation.md). Spark Silver/Gold, the classifier and the evaluation are still to do. Earlier phases: [Phase 1 assessment](docs/plan/phase-1-assessment.md), [Phase 2 report](docs/reports/phase-2.md).
 
 ## Contents
 
@@ -35,13 +35,13 @@ flowchart TD
   K2 --> CS[Consumer semantic: chunks -> BGE-M3] --> QD[(Qdrant: vectors)]
   K2 --> CA[Consumer archive] --> HD[(HDFS Bronze)] --> SP[Spark: Silver/Gold, near-dup, experiments]
   PG & QD --> RAG[Advanced RAG: keyword + vector, RRF, bge-reranker]
-  RAG --> LLM[Gemini free models in turn, Ollama fallback]
+  RAG --> LLM[Free Gemini models, tried in turn]
   PG --> N[FastAPI: news + WebSocket]
   RAG --> C[FastAPI: chat over SSE]
   N & C --> FE[Demo page /app/]
 ```
 
-Decisions: [ADR 0005 streaming with Kafka](docs/decisions/0005-streaming-pipeline-kafka.md), [ADR 0006 Gemini rotation](docs/decisions/0006-llm-gemini-rotation-ollama-fallback.md), [ADR 0007 BGE-M3 + reranker GGUF](docs/decisions/0007-bge-m3-and-reranker-gguf.md). Earlier: [0001-0004](docs/decisions/).
+Decisions: [ADR 0005 streaming with Kafka](docs/decisions/0005-streaming-pipeline-kafka.md), [ADR 0006 Gemini rotation](docs/decisions/0006-llm-gemini-model-rotation.md), [ADR 0007 BGE-M3 + reranker GGUF](docs/decisions/0007-bge-m3-and-reranker-gguf.md). Earlier: [0001-0004](docs/decisions/).
 
 ## Implementation status
 
@@ -54,7 +54,7 @@ Decisions: [ADR 0005 streaming with Kafka](docs/decisions/0005-streaming-pipelin
 | Operational consumer → PostgreSQL, accent-insensitive search (migration 003) | Skeleton, tested on PostgreSQL 16 | `make crawl-stats` |
 | Semantic consumer → BGE-M3 → Qdrant | Skeleton, tested on Qdrant 1.19 with fake vectors | `make crawl-stats` (`qdrant_chunks`) |
 | Hybrid RAG: keyword + vectors, RRF, bge-reranker, cited answers | Skeleton, unit-tested | `make ask Q="..."` |
-| LLM router: Gemini models in rotation, Ollama fallback | Unit-tested; model names to verify with a key | `make llm-check` |
+| LLM router: free Gemini models in rotation | Unit-tested; model names to verify with a key | `make llm-check` |
 | FastAPI: `/chat`, `/chat/stream` (SSE), `/news/latest`, `/ws/news`, ... | Done, tested with fakes | http://localhost:8000/docs |
 | Demo page (news feed + chat) | Done | http://localhost:8000/app/ |
 | Spark Silver/Gold, near-duplicates (MinHashLSH), scaling runs | **To do** (plan task 6, 9) | — |
@@ -87,7 +87,7 @@ Memory (estimate): `up-demo` about 3.5-4 GB; HDFS + Spark add 1.5-3.5 GB.
 
 ## Plan and team
 
-Full plan with daily gates and step-by-step tasks: [docs/plans/2026-11-02-speedrun-to-presentation.md](docs/plans/2026-11-02-speedrun-to-presentation.md).
+Full plan with daily gates and step-by-step tasks: [docs/plans/2026-11-02-plan-to-presentation.md](docs/plans/2026-11-02-plan-to-presentation.md).
 
 | Member | Code | AI assistant | Owns until 10 Nov |
 |---|---|---|---|
@@ -113,7 +113,7 @@ LTN works without an AI assistant, so LTN's tasks are commands to run and files 
 
 ## Data sources
 
-23 feeds in [`pipelines/sources.json`](pipelines/sources.json): 10 Vietnamese, 8 English, 3 Spanish, 2 French (one disabled). Seven were checked live on 2026-11-02 (VnExpress, Tuổi Trẻ, BBC × 3, Guardian, MARCA); the 15 added for the speed run are marked `"verified": false` until `make sources-check` confirms them (plan task 2).
+23 feeds in [`pipelines/sources.json`](pipelines/sources.json): 10 Vietnamese, 8 English, 3 Spanish, 2 French (one disabled). Seven were checked live on 2026-11-02 (VnExpress, Tuổi Trẻ, BBC × 3, Guardian, MARCA); the 15 added on 2026-11-02 are marked `"verified": false` until `make sources-check` confirms them (plan task 2).
 
 Rules: robots.txt is respected (an unreadable robots.txt means skip), at most one request per site every 3 seconds, the User-Agent names the project and a contact. Full text is stored for processing only; users see the title, a short excerpt and the link to the original. RSS lists only recent items, so older articles come from sitemaps (`make backfill`). VnExpress answers only from Vietnamese IP addresses.
 
@@ -123,7 +123,7 @@ Rules: robots.txt is respected (an unreadable robots.txt means skip), at most on
 2. **Vector search** in Qdrant: BGE-M3 (GGUF, llama.cpp) over 1,200-character chunks.
 3. **Fusion** with Reciprocal Rank Fusion, then **reranking** with bge-reranker-v2-m3 (GGUF); weak candidates are dropped.
 4. **Answer** with an LLM that sees only these articles and must cite `[n]`; answers with URLs or invalid citations are replaced by excerpts. No candidate → "no evidence", no LLM call.
-5. **LLM router:** free Gemini models in turn (a model that hits its quota rests), then local Ollama.
+5. **LLM router:** free Gemini models in turn (a model that hits its quota rests). If all are out of quota, the bot shows excerpts of the matching articles with links.
 
 Trained model (plan task 7): sport category of an article; TF-IDF + logistic regression (Spark MLlib) baseline vs BGE-M3 vectors + logistic regression, evaluated on hand labels. No LLM is trained or fine-tuned.
 

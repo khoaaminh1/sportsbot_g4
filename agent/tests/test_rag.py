@@ -163,7 +163,7 @@ def router_with(responses: dict[str, list[httpx.Response]], clock) -> ChatRouter
         [
             ChatTarget("gemini:a", "https://g.test/v1beta/openai", "a", "KEY"),
             ChatTarget("gemini:b", "https://g.test/v1beta/openai", "b", "KEY"),
-            ChatTarget("ollama:llama3", "http://localhost:11434/v1", "llama3"),
+            ChatTarget("gemini:c", "https://g.test/v1beta/openai", "c", "KEY"),
         ],
         transport=httpx.MockTransport(handler),
         clock=clock,
@@ -183,7 +183,7 @@ def test_router_rotates_on_quota_and_recovers_after_cooldown():
         {
             "a": [httpx.Response(429, text="Resource exhausted: requests per minute"), ok("A2")],
             "b": [ok("B1")],
-            "llama3": [],
+            "c": [],
         },
         clock=lambda: now[0],
     )
@@ -195,16 +195,16 @@ def test_router_rotates_on_quota_and_recovers_after_cooldown():
     assert router.calls == ["a", "b", "a"]  # type: ignore[attr-defined]
 
 
-def test_router_daily_quota_waits_until_pacific_midnight_and_falls_back_to_ollama():
+def test_router_daily_quota_waits_until_pacific_midnight_and_uses_next_model():
     router = router_with(
         {
             "a": [httpx.Response(429, text="Quota exceeded: GenerateRequestsPerDay")],
             "b": [httpx.Response(404, text="model not found")],
-            "llama3": [ok("local")],
+            "c": [ok("third")],
         },
         clock=lambda: 0.0,
     )
-    assert router.chat([Message("user", "hi")]) == "local"
+    assert router.chat([Message("user", "hi")]) == "third"
     status = {s["target"]: s for s in router.status()}
     assert status["gemini:a"]["cooldown_seconds"] > 60
     assert status["gemini:b"]["disabled"] is True
@@ -212,7 +212,7 @@ def test_router_daily_quota_waits_until_pacific_midnight_and_falls_back_to_ollam
 
 def test_router_raises_when_nothing_answers():
     router = router_with(
-        {"a": [httpx.Response(500)], "b": [httpx.Response(401)], "llama3": [httpx.Response(503)]},
+        {"a": [httpx.Response(500)], "b": [httpx.Response(401)], "c": [httpx.Response(503)]},
         clock=lambda: 0.0,
     )
     with pytest.raises(LLMError, match="No LLM target answered"):
@@ -220,17 +220,15 @@ def test_router_raises_when_nothing_answers():
 
 
 def test_build_targets_and_midnight():
-    targets = build_targets("K", "https://g", ["m1", "", "m2"], "http://o/v1", "llama3", True)
-    assert [t.name for t in targets] == ["gemini:m1", "gemini:m2", "ollama:llama3"]
-    assert build_targets("", "https://g", ["m1"], "http://o/v1", "llama3", False) == []
+    targets = build_targets("K", "https://g", ["m1", "", "m2"])
+    assert [t.name for t in targets] == ["gemini:m1", "gemini:m2"]
+    assert build_targets("", "https://g", ["m1"]) == []
     assert 0 < seconds_until_pacific_midnight() <= 86_405
 
 
 def test_config_reads_gemini_models_list():
-    cfg = AgentConfig.from_env(
-        {"GEMINI_MODELS": "x-flash, y-lite ,", "LLM_USE_OLLAMA_FALLBACK": "false"}
-    )
-    assert cfg.gemini_models == ("x-flash", "y-lite") and cfg.llm_use_ollama_fallback is False
+    cfg = AgentConfig.from_env({"GEMINI_MODELS": "x-flash, y-lite ,"})
+    assert cfg.gemini_models == ("x-flash", "y-lite")
     assert AgentConfig.from_env({}).gemini_models[0].startswith("gemini-")
 
 

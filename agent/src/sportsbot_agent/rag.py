@@ -69,12 +69,7 @@ def build_rag(
     router = None
     if use_llm:
         targets = build_targets(
-            config.gemini_api_key,
-            config.gemini_base_url,
-            list(config.gemini_models),
-            config.llm_base_url,
-            config.llm_model,
-            config.llm_use_ollama_fallback,
+            config.gemini_api_key, config.gemini_base_url, list(config.gemini_models)
         )
         if targets:
             router = ChatRouter(

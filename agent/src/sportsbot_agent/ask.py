@@ -1,10 +1,10 @@
-"""Terminal client for the production RAG (PostgreSQL + Qdrant + reranker + Gemini/Ollama).
+"""Terminal client for the RAG (PostgreSQL + Qdrant + reranker + Gemini).
 
     PYTHONPATH=agent/src python -m sportsbot_agent.ask "Ai ghi bàn cho Việt Nam tối qua?"
     make ask Q="Ai ghi bàn cho Việt Nam tối qua?"
 
 Needs the stack: `make up-stream` (PostgreSQL, Qdrant, Kafka, workers) and `make up-ai`
-(embedder + reranker). Set GEMINI_API_KEY in .env, or keep Ollama running as the fallback.
+(embedder + reranker). Set GEMINI_API_KEY in .env; without it, only excerpts are shown.
 """
 
 from __future__ import annotations

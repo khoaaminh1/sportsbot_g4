@@ -67,7 +67,7 @@ articles-export:  ## Copy collected Bronze articles from HDFS to data/articles/ 
 	$(COMPOSE) --profile bigdata exec -T namenode hdfs dfs -text "/sportsbot/bronze/*/*/*/*.jsonl.gz" > data/articles/bronze-export.jsonl
 	@echo "Exported $$(wc -l < data/articles/bronze-export.jsonl | tr -d ' ') records to data/articles/bronze-export.jsonl"
 
-chat:  ## Terminal chat: answers only from stored articles, with links (needs Ollama running)
+chat:  ## BM25 terminal prototype over exported Bronze files (Gemini key in .env)
 	PYTHONPATH=agent/src $(PYTHON) -m sportsbot_agent.main
 
 chat-no-llm:  ## Same, but only shows matching article excerpts (no model needed)
@@ -113,7 +113,7 @@ logs-stream:  ## Follow the streaming workers' logs
 ask:  ## Ask the hybrid RAG from the terminal: make ask Q="Kết quả Việt Nam - Thái Lan?"
 	PYTHONPATH=agent/src $(PYTHON) -m sportsbot_agent.ask "$(Q)"
 
-llm-check:  ## Which Gemini models (and Ollama) answer right now, one tiny request each
+llm-check:  ## Which Gemini models answer with your key, one tiny request each
 	PYTHONPATH=agent/src $(PYTHON) -m sportsbot_agent.llm_check
 
 export-labeling:  ## Random article sample to label by hand: make export-labeling N=400 -> data/labeling/

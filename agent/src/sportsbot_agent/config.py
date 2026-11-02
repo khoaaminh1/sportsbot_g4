@@ -1,8 +1,7 @@
 """Agent configuration from environment variables (see `.env.example`).
 
-The LLM is reached through an OpenAI-compatible API (AGENTS.md). Ollama serves one at
-`http://localhost:11434/v1` on macOS, Windows and Linux, so the same code runs everywhere and a
-different model or server is a configuration change only.
+The chat models are free Gemini models reached through Google's OpenAI-compatible API
+(ADR 0006); the list is tried in order and a model that hits its quota rests.
 """
 
 from __future__ import annotations
@@ -30,25 +29,17 @@ def _list(env: Mapping[str, str], key: str, default: tuple[str, ...]) -> tuple[s
     return tuple(x.strip() for x in raw.split(",") if x.strip()) if raw else default
 
 
-def _bool(env: Mapping[str, str], key: str, default: bool) -> bool:
-    raw = env.get(key, "").strip().lower()
-    return raw in ("1", "true", "yes", "on") if raw else default
-
-
 @dataclass(frozen=True)
 class AgentConfig:
-    llm_base_url: str = "http://localhost:11434/v1"
-    llm_model: str = "llama3:latest"
-    llm_api_key: str = ""  # Ollama needs none; kept for other OpenAI-compatible servers
-    llm_timeout_seconds: float = 120.0
-    llm_max_tokens: int = 400
+    llm_timeout_seconds: float = 60.0
+    llm_max_tokens: int = 600
     llm_temperature: float = 0.1
     articles_dir: Path = REPO_ROOT / "data" / "articles"
     top_k: int = 5
     min_matched_terms: int = 1
     max_question_chars: int = 500
 
-    # Free Gemini models tried in order (ADR 0006); Ollama (llm_base_url/llm_model) is last.
+    # Free Gemini models tried in order (ADR 0006).
     gemini_api_key: str = ""
     gemini_base_url: str = "https://generativelanguage.googleapis.com/v1beta/openai"
     gemini_models: tuple[str, ...] = (
@@ -58,7 +49,6 @@ class AgentConfig:
         "gemini-3.1-flash-lite",
         "gemini-2.5-flash-lite",
     )
-    llm_use_ollama_fallback: bool = True
     llm_cooldown_seconds: float = 65.0
 
     # Advanced RAG (hybrid.py): PostgreSQL keyword + Qdrant vectors + reranker.
@@ -78,9 +68,6 @@ class AgentConfig:
         env = os.environ if env is None else env
         d = cls()
         return cls(
-            llm_base_url=(env.get("LLM_BASE_URL") or d.llm_base_url).rstrip("/"),
-            llm_model=env.get("LLM_MODEL") or d.llm_model,
-            llm_api_key=env.get("LLM_API_KEY", ""),
             llm_timeout_seconds=_float(env, "LLM_TIMEOUT_SECONDS", d.llm_timeout_seconds),
             llm_max_tokens=_int(env, "LLM_MAX_TOKENS", d.llm_max_tokens),
             llm_temperature=_float(env, "LLM_TEMPERATURE", d.llm_temperature),
@@ -90,9 +77,6 @@ class AgentConfig:
             gemini_api_key=env.get("GEMINI_API_KEY", ""),
             gemini_base_url=(env.get("GEMINI_BASE_URL") or d.gemini_base_url).rstrip("/"),
             gemini_models=_list(env, "GEMINI_MODELS", d.gemini_models),
-            llm_use_ollama_fallback=_bool(
-                env, "LLM_USE_OLLAMA_FALLBACK", d.llm_use_ollama_fallback
-            ),
             llm_cooldown_seconds=_float(env, "LLM_COOLDOWN_SECONDS", d.llm_cooldown_seconds),
             database_url=env.get("DATABASE_URL") or d.database_url,
             qdrant_url=env.get("QDRANT_URL") or d.qdrant_url,

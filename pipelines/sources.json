@@ -152,7 +152,7 @@
         "thanhnien.vn"
       ],
       "verified": false,
-      "notes": "Added 2026-11-02 for the crawl speed run; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -168,7 +168,7 @@
         "dantri.com.vn"
       ],
       "verified": false,
-      "notes": "Added 2026-11-02 for the crawl speed run; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -184,7 +184,7 @@
         "vietnamnet.vn"
       ],
       "verified": false,
-      "notes": "Added 2026-11-02 for the crawl speed run; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -200,7 +200,7 @@
         "nld.com.vn"
       ],
       "verified": false,
-      "notes": "Added 2026-11-02 for the crawl speed run; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -216,7 +216,7 @@
         "laodong.vn"
       ],
       "verified": false,
-      "notes": "Added 2026-11-02 for the crawl speed run; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -232,7 +232,7 @@
         "baotintuc.vn"
       ],
       "verified": false,
-      "notes": "Added 2026-11-02 for the crawl speed run; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -248,7 +248,7 @@
         "znews.vn"
       ],
       "verified": false,
-      "notes": "Added 2026-11-02 for the crawl speed run; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -264,7 +264,7 @@
         "vov.vn"
       ],
       "verified": false,
-      "notes": "Added 2026-11-02 for the crawl speed run; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -281,7 +281,7 @@
         "bbc.com"
       ],
       "verified": false,
-      "notes": "Added 2026-11-02 for the crawl speed run; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -297,7 +297,7 @@
         "theguardian.com"
       ],
       "verified": false,
-      "notes": "Added 2026-11-02 for the crawl speed run; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -313,7 +313,7 @@
         "espn.com"
       ],
       "verified": false,
-      "notes": "Added 2026-11-02 for the crawl speed run; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -329,7 +329,7 @@
         "skysports.com"
       ],
       "verified": false,
-      "notes": "Added 2026-11-02 for the crawl speed run; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -345,7 +345,7 @@
         "as.com"
       ],
       "verified": false,
-      "notes": "Added 2026-11-02 for the crawl speed run; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -361,7 +361,7 @@
         "mundodeportivo.com"
       ],
       "verified": false,
-      "notes": "Added 2026-11-02 for the crawl speed run; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
       "sitemaps": [],
       "sitemap_include": null
     },
@@ -377,7 +377,7 @@
         "france24.com"
       ],
       "verified": false,
-      "notes": "Added 2026-11-02 for the crawl speed run; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
       "sitemaps": [],
       "sitemap_include": null
     }

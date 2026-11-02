@@ -1,6 +1,6 @@
 # 0004. Local LLM with Ollama; answers only from stored articles
 
-- Status: accepted (2026-11-02, team decision communicated by TMK)
+- Status: superseded by 0006 (2026-11-02): Ollama is no longer used; the grounding rules below still apply
 - Date: 2026-11-02
 - Deciders: TMK, VNP, LTN
 

@@ -5,8 +5,9 @@ Query understanding, retrieval, evidence checks, prompts and the LLM client. Own
 ## Status
 | Part | Status |
 |---|---|
-| Terminal chat prototype: answers only from stored articles, with links; Ollama via OpenAI-compatible API | Implemented (prototype) |
+| Terminal chat prototype (BM25 over exported Bronze files): answers only from stored articles, with links | Implemented (prototype) |
+| Hybrid RAG (PostgreSQL + Qdrant + reranker), free Gemini models in rotation (`make ask`) | Skeleton, tested |
 | Keyword retrieval (BM25, accent-insensitive) | Implemented (baseline) |
-| Hybrid retrieval with multilingual vectors, query understanding, time parsing | Planned (Phase 4) |
+| Query understanding, time parsing | Planned |
 
-How to run, configure and change the model: [docs/runbooks/chat-prototype.md](../docs/runbooks/chat-prototype.md). Decision: [ADR 0004](../docs/decisions/0004-local-llm-ollama.md).
+How to run, configure and change the model: [docs/runbooks/chat-prototype.md](../docs/runbooks/chat-prototype.md). Decisions: [ADR 0006](../docs/decisions/0006-llm-gemini-model-rotation.md), [ADR 0007](../docs/decisions/0007-bge-m3-and-reranker-gguf.md).

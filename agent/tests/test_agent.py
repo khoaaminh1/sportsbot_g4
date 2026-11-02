@@ -11,14 +11,9 @@ import httpx
 import pytest
 
 from sportsbot_agent.answer import answer_question, detect_language, validate_citations
+from sportsbot_agent.clients.llm_router import ChatRouter, ChatTarget
 from sportsbot_agent.config import AgentConfig
-from sportsbot_agent.llm_client import (
-    LLMClient,
-    LLMError,
-    LLMModelNotFound,
-    LLMTimeout,
-    LLMUnavailable,
-)
+from sportsbot_agent.llm_client import LLMError, Message
 from sportsbot_agent.main import format_answer, run, validate_question
 from sportsbot_agent.retrieval import BM25Index, normalize, query_terms
 from sportsbot_agent.store import html_to_text, load_articles
@@ -44,10 +39,11 @@ def fake_llm(reply: str | None = None, status: int = 200, error: Exception | Non
         if error:
             raise error
         if status != 200:
-            return httpx.Response(status, text="model 'llama3:latest' not found")
+            return httpx.Response(status, text="error")
         return httpx.Response(200, json={"choices": [{"message": {"content": reply}}]})
 
-    client = LLMClient(AgentConfig(), transport=httpx.MockTransport(handler))
+    target = ChatTarget("gemini:test-flash", "https://g.test/v1beta/openai", "test-flash", "K")
+    client = ChatRouter([target], transport=httpx.MockTransport(handler))
     return client, calls
 
 
@@ -56,13 +52,11 @@ def fake_llm(reply: str | None = None, status: int = 200, error: Exception | Non
 
 def test_config_from_env_and_defaults():
     default = AgentConfig.from_env({})
-    assert default.llm_base_url == "http://localhost:11434/v1"
-    assert default.llm_model == "llama3:latest"
+    assert default.gemini_base_url.endswith("/v1beta/openai") and default.gemini_api_key == ""
     custom = AgentConfig.from_env(
-        {"LLM_BASE_URL": "http://pc:11434/v1/", "LLM_MODEL": "qwen2.5:7b", "RETRIEVAL_TOP_K": "3"}
+        {"GEMINI_BASE_URL": "https://g.test/openai/", "RETRIEVAL_TOP_K": "3"}
     )
-    assert custom.llm_base_url == "http://pc:11434/v1"
-    assert custom.llm_model == "qwen2.5:7b" and custom.top_k == 3
+    assert custom.gemini_base_url == "https://g.test/openai" and custom.top_k == 3
 
 
 # -------------------------------------------------------------------- store ----
@@ -151,7 +145,7 @@ def test_insufficient_evidence(index):
 def test_llm_down_still_shows_sources(index):
     llm, _ = fake_llm(error=httpx.ConnectError("refused"))
     answer = answer_question("Manchester United", index, llm)
-    assert answer.mode == "excerpts" and "Ollama" in answer.notice
+    assert answer.mode == "excerpts" and "gemini:test-flash" in answer.notice
 
 
 def test_detect_language_and_citation_check():
@@ -164,23 +158,21 @@ def test_detect_language_and_citation_check():
 # --------------------------------------------------------------- llm client ----
 
 
-def test_llm_client_errors():
-    with pytest.raises(LLMUnavailable, match="Ollama"):
-        fake_llm(error=httpx.ConnectError("refused"))[0].chat([])
-    with pytest.raises(LLMTimeout):
-        fake_llm(error=httpx.ReadTimeout("slow"))[0].chat([])
-    with pytest.raises(LLMModelNotFound, match="ollama pull"):
-        fake_llm(status=404)[0].chat([])
-    with pytest.raises(LLMError):
-        fake_llm(status=500)[0].chat([])
+def test_router_errors_raise_llm_error():
+    for kwargs in (
+        {"error": httpx.ConnectError("refused")},
+        {"error": httpx.ReadTimeout("slow")},
+        {"status": 404},
+        {"status": 500},
+    ):
+        with pytest.raises(LLMError):
+            fake_llm(**kwargs)[0].chat([])
 
 
-def test_llm_client_sends_openai_compatible_request():
+def test_router_sends_openai_compatible_request():
     llm, calls = fake_llm("ok")
-    from sportsbot_agent.llm_client import Message
-
     assert llm.chat([Message("user", "hi")]) == "ok"
-    assert calls[0]["model"] == "llama3:latest" and calls[0]["stream"] is False
+    assert calls[0]["model"] == "test-flash" and calls[0]["stream"] is False
     assert calls[0]["messages"] == [{"role": "user", "content": "hi"}]
 
 

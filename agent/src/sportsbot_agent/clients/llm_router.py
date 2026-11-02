@@ -1,13 +1,13 @@
-"""Chat LLM router: several free Gemini models in turn, local Ollama as the last resort.
+"""Chat LLM router: several free Gemini models, tried in turn (ADR 0006).
 
 Why: the Gemini API free tier limits requests per minute and per day *per model* (per project),
 and the limits change without notice. When one model answers HTTP 429 (quota) the router puts it
-on cooldown and tries the next one, so the chatbot keeps answering. All calls use the
-OpenAI-compatible Chat Completions API, which Gemini (`.../v1beta/openai`) and Ollama
-(`http://localhost:11434/v1`) both serve, so a target is just (base URL, model, key).
+on cooldown and tries the next one, so the chatbot keeps answering. Calls use Gemini's
+OpenAI-compatible Chat Completions endpoint (`.../v1beta/openai`), so a target is just
+(base URL, model, key). If every model fails, the caller shows article excerpts instead.
 
-Cooldowns: a per-minute limit (429 without "day" in the message) cools the model for
-`cooldown_seconds`; a daily limit cools it until the next midnight Pacific time, when Google
+Cooldowns: a per-minute limit (429 without "day" in the message) rests the model for
+`cooldown_seconds`; a daily limit rests it until the next midnight Pacific time, when Google
 resets daily quotas. A model the server does not know (404) is skipped for the session.
 """
 
@@ -155,20 +155,10 @@ class ChatRouter:
 
 
 def build_targets(
-    gemini_api_key: str,
-    gemini_base_url: str,
-    gemini_models: list[str],
-    ollama_base_url: str,
-    ollama_model: str,
-    use_ollama: bool,
+    gemini_api_key: str, gemini_base_url: str, gemini_models: list[str]
 ) -> list[ChatTarget]:
-    targets = []
-    if gemini_api_key:
-        targets += [
-            ChatTarget(f"gemini:{m}", gemini_base_url, m, gemini_api_key)
-            for m in gemini_models
-            if m
-        ]
-    if use_ollama and ollama_model:
-        targets.append(ChatTarget(f"ollama:{ollama_model}", ollama_base_url, ollama_model))
-    return targets
+    if not gemini_api_key:
+        return []
+    return [
+        ChatTarget(f"gemini:{m}", gemini_base_url, m, gemini_api_key) for m in gemini_models if m
+    ]
