@@ -9,7 +9,7 @@ schedule             run forever, each source on its own interval (no Kafka)
 
 Streaming pipeline (ADR 0005, needs Kafka):
 discover [--once]    RSS -> Bronze + articles.discovered (forever, or one pass)
-backfill --since D   sitemaps -> articles.discovered (older articles)
+backfill --since D   sitemaps + listing pages -> articles.discovered (older articles)
 extract              articles.discovered -> fetch/extract/dedup -> articles.extracted | dead-letter
 consume operational  articles.extracted -> PostgreSQL
 consume semantic     articles.extracted -> chunks -> BGE-M3 -> Qdrant
@@ -221,7 +221,7 @@ def cmd_backfill(
 
     sources, state = _setup(settings, source_id)
     bus = _bus(settings)
-    publish = bus_publisher(bus, "sitemap")
+    publish = bus_publisher(bus, None)  # "sitemap" or "listing"
     total = 0
     with _client(settings) as client:
         for source in sources:

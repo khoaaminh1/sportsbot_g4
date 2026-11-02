@@ -456,3 +456,64 @@ def test_semantic_consumer_skips_chunks_the_embedder_rejects():
     store = FakeStore()
     semantic.make_handler(PartialEmbedder(), store, max_chars=300, overlap_chars=50)(_extracted(1))
     assert store.points and all(p["payload"]["article_id"] == "id1" for p in store.points.values())
+
+
+# ------------------------------------------------------------ listing backfill -----
+
+
+def listing_page(*slugs: str) -> bytes:
+    links = "".join(f'<a href="/{s}">{s}</a>' for s in slugs)
+    return (
+        f'<html><body>{links}<a href="https://other.test/x-1.html">ad</a>'
+        '<a href="/the-thao">section</a></body></html>'
+    ).encode()
+
+
+def test_listing_backfill_walks_pages_until_nothing_new(source):
+    from sportsbot_pipelines.collectors.registry import Listing
+
+    src = source.model_copy(
+        update={
+            "listing": Listing(
+                first_page="https://news.fixture.test/the-thao",
+                page_url="https://news.fixture.test/the-thao-p{page}",
+                max_pages=10,
+                article_pattern=r"-\d{4,}\.html$",
+            )
+        }
+    )
+    client = FakeClient(
+        {
+            "https://news.fixture.test/the-thao": listing_page("a-1001.html", "b-1002.html"),
+            "https://news.fixture.test/the-thao-p2": listing_page("b-1002.html", "c-1003.html"),
+            "https://news.fixture.test/the-thao-p3": listing_page("c-1003.html"),
+            "https://news.fixture.test/the-thao-p4": FetchError("HTTP 404"),
+        }
+    )
+    bus = MemoryBus()
+    result = backfill_source(
+        src, client, MemoryState(), bus_publisher(bus, None), since=date(2026, 10, 1)
+    )
+    values = bus.values(topics.DISCOVERED)
+    assert result["queued"] == 3
+    assert [v["url"] for v in values] == [
+        "https://news.fixture.test/a-1001.html",
+        "https://news.fixture.test/b-1002.html",
+        "https://news.fixture.test/c-1003.html",
+    ]
+    assert {v["discovered_via"] for v in values} == {"listing"}
+    # p3 gave nothing new and p4 failed: two idle pages, so p5 is never requested.
+    assert client.fetched[-1] == "https://news.fixture.test/the-thao-p4"
+
+
+def test_listing_config_is_validated():
+    from pydantic import ValidationError
+
+    from sportsbot_pipelines.collectors.registry import Listing
+
+    with pytest.raises(ValidationError):
+        Listing(first_page="https://x.test/s", page_url="https://x.test/s-p", article_pattern="x")
+    with pytest.raises(ValidationError):
+        Listing(
+            first_page="https://x.test/s", page_url="https://x.test/{page}", article_pattern="("
+        )

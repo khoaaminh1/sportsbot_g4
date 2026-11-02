@@ -5,6 +5,7 @@
     "`verified` becomes true only after `make sources-check` fetched the feed; record the date in `notes`.",
     "`domains`: article links outside these domains are dropped.",
     "`sitemaps` + `sitemap_include` (regex on the URL) enable `make backfill`; find sitemap URLs with `make sources-sitemaps`.",
+    "`listing` (paginated section pages + an article URL regex) also feeds `make backfill`, for sites whose article URLs have no section path.",
     "Full text is for internal processing only; users see title, excerpt and link."
   ],
   "sources": [
@@ -20,9 +21,16 @@
         "vnexpress.net"
       ],
       "verified": true,
-      "notes": "Used by the prototype (PR #1). Live check 2026-11-02 from Vietnam (TMK, macOS): 60 entries, all dated with offsets. From a GitHub runner in the US the feed returns HTTP 404, so collect from Vietnam.",
+      "notes": "Used by the prototype (PR #1). Live check 2026-11-02 from Vietnam (TMK, macOS): 60 entries, all dated with offsets. From a GitHub runner in the US the feed returns HTTP 404, so collect from Vietnam. Backfill: article URLs are flat (no section path), so the sitemap cannot be filtered; the paginated /the-thao section is walked instead (format the-thao-pN seen on page 2, 2026-11-03).",
       "sitemaps": [],
-      "sitemap_include": null
+      "sitemap_include": null,
+      "listing": {
+        "first_page": "https://vnexpress.net/the-thao",
+        "page_url": "https://vnexpress.net/the-thao-p{page}",
+        "start": 2,
+        "max_pages": 150,
+        "article_pattern": "^https://vnexpress\\.net/[a-z0-9-]+-\\d{6,}\\.html$"
+      }
     },
     {
       "id": "tuoitre_the_thao",
@@ -36,9 +44,16 @@
         "tuoitre.vn"
       ],
       "verified": true,
-      "notes": "Used by the prototype (PR #1). Live check 2026-11-02: 50 entries. Dates are US month-first with AM/PM and no offset (e.g. 11/2/2026 1:35:00 PM); parsed by collectors/dates.py with Asia/Ho_Chi_Minh assumed.",
+      "notes": "Used by the prototype (PR #1). Live check 2026-11-02: 50 entries. Dates are US month-first with AM/PM and no offset (e.g. 11/2/2026 1:35:00 PM); parsed by collectors/dates.py with Asia/Ho_Chi_Minh assumed. Backfill: flat article URLs; walks /the-thao/trang-N.htm (page 2 seen 2026-11-03; later pages assumed to follow).",
       "sitemaps": [],
-      "sitemap_include": null
+      "sitemap_include": null,
+      "listing": {
+        "first_page": "https://tuoitre.vn/the-thao.htm",
+        "page_url": "https://tuoitre.vn/the-thao/trang-{page}.htm",
+        "start": 2,
+        "max_pages": 150,
+        "article_pattern": "^https://tuoitre\\.vn/[a-z0-9-]+-\\d{12,}\\.htm$"
+      }
     },
     {
       "id": "bbc_sport_football",
@@ -106,9 +121,11 @@
         "theguardian.com"
       ],
       "verified": true,
-      "notes": "Live check 2026-11-02: 59 entries, all usable and dated.",
-      "sitemaps": [],
-      "sitemap_include": null
+      "notes": "Live check 2026-11-02: 59 entries, all usable and dated. Backfill config 2026-11-03: sitemap URLs from `make sources-sitemaps` on TMK's PC: Google News sitemap: about the last two days only.",
+      "sitemaps": [
+        "https://www.theguardian.com/sitemaps/news.xml"
+      ],
+      "sitemap_include": "theguardian\\.com/football/"
     },
     {
       "id": "marca_futbol",
@@ -171,9 +188,13 @@
         "dantri.com.vn"
       ],
       "verified": false,
-      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
-      "sitemaps": [],
-      "sitemap_include": null
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result. Backfill config 2026-11-03: sitemap URLs from `make sources-sitemaps` on TMK's PC: monthly article sitemaps; sports URLs carry /the-thao/ (seen 2026-11-03).",
+      "sitemaps": [
+        "https://dantri.com.vn/sitemaps/Article-2026-09-01.xml",
+        "https://dantri.com.vn/sitemaps/Article-2026-10-01.xml",
+        "https://dantri.com.vn/sitemaps/Article-2026-11-01.xml"
+      ],
+      "sitemap_include": "^https://dantri\\.com\\.vn/the-thao/"
     },
     {
       "id": "vietnamnet_the_thao",
@@ -187,9 +208,16 @@
         "vietnamnet.vn"
       ],
       "verified": false,
-      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result. Backfill: flat article URLs; walks /the-thao-pageN (page index starts at 1 for the second page, seen 2026-11-03).",
       "sitemaps": [],
-      "sitemap_include": null
+      "sitemap_include": null,
+      "listing": {
+        "first_page": "https://vietnamnet.vn/the-thao",
+        "page_url": "https://vietnamnet.vn/the-thao-page{page}",
+        "start": 1,
+        "max_pages": 150,
+        "article_pattern": "^https://vietnamnet\\.vn/[a-z0-9-]+-\\d{6,}\\.html$"
+      }
     },
     {
       "id": "nld_the_thao",
@@ -269,9 +297,11 @@
         "vov.vn"
       ],
       "verified": false,
-      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
-      "sitemaps": [],
-      "sitemap_include": null
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result. Backfill config 2026-11-03: sitemap URLs from `make sources-sitemaps` on TMK's PC: news sitemap; URL pattern not yet checked.",
+      "sitemaps": [
+        "https://vov.vn/news-sitemap.xml"
+      ],
+      "sitemap_include": "vov\\.vn/the-thao/"
     },
     {
       "id": "bbc_sport_all",
@@ -303,9 +333,11 @@
         "theguardian.com"
       ],
       "verified": false,
-      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
-      "sitemaps": [],
-      "sitemap_include": null
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result. Backfill config 2026-11-03: sitemap URLs from `make sources-sitemaps` on TMK's PC: Google News sitemap: about the last two days only.",
+      "sitemaps": [
+        "https://www.theguardian.com/sitemaps/news.xml"
+      ],
+      "sitemap_include": "theguardian\\.com/sport/"
     },
     {
       "id": "espn_soccer",
@@ -335,9 +367,11 @@
         "skysports.com"
       ],
       "verified": false,
-      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
-      "sitemaps": [],
-      "sitemap_include": null
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result. Backfill config 2026-11-03: sitemap URLs from `make sources-sitemaps` on TMK's PC: news sitemap from the sitemap index; URL pattern not yet checked.",
+      "sitemaps": [
+        "https://www.skysports.com/sitemap/sitemap-news.xml"
+      ],
+      "sitemap_include": "skysports\\.com/football/news/"
     },
     {
       "id": "as_futbol",
@@ -367,9 +401,12 @@
         "mundodeportivo.com"
       ],
       "verified": false,
-      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
-      "sitemaps": [],
-      "sitemap_include": null
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result. Backfill config 2026-11-03: sitemap URLs from `make sources-sitemaps` on TMK's PC: monthly news sitemaps (gzip); URL pattern not yet checked.",
+      "sitemaps": [
+        "https://www.mundodeportivo.com/sitemap-noticias-202609.xml.gz",
+        "https://www.mundodeportivo.com/sitemap-noticias-202610.xml.gz"
+      ],
+      "sitemap_include": "mundodeportivo\\.com/futbol/"
     },
     {
       "id": "france24_sport_fr",

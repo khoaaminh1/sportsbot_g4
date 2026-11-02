@@ -116,7 +116,12 @@ def iter_article_entries(
 
 
 def entry_to_record(
-    entry: SitemapEntry, source: Source, *, collected_at: datetime, run_id: str
+    entry: SitemapEntry,
+    source: Source,
+    *,
+    collected_at: datetime,
+    run_id: str,
+    kind: str = "sitemap",
 ) -> BronzeRecord | None:
     link = canonical_url(entry.loc)
     if not link or not host_allowed(link, source.domains):
@@ -126,7 +131,7 @@ def entry_to_record(
         record_id=article_id(link),
         source_id=source.id,
         source_name=source.name,
-        source_kind="sitemap",
+        source_kind=kind,
         language_hint=source.language,
         feed_url=link,
         url=entry.loc,
