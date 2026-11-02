@@ -96,7 +96,8 @@ def test_no_duplicate_keys():
 def test_values_are_safe_placeholders():
     active, _ = documented()
     for key, value in active.items():
-        if any(word in key for word in ("KEY", "TOKEN", "SECRET")):
+        # Secret-like names (…_KEY, …_KEYS, …_TOKEN, …_SECRET), not e.g. LLM_MAX_TOKENS.
+        if re.search(r"(^|_)(KEYS?|TOKEN|SECRET)$", key):
             assert value == "", f"{key} must be empty in .env.example"
         if "PASSWORD" in key:
             assert value.startswith("change-me"), f"{key} must be an obvious placeholder"

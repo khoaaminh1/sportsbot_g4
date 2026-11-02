@@ -27,8 +27,9 @@ jobs:
             requirements-dev.txt
             backend/requirements.txt
             pipelines/requirements.txt
+            agent/requirements.txt
       - name: Install dependencies
-        run: pip install -r requirements-dev.txt -r backend/requirements.txt -r pipelines/requirements.txt
+        run: pip install -r requirements-dev.txt -r backend/requirements.txt -r pipelines/requirements.txt -r agent/requirements.txt
       - name: Validate source registry
         run: PYTHONPATH=pipelines/src python -m sportsbot_pipelines sources validate
       - name: Lint

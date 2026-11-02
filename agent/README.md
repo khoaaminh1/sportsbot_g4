@@ -1,5 +1,12 @@
 # agent
 
-Query understanding (intent, sport, entities, time window), hybrid retrieval (BM25 + multilingual dense, RRF), evidence and conflict checks, prompts, OpenAI-compatible LLM client. Owner: TMK.
+Query understanding, retrieval, evidence checks, prompts and the LLM client. Owner: TMK.
 
-Status: **planned (Phase 4)**. Nothing is implemented yet.
+## Status
+| Part | Status |
+|---|---|
+| Terminal chat prototype: answers only from stored articles, with links; Ollama via OpenAI-compatible API | Implemented (prototype) |
+| Keyword retrieval (BM25, accent-insensitive) | Implemented (baseline) |
+| Hybrid retrieval with multilingual vectors, query understanding, time parsing | Planned (Phase 4) |
+
+How to run, configure and change the model: [docs/runbooks/chat-prototype.md](../docs/runbooks/chat-prototype.md). Decision: [ADR 0004](../docs/decisions/0004-local-llm-ollama.md).

@@ -1,4 +1,4 @@
-.PHONY: help setup lint format test test-integration run up-core up-bigdata up up-collect collect-once sources-check bronze-ls down ps logs hdfs-init hdfs-ls spark-smoke clean-volumes
+.PHONY: help setup lint format test test-integration run up-core up-bigdata up up-collect collect-once sources-check bronze-ls articles-export chat chat-no-llm down ps logs hdfs-init hdfs-ls spark-smoke clean-volumes
 
 PYTHON ?= python
 COMPOSE ?= docker compose
@@ -8,7 +8,7 @@ help:  ## List targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-18s %s\n", $$1, $$2}'
 
 setup:  ## Install dev tools and backend dependencies, install git hooks
-	$(PYTHON) -m pip install -r requirements-dev.txt -r backend/requirements.txt -r pipelines/requirements.txt
+	$(PYTHON) -m pip install -r requirements-dev.txt -r backend/requirements.txt -r pipelines/requirements.txt -r agent/requirements.txt
 	pre-commit install
 
 lint:  ## Static checks (ruff)
@@ -52,6 +52,17 @@ sources-check:  ## Fetch robots.txt and every feed once, print a table (no write
 
 bronze-ls:  ## List Bronze files in HDFS
 	$(COMPOSE) --profile bigdata exec -T namenode hdfs dfs -ls -R /sportsbot/bronze
+
+articles-export:  ## Copy collected Bronze articles from HDFS to data/articles/ for the chat prototype
+	mkdir -p data/articles
+	$(COMPOSE) --profile bigdata exec -T namenode hdfs dfs -text "/sportsbot/bronze/*/*/*/*.jsonl.gz" > data/articles/bronze-export.jsonl
+	@echo "Exported $$(wc -l < data/articles/bronze-export.jsonl | tr -d ' ') records to data/articles/bronze-export.jsonl"
+
+chat:  ## Terminal chat: answers only from stored articles, with links (needs Ollama running)
+	PYTHONPATH=agent/src $(PYTHON) -m sportsbot_agent.main
+
+chat-no-llm:  ## Same, but only shows matching article excerpts (no model needed)
+	PYTHONPATH=agent/src $(PYTHON) -m sportsbot_agent.main --no-llm
 
 down:  ## Stop all services (named volumes keep the data)
 	$(COMPOSE) $(ALL_PROFILES) down

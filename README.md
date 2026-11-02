@@ -83,7 +83,8 @@ The request path never reads HDFS or runs Spark. HDFS keeps every raw and proces
 | Backend foundation: config, JSON logging, errors, `/health` | **Implemented** (Phase 2) | `curl localhost:8000/health`; `make test` |
 | Collectors and HDFS Bronze ingestion (7 RSS sources, vi/en/es) | **Implemented** (Phase 3a) | `make sources-check`, `make collect-once`, `make bronze-ls`; [ADR 0003](docs/decisions/0003-collection-and-bronze.md) |
 | Spark Silver/Gold jobs, cross-source dedup, scaling experiments | Planned (Phase 3b) | — |
-| Classifier, multilingual retrieval, RAG | Planned (Phase 4) | — |
+| Terminal chat prototype: answers only from stored articles with links, local Ollama | **Implemented** (prototype) | `make articles-export`, `make chat`; [runbook](docs/runbooks/chat-prototype.md), [ADR 0004](docs/decisions/0004-local-llm-ollama.md) |
+| Classifier, multilingual hybrid retrieval, full RAG | Planned (Phase 4) | — |
 | FastAPI backend | Planned (Phase 5) | — |
 | Web frontend | Planned (Phase 6) | — |
 
@@ -203,7 +204,7 @@ Fine-tuning `xlm-roberta-base` is optional and will be kept only if it beats the
 | Application data | PostgreSQL | Articles, sources, collection runs, conversations |
 | Retrieval | Qdrant, BM25, multilingual-e5-small | Hybrid multilingual search with metadata filters |
 | NLP / ML | underthesea or pyvi, lingua or fastText language ID, scikit-learn, Hugging Face transformers | Vietnamese segmentation, language detection, classifiers |
-| LLM | OpenAI-compatible client (hosted API or local Ollama; team decision pending) | Grounded answer generation |
+| LLM | Local Ollama through its OpenAI-compatible API (ADR 0004); initial model `llama3` 8B | Grounded answer generation |
 | Backend | FastAPI, Pydantic | Typed API with OpenAPI docs |
 | Frontend | React + Vite + TypeScript (Phase 6) | Responsive web UI over the API |
 | Infrastructure | Docker Compose, GitHub Actions, ruff, pytest | One-command stack, CI on every PR |
