@@ -13,7 +13,10 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 class PipelineSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    # env_ignore_empty: an empty value in .env (e.g. `SOURCES_FILE=`) means "use the default".
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8", extra="ignore", env_ignore_empty=True
+    )
 
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     log_format: Literal["json", "text"] = "json"
