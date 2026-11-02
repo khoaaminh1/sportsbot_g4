@@ -15,8 +15,9 @@ from email.utils import parsedate_to_datetime
 from zoneinfo import ZoneInfo
 
 _GMT_OFFSET = re.compile(r"\b(?:GMT|UTC)\s*([+-])\s*(\d{1,2})(?::?(\d{2}))?\b", re.IGNORECASE)
-_DMY = re.compile(
-    r"(?P<d>\d{1,2})/(?P<m>\d{1,2})/(?P<y>\d{4})[ ,T]+(?P<H>\d{1,2}):(?P<M>\d{2})(?::(?P<S>\d{2}))?"
+_NUMERIC = re.compile(
+    r"(?P<a>\d{1,2})/(?P<b>\d{1,2})/(?P<y>\d{4})[ ,T]+(?P<H>\d{1,2}):(?P<M>\d{2})"
+    r"(?::(?P<S>\d{2}))?(?:\s*(?P<ampm>[AaPp][Mm]))?"
 )
 
 
@@ -64,17 +65,26 @@ def parse_date(raw: str | None, default_tz: str = "UTC") -> ParsedDate | None:
     except ValueError:
         pass
 
-    # Day-first numeric dates common on Vietnamese sites: "02/11/2026 16:30(:00)".
-    match = _DMY.search(normalized)
+    # Numeric dates. Vietnamese sites write day-first with a 24-hour clock ("02/11/2026 16:30");
+    # a 12-hour clock with AM/PM means US month-first ("11/2/2026 1:35:00 PM", seen on Tuổi Trẻ).
+    # A part above 12 settles the order regardless.
+    match = _NUMERIC.search(normalized)
     if match:
+        a, b = int(match["a"]), int(match["b"])
+        month_first = bool(match["ampm"])
+        if a > 12:
+            month_first = False
+        elif b > 12:
+            month_first = True
+        month, day = (a, b) if month_first else (b, a)
+        hour = int(match["H"])
+        if match["ampm"]:
+            if not 1 <= hour <= 12:
+                return None
+            hour = hour % 12 + (12 if match["ampm"].lower() == "pm" else 0)
         try:
             value = datetime(
-                int(match["y"]),
-                int(match["m"]),
-                int(match["d"]),
-                int(match["H"]),
-                int(match["M"]),
-                int(match["S"] or 0),
+                int(match["y"]), month, day, hour, int(match["M"]), int(match["S"] or 0)
             )
         except ValueError:
             return None

@@ -24,6 +24,13 @@ VN = "Asia/Ho_Chi_Minh"
         ("02/11/2026 16:30:00", VN, "2026-11-02T09:30:00+00:00", True),
         ("Thứ hai, 02/11/2026 16:30", VN, "2026-11-02T09:30:00+00:00", True),
         ("Mon, 02 Nov 2026 16:30:00 -0000", VN, "2026-11-02T09:30:00+00:00", True),
+        # Real format from Tuổi Trẻ (live check 2026-11-02): US month-first with AM/PM.
+        ("11/2/2026 1:35:00 PM", VN, "2026-11-02T06:35:00+00:00", True),
+        ("11/2/2026 12:05:00 AM", VN, "2026-11-01T17:05:00+00:00", True),
+        ("11/2/2026 12:05:00 PM", VN, "2026-11-02T05:05:00+00:00", True),
+        # A part above 12 settles the order.
+        ("13/11/2026 08:00", VN, "2026-11-13T01:00:00+00:00", True),
+        ("11/13/2026 08:00 AM", VN, "2026-11-13T01:00:00+00:00", True),
         # London is UTC+0 in November.
         ("2026-11-02 09:30:00", "Europe/London", "2026-11-02T09:30:00+00:00", True),
     ],
@@ -35,6 +42,8 @@ def test_parse_date(raw, tz, expected_utc, assumed):
     assert parsed.tz_assumed is assumed
 
 
-@pytest.mark.parametrize("raw", [None, "", "   ", "yesterday", "32/13/2026 25:61"])
+@pytest.mark.parametrize(
+    "raw", [None, "", "   ", "yesterday", "32/13/2026 25:61", "11/2/2026 13:35:00 PM"]
+)
 def test_unparseable_dates_return_none(raw):
     assert parse_date(raw, VN) is None

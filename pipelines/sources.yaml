@@ -31,7 +31,7 @@ sources:
     timezone: Asia/Ho_Chi_Minh
     domains: [tuoitre.vn]
     verified: true
-    notes: "Used by the prototype (PR #1). Live check 2026-11-02: 50 entries, but 0 dates parsed by feedparser; dates now parsed by collectors/dates.py (re-check)."
+    notes: "Used by the prototype (PR #1). Live check 2026-11-02: 50 entries. Dates are US month-first with AM/PM and no offset (e.g. 11/2/2026 1:35:00 PM); parsed by collectors/dates.py with Asia/Ho_Chi_Minh assumed."
 
   # --- English ------------------------------------------------------------------
   - id: bbc_sport_football
