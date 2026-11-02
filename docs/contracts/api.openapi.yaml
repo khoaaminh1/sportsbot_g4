@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Vietnam SportsBot API
-  version: 0.2.0
+  version: 0.3.0
   description: |
     Contract between the backend and its clients (frontend, evaluation, CLI).
     Frozen 2026-11-02 (Phase 2). Change only through an approved issue.
@@ -11,6 +11,12 @@ info:
     - `planned`: agreed shape, not implemented yet (Phase 4-5).
 
     Errors always use `ErrorResponse`. Times are RFC 3339 in UTC.
+
+    0.3.0 (2026-11-02, streaming + RAG skeleton): /chat, /chat/stream, /news/latest,
+    /categories, /articles/{article_id} and /sources are implemented. Not in OpenAPI paths:
+    the WebSocket `GET /ws/news` pushes `{"type": "articles", "items": [ArticleSummary]}`
+    on connect (latest 20) and whenever new articles are stored. The demo page is served
+    at `/app/`.
 servers:
   - url: http://localhost:8000
 paths:
@@ -45,7 +51,7 @@ paths:
               schema: { $ref: "#/components/schemas/HealthResponse" }
   /chat:
     post:
-      x-status: planned
+      x-status: implemented
       summary: Ask a question; answer grounded in retrieved articles with citations
       operationId: chat
       tags: [chat]
@@ -65,9 +71,36 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
+  /chat/stream:
+    post:
+      x-status: implemented
+      summary: Same as /chat, as Server-Sent Events
+      description: |
+        Events, in order: `status` {stage}, `delta` {text} (repeated), `citations`
+        [Citation-like objects], `done` (the ChatResponse fields without answer and citations).
+        On failure: one `error` event {code, message}. The answer's citations are validated
+        before the first `delta` is sent.
+      operationId: chatStream
+      tags: [chat]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChatRequest" }
+      responses:
+        "200":
+          description: An event stream
+          content:
+            text/event-stream:
+              schema: { type: string }
+        "503":
+          description: Chat is not configured
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
   /news/latest:
     get:
-      x-status: planned
+      x-status: implemented
       summary: Latest articles, newest first
       operationId: latestNews
       tags: [news]
@@ -107,7 +140,7 @@ paths:
               schema: { $ref: "#/components/schemas/ArticlePage" }
   /categories:
     get:
-      x-status: planned
+      x-status: implemented
       summary: Sports categories with article counts
       operationId: categories
       tags: [news]
@@ -121,7 +154,7 @@ paths:
                 items: { $ref: "#/components/schemas/Category" }
   /articles/{article_id}:
     get:
-      x-status: planned
+      x-status: implemented
       summary: Article metadata, excerpt and original link
       operationId: getArticle
       tags: [news]
@@ -143,7 +176,7 @@ paths:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
   /sources:
     get:
-      x-status: planned
+      x-status: implemented
       summary: Configured sources with their latest collection status
       operationId: listSources
       tags: [sources]

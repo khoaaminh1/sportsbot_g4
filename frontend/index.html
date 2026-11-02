@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vietnam SportsBot</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --ink: #1d232b; --muted: #5f6b7a; --line: #e2e6eb;
+    --accent: #0b6e4f; --accent-soft: #e5f2ed; --warn: #8a5a00; --warn-soft: #fff4dc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #12161b; --panel: #1a2027; --ink: #e8ecf0; --muted: #9aa6b4; --line: #2a323c;
+            --accent: #4cc39a; --accent-soft: #1d3a31; --warn: #f0c36a; --warn-soft: #3a3120; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+         background: var(--bg); color: var(--ink); }
+  header { display: flex; align-items: baseline; gap: 12px; padding: 14px 20px;
+           border-bottom: 1px solid var(--line); background: var(--panel); }
+  header h1 { font-size: 18px; margin: 0; }
+  header span { color: var(--muted); font-size: 13px; }
+  main { display: grid; grid-template-columns: minmax(280px, 1fr) minmax(340px, 1.4fr);
+         gap: 16px; padding: 16px; height: calc(100vh - 56px); }
+  @media (max-width: 860px) { main { grid-template-columns: 1fr; height: auto; } }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+            display: flex; flex-direction: column; min-height: 0; }
+  section h2 { font-size: 14px; margin: 0; padding: 12px 14px; border-bottom: 1px solid var(--line);
+               display: flex; justify-content: space-between; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); display: inline-block;
+         margin-right: 6px; }
+  .dot.live { background: var(--accent); }
+  #feed { overflow-y: auto; padding: 4px 14px; flex: 1; }
+  .item { padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .item a { color: var(--ink); text-decoration: none; font-weight: 600; }
+  .item a:hover { text-decoration: underline; }
+  .meta { color: var(--muted); font-size: 12px; }
+  .item.new { animation: flash 2s ease-out; }
+  @keyframes flash { from { background: var(--accent-soft); } to { background: transparent; } }
+  #log { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+  .msg { max-width: 92%; padding: 10px 12px; border-radius: 10px; white-space: pre-wrap; }
+  .user { align-self: flex-end; background: var(--accent); color: #fff; }
+  .bot { align-self: flex-start; background: var(--bg); border: 1px solid var(--line); }
+  .notice { background: var(--warn-soft); color: var(--warn); font-size: 13px; padding: 6px 8px;
+            border-radius: 6px; margin-top: 6px; }
+  .cites { margin: 8px 0 0; padding-left: 18px; font-size: 13px; }
+  .cites a { color: var(--accent); }
+  .status { color: var(--muted); font-size: 12px; }
+  form { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--line); }
+  input { flex: 1; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px;
+          background: var(--bg); color: var(--ink); font: inherit; }
+  button { padding: 10px 16px; border: 0; border-radius: 8px; background: var(--accent);
+           color: #fff; font: inherit; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Vietnam SportsBot</h1>
+  <span>Answers only from collected news, with sources and publication times.</span>
+</header>
+<main>
+  <section aria-label="Latest news">
+    <h2><span><i id="live" class="dot"></i>Latest news</span><span id="count" class="meta"></span></h2>
+    <div id="feed"></div>
+  </section>
+  <section aria-label="Chat">
+    <h2>Ask about recent sports news</h2>
+    <div id="log" aria-live="polite"></div>
+    <form id="ask">
+      <input id="q" maxlength="2000" autocomplete="off"
+             placeholder="e.g. Kết quả trận Việt Nam gặp Thái Lan? / Who won last night?">
+      <button id="send">Ask</button>
+    </form>
+  </section>
+</main>
+<script>
+// The page is served by the backend at /app/, so the API is on the same origin.
+const API = location.origin;
+const feed = document.getElementById("feed");
+const seen = new Set();
+
+function fmtTime(iso) {
+  if (!iso) return "time unknown";
+  const d = new Date(iso);
+  return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+}
+
+function el(tag, attrs = {}, text = "") {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+  if (text) node.textContent = text;  // textContent: never inject HTML from articles
+  return node;
+}
+
+function addArticles(items, isNew) {
+  for (const a of items) {
+    if (seen.has(a.article_id)) continue;
+    seen.add(a.article_id);
+    const item = el("div", { class: "item" + (isNew ? " new" : "") });
+    item.append(el("a", { href: a.source_url, target: "_blank", rel: "noopener" }, a.title));
+    item.append(el("div", { class: "meta" },
+      `${a.source_name} · published ${fmtTime(a.published_at)}${a.language ? " · " + a.language : ""}`));
+    feed.prepend(item);
+  }
+  document.getElementById("count").textContent = `${seen.size} shown`;
+}
+
+function connectFeed() {
+  const ws = new WebSocket(API.replace(/^http/, "ws") + "/ws/news");
+  let first = true;
+  ws.onopen = () => document.getElementById("live").classList.add("live");
+  ws.onmessage = (ev) => {
+    const msg = JSON.parse(ev.data);
+    if (msg.type === "articles") { addArticles(msg.items, !first); first = false; }
+  };
+  ws.onclose = () => {
+    document.getElementById("live").classList.remove("live");
+    setTimeout(connectFeed, 5000);  // reconnect
+  };
+}
+connectFeed();
+
+const log = document.getElementById("log");
+const form = document.getElementById("ask");
+const input = document.getElementById("q");
+const send = document.getElementById("send");
+let conversationId = null;
+
+function renderCitations(box, citations) {
+  if (!citations.length) return;
+  const list = el("ol", { class: "cites" });
+  for (const c of citations) {
+    const li = el("li", { value: String(c.index) });
+    li.append(el("a", { href: c.source_url, target: "_blank", rel: "noopener" }, c.title));
+    li.append(document.createTextNode(` — ${c.source_name}, published ${fmtTime(c.published_at)}`));
+    list.append(li);
+  }
+  box.append(list);
+}
+
+async function ask(question) {
+  log.append(el("div", { class: "msg user" }, question));
+  const box = el("div", { class: "msg bot" });
+  const status = el("div", { class: "status" }, "Searching collected articles…");
+  const text = el("div");
+  box.append(status, text);
+  log.append(box);
+  log.scrollTop = log.scrollHeight;
+
+  const resp = await fetch(API + "/chat/stream", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message: question, conversation_id: conversationId }),
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    status.textContent = (err.error && err.error.message) || `Error ${resp.status}`;
+    return;
+  }
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let cut;
+    while ((cut = buffer.indexOf("\n\n")) >= 0) {
+      const block = buffer.slice(0, cut);
+      buffer = buffer.slice(cut + 2);
+      const event = /event: (.*)/.exec(block)[1];
+      const data = JSON.parse(/data: (.*)/s.exec(block)[1]);
+      if (event === "status") status.textContent = data.stage === "answering" ? "" : "Searching collected articles…";
+      else if (event === "delta") text.textContent += data.text;
+      else if (event === "citations") renderCitations(box, data);
+      else if (event === "done") {
+        conversationId = data.conversation_id;
+        if (data.notice) box.append(el("div", { class: "notice" }, data.notice));
+        const llm = data.meta && data.meta.llm ? ` · ${data.meta.llm}` : "";
+        status.textContent = `${data.mode}${llm}`;
+        box.append(status);
+      } else if (event === "error") status.textContent = data.message;
+      log.scrollTop = log.scrollHeight;
+    }
+  }
+}
+
+form.addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const q = input.value.trim();
+  if (!q) return;
+  input.value = "";
+  send.disabled = true;
+  try { await ask(q); } catch (e) { log.append(el("div", { class: "msg bot" }, "Network error: " + e)); }
+  finally { send.disabled = false; input.focus(); }
+});
+</script>
+</body>
+</html>

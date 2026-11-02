@@ -35,6 +35,11 @@ class Settings(BaseSettings):
     hdfs_webhdfs_url: str = ""
     health_timeout_seconds: float = Field(default=2.0, gt=0, le=30)
 
+    # Chat (agent/rag.py reads its own settings: GEMINI_*, EMBEDDING_*, RERANK_*, LLM_*).
+    chat_enabled: bool = True
+    # How often the /ws/news WebSocket looks for newly stored articles.
+    news_poll_seconds: float = Field(default=5.0, gt=0, le=300)
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def _split_origins(cls, value: object) -> object:

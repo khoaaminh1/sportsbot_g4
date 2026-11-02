@@ -1,8 +1,10 @@
-# Vietnam SportsBot local stack (ADR 0002).
-#   make up-core     PostgreSQL + Qdrant + backend               (profile: core)
-#   make up-bigdata  HDFS NameNode + 2 DataNodes + Spark         (profile: bigdata)
-#   make up          both
-#   make up-collect  the collector (scheduler) on top of both          (profile: collect)
+# Vietnam SportsBot local stack (ADR 0002, 0005).
+#   make up-core     PostgreSQL + Qdrant + backend (API + demo page /app/)      (profile: core)
+#   make up-stream   Kafka + discovery + extractor + consumers, on top of core  (profile: stream)
+#   make up-ai       BGE-M3 embedder + bge-reranker (llama.cpp, GGUF)           (profile: ai)
+#   make up-bigdata  HDFS NameNode + 2 DataNodes + Spark                        (profile: bigdata)
+#   make up-collect  the old RSS-only collector into HDFS (no Kafka)            (profile: collect)
+#   make up-tools    Kafka UI on http://localhost:8085                          (profile: tools)
 # Values come from .env (copy .env.example). Development settings only: no TLS, HDFS permissions
 # off, HDFS containers run as root so named volumes are writable.
 
@@ -57,6 +59,14 @@ services:
       QDRANT_URL: http://qdrant:6333
       # Set STACK_HDFS_WEBHDFS_URL=http://namenode:9870 in .env when the bigdata profile runs too.
       HDFS_WEBHDFS_URL: ${STACK_HDFS_WEBHDFS_URL:-}
+      # AI services (profile ai). Override in .env to use native servers on the host (faster on
+      # a Mac: Metal GPU), e.g. STACK_EMBEDDING_BASE_URL=http://host.docker.internal:8091
+      EMBEDDING_BASE_URL: ${STACK_EMBEDDING_BASE_URL:-http://embedder:8080}
+      RERANK_BASE_URL: ${STACK_RERANK_BASE_URL:-http://reranker:8080}
+      # Ollama (last fallback after the Gemini models) runs on the host, not in Docker.
+      LLM_BASE_URL: ${STACK_LLM_BASE_URL:-http://host.docker.internal:11434/v1}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "8000:8000"
     depends_on:
@@ -206,9 +216,193 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # -------------------------------------------------------------- stream ----
+  # Kafka in KRaft mode (no ZooKeeper), one broker. Host clients use localhost:9094.
+  kafka:
+    image: apache/kafka:3.9.1
+    profiles: [stream]
+    hostname: kafka
+    user: root   # development only: the named volume must be writable
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,PLAINTEXT_HOST://:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_LOG_RETENTION_HOURS: 336   # keep two weeks of messages for replays
+      KAFKA_HEAP_OPTS: "-Xmx512m -Xms512m"
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk   # any 22-char base64 UUID; fixed so restarts reuse the volume
+    ports:
+      - "9094:9094"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9092"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  # One-shot: creates the topics (6 partitions keyed by source id). Run by `make up-stream`.
+  kafka-init:
+    image: apache/kafka:3.9.1
+    profiles: [stream]
+    command:
+      - bash
+      - -c
+      - |
+        for spec in articles.discovered:6 articles.extracted:6 articles.dead-letter:1; do
+          /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists \
+            --topic "$${spec%%:*}" --partitions "$${spec##*:}" --replication-factor 1
+        done
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: "no"
+
+  # RSS discovery: Bronze files + articles.discovered, each source on its own interval.
+  discover:
+    build: &workers-build
+      context: .
+      dockerfile: pipelines/Dockerfile
+    profiles: [stream]
+    command: ["discover"]
+    env_file: &workers-env-file
+      - path: .env
+        required: false
+    environment: &workers-env
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-sportsbot}:${POSTGRES_PASSWORD:-change-me-local-only}@postgres:5432/${POSTGRES_DB:-sportsbot}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      QDRANT_URL: http://qdrant:6333
+      EMBEDDING_BASE_URL: ${STACK_EMBEDDING_BASE_URL:-http://embedder:8080}
+      # local: files in the bronze_data volume; hdfs: also run the bigdata profile.
+      BRONZE_BACKEND: ${STREAM_BRONZE_BACKEND:-local}
+      HDFS_WEBHDFS_URL: http://namenode:9870
+    volumes: &workers-volumes
+      - bronze_data:/app/data/bronze
+    extra_hosts: &workers-hosts
+      - "host.docker.internal:host-gateway"
+    depends_on: &workers-deps
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Fetch + extract + de-duplicate. Scale out with `docker compose ... up --scale extractor=3`:
+  # partitions are keyed by source, so each site is still fetched by one process at a time.
+  extractor:
+    build: *workers-build
+    profiles: [stream]
+    command: ["extract"]
+    env_file: *workers-env-file
+    environment: *workers-env
+    volumes: *workers-volumes
+    extra_hosts: *workers-hosts
+    depends_on: *workers-deps
+    restart: unless-stopped
+
+  consumer-operational:
+    build: *workers-build
+    profiles: [stream]
+    command: ["consume", "operational"]
+    env_file: *workers-env-file
+    environment: *workers-env
+    depends_on: *workers-deps
+    restart: unless-stopped
+
+  # Waits (does not drop messages) while the embedder or Qdrant is down.
+  consumer-semantic:
+    build: *workers-build
+    profiles: [stream]
+    command: ["consume", "semantic"]
+    env_file: *workers-env-file
+    environment: *workers-env
+    extra_hosts: *workers-hosts
+    depends_on:
+      kafka:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    restart: unless-stopped
+
+  consumer-archive:
+    build: *workers-build
+    profiles: [stream]
+    command: ["consume", "archive"]
+    env_file: *workers-env-file
+    environment: *workers-env
+    volumes: *workers-volumes
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ------------------------------------------------------------------ ai ----
+  # llama.cpp server with GGUF models from ./models (download: `make models`).
+  # CPU inside Docker. On a Mac, a native `llama-server` (brew install llama.cpp) uses the GPU
+  # and is several times faster: see docs/runbooks/streaming-stack.md.
+  embedder:
+    image: ${LLAMA_CPP_IMAGE:-ghcr.io/ggml-org/llama.cpp:server}
+    profiles: [ai]
+    command:
+      ["-m", "/models/${EMBEDDING_GGUF:-bge-m3-q8_0.gguf}", "--embedding", "--pooling", "cls",
+       "-c", "8192", "-b", "8192", "-ub", "8192", "--alias", "bge-m3",
+       "--host", "0.0.0.0", "--port", "8080"]
+    ports:
+      - "8091:8080"
+    volumes:
+      - ./models:/models:ro
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 30
+
+  reranker:
+    image: ${LLAMA_CPP_IMAGE:-ghcr.io/ggml-org/llama.cpp:server}
+    profiles: [ai]
+    command:
+      ["-m", "/models/${RERANK_GGUF:-bge-reranker-v2-m3-Q8_0.gguf}", "--reranking", "--embedding",
+       "--pooling", "rank", "-c", "8192", "-b", "8192", "-ub", "8192",
+       "--alias", "bge-reranker-v2-m3", "--host", "0.0.0.0", "--port", "8080"]
+    ports:
+      - "8092:8080"
+    volumes:
+      - ./models:/models:ro
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 30
+
+  # --------------------------------------------------------------- tools ----
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    profiles: [tools]
+    environment:
+      KAFKA_CLUSTERS_0_NAME: sportsbot
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    ports:
+      - "8085:8080"
+    depends_on:
+      kafka:
+        condition: service_healthy
+
 volumes:
   pg_data:
   qdrant_data:
   namenode_data:
   datanode1_data:
   datanode2_data:
+  kafka_data:
+  bronze_data:

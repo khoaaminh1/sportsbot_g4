@@ -55,7 +55,7 @@ Set `COLLECTOR_CONTACT` in `.env` to a team email: it goes into the User-Agent s
 | Symptom | Meaning / fix |
 |---|---|
 | `status = skipped`, error mentions robots.txt | The site disallows the feed path. Disable the source; do not work around it. |
-| `http_status = 403` | Access refused. Disable the source and note it in `sources.yaml`. |
+| `http_status = 403` | Access refused. Disable the source and note it in `sources.json`. |
 | `http_status = 404` | Feed URL changed or not served to this location. Re-check from Vietnam; update the URL. |
 | `http_status = 304`, `items_new = 0` | Normal: the feed has not changed since the last run. |
 | `WebHdfsError ... expected 307` | HDFS not running or `hdfs-init` not run: `make up-bigdata`. |

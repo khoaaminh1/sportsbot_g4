@@ -5,7 +5,7 @@ Data collection and processing: collectors, Bronze ingestion into HDFS, and (nex
 ## Status
 | Part | Status |
 |---|---|
-| Source registry (`sources.yaml`), 7 enabled RSS sources in vi / en / es | Implemented |
+| Source registry (`sources.json`), 7 enabled RSS sources in vi / en / es | Implemented |
 | Polite collector (robots.txt, per-host delay, conditional GET, retries, size cap) | Implemented |
 | Bronze in HDFS (append-only gzip JSON Lines), state and runs in PostgreSQL | Implemented |
 | Scheduler (`collector` container) | Implemented |
@@ -19,7 +19,7 @@ src/sportsbot_pipelines/
   ingestion/    bronze.py (WebHDFS / local writers), state.py, run.py, scheduler.py, migrate.py
   cli.py        python -m sportsbot_pipelines {migrate, sources validate|check, collect, schedule}
 spark/jobs/     hdfs_smoke.py (Phase 2); Silver/Gold jobs come here
-sources.yaml    the source registry
+sources.json    the source registry
 tests/          unit tests, integration tests (real PostgreSQL), SYNTHETIC fixtures
 ```
 
@@ -39,6 +39,6 @@ PYTHONPATH=pipelines/src python -m sportsbot_pipelines collect
 `record_id` (sha256 of canonical URL), `source_id`, `source_name`, `source_kind`, `language_hint`, `feed_url`, `url`, `canonical_url`, `title`, `summary_html` (raw), `published_raw` (as given), `published_at` (UTC or null), `published_tz_assumed`, `updated_raw`, `authors`, `tags`, `collected_at` (UTC), `run_id`, `http_status`, `collector_version`, `schema_version`.
 
 ## Adding a source
-1. Add an entry to `sources.yaml` with its timezone and allowed `domains`.
+1. Add an entry to `sources.json` with its timezone and allowed `domains`.
 2. Run `make sources-check`; set `verified: true` and write the date and result in `notes` only if it returned items.
 3. Check the site's terms of use; note anything relevant in `notes`. If a site refuses access (403, robots.txt), disable it: never work around a refusal.

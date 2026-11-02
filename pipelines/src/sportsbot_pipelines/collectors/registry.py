@@ -1,4 +1,7 @@
-"""Source registry: load and validate `pipelines/sources.yaml`."""
+"""Source registry: load and validate `pipelines/sources.json` (YAML files are read too).
+
+JSON is a subset of YAML, so one loader reads both formats.
+"""
 
 from __future__ import annotations
 
@@ -22,6 +25,10 @@ class Source(BaseModel):
     timezone: str = "UTC"
     enabled: bool = True
     verified: bool = False
+    # Sitemap backfill (optional): sitemap or sitemap-index URLs, and a regex the article URL
+    # path must match (e.g. "/the-thao/"), so only sports pages are queued.
+    sitemaps: list[HttpUrl] = Field(default_factory=list)
+    sitemap_include: str | None = None
     notes: str = ""
 
     @field_validator("domains")

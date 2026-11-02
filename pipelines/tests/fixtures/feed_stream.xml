@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SYNTHETIC feed for the CI streaming test: one article page that exists, one that does not. -->
+<rss version="2.0">
+  <channel>
+    <title>Fixture stream (synthetic)</title>
+    <link>http://fixture-feed:8000/</link>
+    <description>Synthetic feed for the Kafka pipeline test</description>
+    <item>
+      <title>Synthetic: Đội tuyển Việt Nam thắng Thái Lan 2-1 ở chung kết</title>
+      <link>http://fixture-feed:8000/article_vi.html</link>
+      <description>Tóm tắt giả lập.</description>
+      <pubDate>Sun, 01 Nov 2026 20:15:00 +0700</pubDate>
+    </item>
+    <item>
+      <title>Synthetic: Trang không tồn tại (kiểm tra dead-letter)</title>
+      <link>http://fixture-feed:8000/missing_article.html</link>
+      <description>Trang này trả về 404.</description>
+      <pubDate>Sun, 01 Nov 2026 21:00:00 +0700</pubDate>
+    </item>
+  </channel>
+</rss>

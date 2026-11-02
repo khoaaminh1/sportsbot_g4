@@ -13,9 +13,19 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from typing import Protocol
 
-from sportsbot_agent.llm_client import LLMClient, LLMError, Message
-from sportsbot_agent.retrieval import BM25Index, Hit
+from sportsbot_agent.llm_client import LLMError, Message
+from sportsbot_agent.retrieval import Hit
+
+
+class ChatModel(Protocol):
+    def chat(self, messages: list[Message]) -> str: ...
+
+
+class Retriever(Protocol):
+    def search(self, question: str, k: int = 5, min_matched_terms: int = 1) -> list[Hit]: ...
+
 
 _VI_CHARS = set("ăâđêôơưáàảãạấầẩẫậắằẳẵặéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ")
 _CITATION = re.compile(r"\[(\d+)\]")
@@ -68,7 +78,7 @@ def _evidence_block(hits: list[Hit]) -> str:
             f"[{i}] Title: {a.title}\n"
             f"Source: {a.source_name}\n"
             f"Published (UTC): {a.published_at or 'unknown'}\n"
-            f"Summary: {a.summary[:800] or '(no summary)'}"
+            f"Text: {a.summary[:1200] or '(no text)'}"
         )
     return "\n\n".join(parts)
 
@@ -110,8 +120,8 @@ def validate_citations(text: str, n_sources: int) -> list[int] | None:
 
 def answer_question(
     question: str,
-    index: BM25Index,
-    llm: LLMClient | None,
+    index: Retriever,
+    llm: ChatModel | None,
     *,
     top_k: int = 5,
     min_matched_terms: int = 1,

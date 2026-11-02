@@ -14,9 +14,12 @@ from datetime import UTC, datetime
 
 from sportsbot_pipelines.collectors.http import FetchError, PoliteClient, RobotsDisallowed
 from sportsbot_pipelines.collectors.registry import Source
-from sportsbot_pipelines.collectors.rss import parse_feed
+from sportsbot_pipelines.collectors.rss import BronzeRecord, parse_feed
 from sportsbot_pipelines.ingestion.bronze import BronzeWriter, bronze_relpath, encode
 from sportsbot_pipelines.ingestion.state import RunRecord, State
+
+# Called with the new records of a run after they are in Bronze (e.g. publish to Kafka).
+Publisher = Callable[[list[BronzeRecord]], None]
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +36,7 @@ def collect_source(
     *,
     max_items: int = 200,
     now: Callable[[], datetime] = lambda: datetime.now(UTC),
+    publish: Publisher | None = None,
 ) -> RunRecord:
     started = now()
     t0 = time.perf_counter()
@@ -76,6 +80,10 @@ def collect_source(
             run.bronze_path = writer.write(
                 bronze_relpath(source.id, started, run.run_key), encode(new_records)
             )
+            if publish is not None:
+                # Publish before marking seen: a crash in between re-publishes (idempotent
+                # downstream) instead of losing the articles.
+                publish(new_records)
             state.mark_seen(source.id, [r.record_id for r in new_records], run.run_key)
         run.items_new = len(new_records)
         state.save_conditional_headers(source.id, fetched.etag, fetched.last_modified)
@@ -115,5 +123,9 @@ def collect_all(
     writer: BronzeWriter,
     *,
     max_items: int = 200,
+    publish: Publisher | None = None,
 ) -> list[RunRecord]:
-    return [collect_source(s, client, state, writer, max_items=max_items) for s in sources]
+    return [
+        collect_source(s, client, state, writer, max_items=max_items, publish=publish)
+        for s in sources
+    ]

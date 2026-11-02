@@ -27,7 +27,7 @@ NOW = datetime(2026, 11, 2, 2, 0, tzinfo=UTC)
 
 
 def test_repository_registry_is_valid():
-    registry = load_registry(REPO / "pipelines" / "sources.yaml")
+    registry = load_registry(REPO / "pipelines" / "sources.json")
     enabled = registry.enabled()
     # Phase 3 acceptance: at least 3 languages. French is disabled until a source accepts us.
     assert len(enabled) >= 6
