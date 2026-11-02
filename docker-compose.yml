@@ -345,6 +345,16 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # Health checks every 15 minutes; alerts to Discord / Telegram (ALERT_* in .env).
+  monitor:
+    build: *workers-build
+    profiles: [stream]
+    command: ["monitor"]
+    env_file: *workers-env-file
+    environment: *workers-env
+    depends_on: *workers-deps
+    restart: unless-stopped
+
   # ------------------------------------------------------------------ ai ----
   # llama.cpp server with GGUF models from ./models (download: `make models`).
   # Pinned release tag: versioned tags ship linux/amd64 and linux/arm64 (Apple Silicon); the
@@ -355,7 +365,7 @@ services:
     image: ${LLAMA_CPP_IMAGE:-ghcr.io/ggml-org/llama.cpp:server-v0.5.0}
     profiles: [ai]
     command:
-      ["-m", "/models/${EMBEDDING_GGUF:-bge-m3-q8_0.gguf}", "--embedding", "--pooling", "cls",
+      ["-m", "/models/${EMBEDDING_GGUF:-bge-m3-Q8_0.gguf}", "--embedding", "--pooling", "cls",
        "-c", "8192", "-b", "8192", "-ub", "8192", "--alias", "bge-m3",
        "--host", "0.0.0.0", "--port", "8080"]
     ports:

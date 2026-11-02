@@ -1,4 +1,4 @@
-.PHONY: help setup lint format test test-integration run up-core up-bigdata up up-collect collect-once sources-check bronze-ls articles-export chat chat-no-llm down ps logs hdfs-init hdfs-ls spark-smoke clean-volumes up-stream up-ai up-tools up-demo models discover-once backfill sources-sitemaps crawl-stats dead-letters logs-stream ask ask-no-llm llm-check export-labeling reindex replay-dead-letters
+.PHONY: help setup lint format test test-integration run up-core up-bigdata up up-collect collect-once sources-check bronze-ls articles-export chat chat-no-llm down ps logs hdfs-init hdfs-ls spark-smoke clean-volumes up-stream up-ai up-tools up-demo models discover-once backfill sources-sitemaps crawl-stats dead-letters logs-stream ask ask-no-llm llm-check export-labeling reindex replay-dead-letters monitor-once alert-test
 
 PYTHON ?= python
 
@@ -77,7 +77,7 @@ chat-no-llm:  ## Same, but only shows matching article excerpts (no model needed
 up-stream:  ## Start PostgreSQL, Qdrant, backend, Kafka, topics, discovery, extractor, consumers
 	$(COMPOSE) $(STREAM) up -d --build --wait postgres qdrant kafka
 	$(COMPOSE) $(STREAM) run --rm kafka-init
-	$(COMPOSE) $(STREAM) up -d --build backend discover extractor consumer-operational consumer-semantic consumer-archive
+	$(COMPOSE) $(STREAM) up -d --build backend discover extractor consumer-operational consumer-semantic consumer-archive monitor
 
 up-ai:  ## Start the BGE-M3 embedder and bge-reranker (needs `make models` first)
 	$(COMPOSE) --profile ai up -d --wait embedder reranker
@@ -113,8 +113,14 @@ reindex:  ## Build missing vectors in Qdrant from PostgreSQL (ALL=1 to rebuild e
 replay-dead-letters:  ## Retry dead-lettered articles (network errors, 429/5xx) [REASONS=a,b]
 	$(COMPOSE) $(STREAM) run --rm --no-deps discover replay $(if $(REASONS),--reasons $(REASONS),)
 
+monitor-once:  ## One health check now: snapshot + active alerts (also sent to Discord/Telegram)
+	$(COMPOSE) $(STREAM) run --rm --no-deps monitor monitor --once
+
+alert-test:  ## Send a test message to the configured Discord/Telegram channel
+	$(COMPOSE) $(STREAM) run --rm --no-deps monitor monitor --test-alert
+
 logs-stream:  ## Follow the streaming workers' logs
-	$(COMPOSE) $(STREAM) logs -f discover extractor consumer-operational consumer-semantic consumer-archive
+	$(COMPOSE) $(STREAM) logs -f discover extractor consumer-operational consumer-semantic consumer-archive monitor
 
 ask:  ## Ask the hybrid RAG from the terminal: make ask Q="Kết quả Việt Nam - Thái Lan?"
 	PYTHONPATH=agent/src $(PYTHON) -m sportsbot_agent.ask "$(Q)"

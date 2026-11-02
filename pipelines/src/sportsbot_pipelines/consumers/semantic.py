@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class Embedder(Protocol):
-    def embed(self, texts: list[str]) -> list[list[float]]: ...
+    def embed(self, texts: list[str]) -> list[list[float] | None]: ...
 
 
 class VectorStore(Protocol):
@@ -81,7 +81,19 @@ def make_handler(
         inputs = [f"{message['title']}\n\n{c}" for c in chunks]
         try:
             vectors = embedder.embed(inputs)
-            store.upsert(build_points(message, vectors, chunks))
+            # A chunk the embedder rejects (bad character for its tokenizer) is left out;
+            # the article stays searchable through its other chunks and keyword search.
+            pairs = [(c, v) for c, v in zip(chunks, vectors, strict=True) if v is not None]
+            if len(pairs) < len(chunks):
+                logger.warning(
+                    "chunks_skipped",
+                    extra={
+                        "article_id": message["article_id"],
+                        "skipped": len(chunks) - len(pairs),
+                    },
+                )
+            if pairs:
+                store.upsert(build_points(message, [v for _, v in pairs], [c for c, _ in pairs]))
         except (EmbeddingError, QdrantError, httpx.HTTPError) as exc:
             raise TransientError(f"semantic layer unavailable: {exc}") from exc
         logger.debug(

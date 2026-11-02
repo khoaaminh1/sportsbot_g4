@@ -17,6 +17,7 @@ consume archive      articles.extracted -> Bronze full-text files (HDFS)
 stats                corpus counts per source (PostgreSQL) and vectors (Qdrant)
 reindex [--all]      build missing vectors from PostgreSQL (all with --all)
 replay [--reasons]   send retryable extract dead letters back to articles.discovered
+monitor [--once]     health checks every 15 min; alerts to Discord / Telegram
 export-sample        random articles as CSV for hand labeling (sport category, golden set)
 """
 
@@ -367,6 +368,43 @@ def cmd_replay(settings: PipelineSettings, reasons: str | None) -> int:
     return 0
 
 
+def cmd_monitor(settings: PipelineSettings, once: bool, test_alert: bool = False) -> int:
+    from sportsbot_agent.clients.qdrant import QdrantClient
+    from sportsbot_pipelines.monitoring.monitor import Monitor, take_snapshot
+    from sportsbot_pipelines.monitoring.notify import Notifier
+    from sportsbot_pipelines.streaming.replay import read_dead_letters
+
+    engine = create_engine(settings.database_url, pool_pre_ping=True)
+    qdrant = QdrantClient(settings.qdrant_url)
+
+    def snapshot():
+        return take_snapshot(
+            engine,
+            qdrant.count,
+            lambda: list(
+                read_dead_letters(
+                    settings.kafka_bootstrap_servers, idle_seconds=3, group_id="sportsbot-monitor"
+                )
+            ),
+        )
+
+    notifier = Notifier(
+        settings.alert_discord_webhook_url,
+        settings.alert_telegram_bot_token,
+        settings.alert_telegram_chat_id,
+    )
+    if test_alert:
+        sent = notifier.send("🧪 SportsBot: test alert. If you can read this, alerts work.")
+        print(json.dumps({"configured": notifier.channels, "sent": sent}))
+        return 0 if sent else 1
+    monitor = Monitor(snapshot, notifier)
+    if once:
+        print(json.dumps(monitor.check(), ensure_ascii=False))
+        return 0
+    monitor.run_forever(settings.monitor_interval_seconds)
+    return 0
+
+
 def cmd_stats(settings: PipelineSettings) -> int:
     from sqlalchemy import text
 
@@ -469,6 +507,9 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("stats")
     rei = sub.add_parser("reindex")
     rei.add_argument("--all", action="store_true", help="re-embed every article")
+    mon = sub.add_parser("monitor")
+    mon.add_argument("--once", action="store_true")
+    mon.add_argument("--test-alert", action="store_true", help="send one test message")
     rep = sub.add_parser("replay")
     rep.add_argument("--reasons", help="comma-separated reasons (default: retryable ones)")
     exp = sub.add_parser("export-sample")
@@ -500,6 +541,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_stats(settings)
     if args.command == "reindex":
         return cmd_reindex(settings, args.all)
+    if args.command == "monitor":
+        return cmd_monitor(settings, args.once, args.test_alert)
     if args.command == "replay":
         return cmd_replay(settings, args.reasons)
     if args.command == "export-sample":

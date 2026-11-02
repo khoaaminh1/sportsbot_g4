@@ -46,14 +46,16 @@ def replay(
     return {"dead_letters_read": seen, "replayed": replayed}
 
 
-def read_dead_letters(bootstrap_servers: str, idle_seconds: float = 10.0):
-    """Yield dead letters not yet read by the replay group; stop after `idle_seconds` idle."""
+def read_dead_letters(
+    bootstrap_servers: str, idle_seconds: float = 10.0, group_id: str = REPLAY_GROUP
+):
+    """Yield dead letters not yet read by `group_id`; stop after `idle_seconds` idle."""
     from confluent_kafka import Consumer
 
     consumer = Consumer(
         {
             "bootstrap.servers": bootstrap_servers,
-            "group.id": REPLAY_GROUP,
+            "group.id": group_id,
             "auto.offset.reset": "earliest",
             "enable.auto.commit": True,
         }

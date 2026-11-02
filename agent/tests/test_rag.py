@@ -8,7 +8,7 @@ import httpx
 import pytest
 
 from sportsbot_agent.answer import answer_question
-from sportsbot_agent.clients.embeddings import EmbeddingClient
+from sportsbot_agent.clients.embeddings import EmbeddingClient, EmbeddingError, safe_text
 from sportsbot_agent.clients.llm_router import (
     ChatRouter,
     ChatTarget,
@@ -336,3 +336,29 @@ def test_clients_send_inputs_without_line_breaks():
     RerankClient("http://r", transport=transport).rerank("câu\nhỏi", ["a\n\nb"])
     assert bodies[0]["input"] == ["Tiêu đề Đoạn 1 Đoạn 2"]
     assert bodies[1]["query"] == "câu hỏi" and bodies[1]["documents"] == ["a b"]
+
+
+def test_embedding_isolates_inputs_the_server_rejects():
+    # The old BGE-M3 GGUF failed (HTTP 500 unordered_map::at) on some characters: one bad
+    # chunk must not block the others, and a cleaned retry is tried first.
+    def handler(request: httpx.Request) -> httpx.Response:
+        inputs = json.loads(request.content)["input"]
+        if any("☃" in t for t in inputs):
+            return httpx.Response(500, json={"error": {"message": "unordered_map::at"}})
+        if any("BAD" in t for t in inputs):
+            return httpx.Response(500, text='{"error":{"message":"unordered_map::at"}}')
+        data = [{"index": i, "embedding": [1.0, 0.0]} for i in range(len(inputs))]
+        return httpx.Response(200, json={"data": data})
+
+    client = EmbeddingClient("http://e", transport=httpx.MockTransport(handler))
+    vectors = client.embed(["ok một", "tuyết ☃ rơi", "BAD always", "ok hai"])
+    assert vectors[0] and vectors[1] and vectors[3]  # the snowman input worked once cleaned
+    assert vectors[2] is None and client.skipped == 1
+
+    def down(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(503, text="Loading model")
+
+    with pytest.raises(EmbeddingError):
+        EmbeddingClient("http://e", transport=httpx.MockTransport(down)).embed(["x"])
+
+    assert safe_text("Đội tuyển ⚽ thắng 🎉!") == "Đội tuyển thắng !"
