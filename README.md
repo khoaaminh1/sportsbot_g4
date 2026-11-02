@@ -18,7 +18,7 @@ Initial focus: **Vietnamese football and volleyball**, with basketball, tennis a
 4. [Repository map](#repository-map)
 5. [Data pipeline: Bronze, Silver, Gold](#data-pipeline-bronze-silver-gold)
 6. [Data sources](#data-sources)
-7. [AI and machine learning](#ai-and-machine-learning)
+7. [NLP pipeline](#nlp-pipeline) and [AI and machine learning](#ai-and-machine-learning)
 8. [Technology stack](#technology-stack)
 9. [Quick start](#quick-start)
 10. [API (planned)](#api-planned)
@@ -150,6 +150,25 @@ RSS feeds and official APIs come first. Page extraction is enabled per source on
 | API-Football (API-Sports) | — | REST API, free tier 100 requests/day | Fixtures, results, standings | Candidate; V.League coverage to verify |
 
 The final list, with intervals and licence notes, will live in `pipelines/sources.yaml` and `docs/data-sources.md`.
+
+## NLP pipeline
+
+Natural language processing runs through the whole system, from cleaning collected articles to understanding questions. Each task below is marked as trained (with its own evaluation) or rule/dictionary-based. All are **planned**.
+
+| NLP task | Where it runs | Method | Type | Evaluated by |
+|---|---|---|---|---|
+| Language identification | Silver Spark job | `lingua` or fastText `lid.176` | Pretrained | Accuracy on a labeled sample |
+| Text normalization (Unicode NFC, HTML removal, whitespace) | Silver Spark job | Rules | Rule-based | Unit tests |
+| Vietnamese word segmentation | BM25 indexing and queries | `underthesea` or `pyvi` | Pretrained | Retrieval recall, segmented vs syllable tokens |
+| Accent stripping | BM25 (queries typed without diacritics, e.g. "doi tuyen viet nam") | Rules | Rule-based | Retrieval recall on no-accent queries |
+| Near-duplicate detection | Silver Spark job | MinHash over word shingles (`MinHashLSH`) | Algorithmic | Precision on hand-checked pairs |
+| Sport-category text classification | Gold enrichment | TF-IDF baseline vs multilingual embeddings | **Trained (Model A)** | Macro-F1, per-language F1 |
+| Named entity recognition (teams, athletes, competitions) | Gold enrichment, query understanding | Alias dictionaries now; a pretrained Vietnamese NER model as a stretch goal | Dictionary (stretch: pretrained) | Precision / recall / F1 on a hand-labeled set |
+| Entity normalization (aliases, abbreviations: "ĐT Việt Nam", "Vietnam national team") | Gold enrichment, query understanding | Alias table mapping to one entity id | Dictionary | Unit tests, golden set |
+| Time expression parsing ("hôm nay", "tuần trước", "last weekend") | Query understanding | Rules to date ranges | Rule-based | Unit tests |
+| Query intent classification | Agent | TF-IDF baseline vs embeddings | **Trained (Model B)** | Macro-F1 |
+| Multilingual sentence embeddings | Semantic and cross-lingual search | `intfloat/multilingual-e5-small` | Pretrained | recall@k, MRR per language |
+| Grounded answer generation | Chat answers | LLM with retrieved evidence and citations | Pretrained (used as-is) | Faithfulness, citation accuracy |
 
 ## AI and machine learning
 
