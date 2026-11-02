@@ -66,6 +66,16 @@ class FakeRepo:
     def sources(self):
         return [{"source_id": "s", "name": "S", "kind": "rss", "language": "vi", "enabled": True}]
 
+    runs: list[dict] = [
+        {"run_id": 1, "source_id": "s", "source_name": "S", "status": "success", "items_new": 2}
+    ]
+
+    def runs_since(self, after, limit):
+        return [r for r in self.runs if after is None or r["run_id"] > after]
+
+    def stats(self):
+        return {"articles": len(self.rows), "last_hour": 1, "sources_active": 1}
+
 
 class FakeRag:
     def __init__(self, mode: str = "generated") -> None:
@@ -170,11 +180,18 @@ def test_news_websocket_pushes_latest_then_new(client_factory):
     repo = FakeRepo()
     client = client_factory(checks=[], news_repo=repo, news_poll_seconds=0.05)
     with client.websocket_connect("/ws/news") as ws:
-        first = ws.receive_json()
-        assert first["type"] == "articles" and first["items"][0]["article_id"] == AID
+        first = [ws.receive_json() for _ in range(3)]
+        assert [m["type"] for m in first] == ["articles", "runs", "stats"]
+        assert first[0]["items"][0]["article_id"] == AID
+        assert first[1]["items"][0]["items_new"] == 2 and first[2]["articles"] == 1
         repo.rows.append(row(5))
-        second = ws.receive_json()
-        assert [i["title"] for i in second["items"]] == ["Tin 5"]
+        repo.runs = [*repo.runs, {"run_id": 2, "source_id": "s", "status": "failed"}]
+        seen: dict[str, dict] = {}
+        while not {"articles", "runs"} <= seen.keys():
+            msg = ws.receive_json()
+            seen.setdefault(msg["type"], msg)
+        assert [i["title"] for i in seen["articles"]["items"]] == ["Tin 5"]
+        assert [r["run_id"] for r in seen["runs"]["items"]] == [2]
 
 
 def test_frontend_is_served(client_factory):

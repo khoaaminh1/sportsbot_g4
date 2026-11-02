@@ -1,200 +1,529 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Vietnam SportsBot</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SportsBot · Tin thể thao có nguồn</title>
+<meta name="description" content="Hỏi về tin thể thao mới nhất. Câu trả lời chỉ dựa trên các bài báo SportsBot đã thu thập, kèm nguồn và giờ đăng.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<script src="config.js"></script>
 <style>
+  /* Palette: a floodlit pitch at night, rendered on chalk.
+     Pitch green carries the brand; floodlight amber means "live" and nothing else. */
   :root {
-    --bg: #f6f7f9; --panel: #ffffff; --ink: #1d232b; --muted: #5f6b7a; --line: #e2e6eb;
-    --accent: #0b6e4f; --accent-soft: #e5f2ed; --warn: #8a5a00; --warn-soft: #fff4dc;
+    --chalk: #F2F4EF;      /* page */
+    --touchline: #E6EAE2;  /* sidebar */
+    --sheet: #FBFCF9;      /* composer, cards */
+    --ink: #15211C;        /* text */
+    --ink-soft: #55625B;   /* secondary text */
+    --rule: #D3D9CF;       /* hairlines */
+    --pitch: #1D6B47;      /* brand, links, send */
+    --pitch-wash: #DCEAE1; /* user bubble, hover */
+    --flood: #D9A21B;      /* live signal */
+    --foul: #B3412E;       /* failed run */
+    --serif: "Newsreader", "Iowan Old Style", "Georgia", serif;
+    --sans: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --radius-l: 22px;
+    --radius-m: 14px;
+    --radius-s: 9px;
+    --sidebar: 304px;
   }
   @media (prefers-color-scheme: dark) {
-    :root { --bg: #12161b; --panel: #1a2027; --ink: #e8ecf0; --muted: #9aa6b4; --line: #2a323c;
-            --accent: #4cc39a; --accent-soft: #1d3a31; --warn: #f0c36a; --warn-soft: #3a3120; }
+    :root {
+      --chalk: #101814; --touchline: #0C130F; --sheet: #17211C; --ink: #E4EAE4;
+      --ink-soft: #97A69D; --rule: #26332C; --pitch: #6CC596; --pitch-wash: #1C3427;
+      --flood: #F0BF45; --foul: #E07A63;
+    }
   }
   * { box-sizing: border-box; }
-  body { margin: 0; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-         background: var(--bg); color: var(--ink); }
-  header { display: flex; align-items: baseline; gap: 12px; padding: 14px 20px;
-           border-bottom: 1px solid var(--line); background: var(--panel); }
-  header h1 { font-size: 18px; margin: 0; }
-  header span { color: var(--muted); font-size: 13px; }
-  main { display: grid; grid-template-columns: minmax(280px, 1fr) minmax(340px, 1.4fr);
-         gap: 16px; padding: 16px; height: calc(100vh - 56px); }
-  @media (max-width: 860px) { main { grid-template-columns: 1fr; height: auto; } }
-  section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
-            display: flex; flex-direction: column; min-height: 0; }
-  section h2 { font-size: 14px; margin: 0; padding: 12px 14px; border-bottom: 1px solid var(--line);
-               display: flex; justify-content: space-between; }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); display: inline-block;
-         margin-right: 6px; }
-  .dot.live { background: var(--accent); }
-  #feed { overflow-y: auto; padding: 4px 14px; flex: 1; }
-  .item { padding: 10px 0; border-bottom: 1px solid var(--line); }
-  .item a { color: var(--ink); text-decoration: none; font-weight: 600; }
-  .item a:hover { text-decoration: underline; }
-  .meta { color: var(--muted); font-size: 12px; }
-  .item.new { animation: flash 2s ease-out; }
-  @keyframes flash { from { background: var(--accent-soft); } to { background: transparent; } }
-  #log { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
-  .msg { max-width: 92%; padding: 10px 12px; border-radius: 10px; white-space: pre-wrap; }
-  .user { align-self: flex-end; background: var(--accent); color: #fff; }
-  .bot { align-self: flex-start; background: var(--bg); border: 1px solid var(--line); }
-  .notice { background: var(--warn-soft); color: var(--warn); font-size: 13px; padding: 6px 8px;
-            border-radius: 6px; margin-top: 6px; }
-  .cites { margin: 8px 0 0; padding-left: 18px; font-size: 13px; }
-  .cites a { color: var(--accent); }
-  .status { color: var(--muted); font-size: 12px; }
-  form { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--line); }
-  input { flex: 1; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px;
-          background: var(--bg); color: var(--ink); font: inherit; }
-  button { padding: 10px 16px; border: 0; border-radius: 8px; background: var(--accent);
-           color: #fff; font: inherit; cursor: pointer; }
-  button:disabled { opacity: .5; cursor: default; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; font-family: var(--sans); font-size: 15px; line-height: 1.55;
+    color: var(--ink); background: var(--chalk);
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--pitch); }
+  button, input, textarea { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--pitch); outline-offset: 2px; border-radius: 6px; }
+
+  .app { display: grid; grid-template-columns: var(--sidebar) 1fr; height: 100vh; height: 100dvh; }
+
+  /* ---------------------------------------------------------------- sidebar */
+  .side {
+    background: var(--touchline); border-right: 1px solid var(--rule);
+    display: flex; flex-direction: column; min-height: 0; padding: 18px 14px 14px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 2px 8px 18px; }
+  .brand svg { flex: none; }
+  .brand b { font-family: var(--serif); font-size: 23px; font-weight: 500; letter-spacing: -.01em; }
+  .new-chat {
+    display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 10px;
+    border: 0; border-radius: var(--radius-s); background: transparent; cursor: pointer;
+    font-weight: 500; text-align: left;
+  }
+  .new-chat:hover { background: var(--pitch-wash); }
+  .new-chat span.plus {
+    display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
+    background: var(--pitch); color: var(--sheet); font-size: 17px; line-height: 1;
+  }
+
+  .live { margin-top: 22px; display: flex; flex-direction: column; min-height: 0; flex: 1; }
+  .live-head { display: flex; align-items: center; justify-content: space-between; padding: 0 8px 10px; }
+  .live-head h2 { margin: 0; font-size: 13px; font-weight: 600; }
+  .status { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--ink-soft); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-soft); position: relative; }
+  .dot.on { background: var(--flood); }
+  .dot.on::after {
+    content: ""; position: absolute; inset: -5px; border-radius: 50%;
+    border: 2px solid var(--flood); opacity: 0; animation: pulse 2.4s ease-out infinite;
+  }
+  @keyframes pulse { 0% { transform: scale(.5); opacity: .7; } 100% { transform: scale(1.5); opacity: 0; } }
+
+  /* The one bold element: a scoreboard of the corpus, ticking as the crawler works. */
+  .board {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin: 0 4px 14px;
+    background: var(--rule); border: 1px solid var(--rule); border-radius: var(--radius-m); overflow: hidden;
+  }
+  .cell { background: var(--sheet); padding: 11px 12px 10px; }
+  .cell .n {
+    font-family: var(--serif); font-size: 27px; line-height: 1.05; font-variant-numeric: tabular-nums;
+    display: block; transition: color .6s;
+  }
+  .cell .n.bump { color: var(--flood); }
+  .cell .l { font-size: 12px; color: var(--ink-soft); }
+
+  .feed { list-style: none; margin: 0; padding: 0 2px 0 4px; overflow-y: auto; flex: 1; scrollbar-width: thin; }
+  .feed li {
+    display: grid; grid-template-columns: 14px 1fr; gap: 8px; padding: 9px 6px; border-radius: var(--radius-s);
+    font-size: 13px; line-height: 1.4;
+  }
+  .feed li + li { border-top: 1px solid var(--rule); border-radius: 0; }
+  .feed li.fresh { animation: arrive .7s cubic-bezier(.2,.8,.2,1); }
+  @keyframes arrive { from { opacity: 0; transform: translateY(-6px); background: var(--pitch-wash); } }
+  .feed .mark { width: 7px; height: 7px; border-radius: 2px; margin-top: 6px; background: var(--pitch); }
+  .feed .mark.run { background: var(--flood); border-radius: 50%; }
+  .feed .mark.fail { background: var(--foul); border-radius: 50%; }
+  .feed a { color: var(--ink); text-decoration: none; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .feed a:hover { color: var(--pitch); text-decoration: underline; }
+  .feed .sub { display: block; color: var(--ink-soft); font-size: 12px; margin-top: 2px; }
+  .feed .empty { color: var(--ink-soft); padding: 10px 8px; display: block; }
+  .side-foot { font-size: 12px; color: var(--ink-soft); padding: 12px 8px 0; border-top: 1px solid var(--rule); margin-top: 8px; }
+
+  /* ------------------------------------------------------------------ main */
+  .main { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  .topbar { display: none; }
+  .scroll { flex: 1; overflow-y: auto; scroll-behavior: smooth; }
+  .column { width: min(760px, 100% - 40px); margin: 0 auto; }
+  .scroll > .column { min-height: 100%; display: flex; flex-direction: column; }
+
+  .hero { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 40px 0 120px; }
+  .hero h1 {
+    font-family: var(--serif); font-weight: 400; font-size: clamp(34px, 4.6vw, 52px); line-height: 1.08;
+    letter-spacing: -.02em; margin: 0 0 10px; text-wrap: balance;
+  }
+  .hero p.lede { margin: 0 0 28px; color: var(--ink-soft); font-size: 16px; max-width: 58ch; }
+  .hero .reveal { animation: rise .9s cubic-bezier(.2,.8,.2,1) both; }
+  .hero .reveal:nth-child(2) { animation-delay: .08s; }
+  .hero .reveal:nth-child(3) { animation-delay: .16s; }
+  .hero .reveal:nth-child(4) { animation-delay: .24s; }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+
+  .composer {
+    background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius-l);
+    box-shadow: 0 1px 0 rgba(21,33,28,.04), 0 12px 32px -18px rgba(21,33,28,.35);
+    padding: 14px 14px 10px 18px; transition: border-color .2s, box-shadow .2s;
+  }
+  .composer:focus-within { border-color: var(--pitch); box-shadow: 0 0 0 4px var(--pitch-wash), 0 12px 32px -18px rgba(21,33,28,.35); }
+  .composer textarea {
+    width: 100%; border: 0; outline: 0; resize: none; background: transparent;
+    font-size: 16px; line-height: 1.5; max-height: 200px; min-height: 26px;
+  }
+  .composer textarea::placeholder { color: var(--ink-soft); }
+  .composer-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 6px; }
+  .hint { font-size: 12px; color: var(--ink-soft); }
+  .send {
+    width: 36px; height: 36px; border: 0; border-radius: 11px; background: var(--pitch); color: var(--sheet);
+    display: grid; place-items: center; cursor: pointer; transition: transform .15s, opacity .2s;
+  }
+  .send:hover { transform: translateY(-1px); }
+  .send:disabled { opacity: .35; cursor: default; transform: none; }
+
+  .prompts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
+  .prompt {
+    text-align: left; border: 1px solid var(--rule); background: transparent; border-radius: var(--radius-m);
+    padding: 12px 14px; cursor: pointer; transition: background .2s, border-color .2s;
+  }
+  .prompt:hover { background: var(--sheet); border-color: var(--pitch); }
+  .prompt b { display: block; font-weight: 500; }
+  .prompt span { font-size: 13px; color: var(--ink-soft); }
+
+  /* conversation */
+  .thread { padding: 28px 0 24px; display: none; }
+  .chatting .hero { display: none; }
+  .chatting .thread { display: block; }
+  .dock { padding: 0 0 18px; display: none; background: linear-gradient(to bottom, transparent, var(--chalk) 30%); }
+  .chatting .dock { display: block; }
+  .turn { margin-bottom: 30px; }
+  .q {
+    margin-left: auto; width: fit-content; max-width: 85%; background: var(--pitch-wash);
+    padding: 10px 16px; border-radius: 18px 18px 4px 18px; white-space: pre-wrap;
+  }
+  .a { margin-top: 18px; }
+  .a .body { font-family: var(--serif); font-size: 18px; line-height: 1.65; max-width: 68ch; }
+  .a .body p { margin: 0 0 12px; }
+  .a .body ul { margin: 0 0 12px; padding-left: 22px; }
+  .a .body li { margin-bottom: 6px; }
+  .cite {
+    display: inline-grid; place-items: center; min-width: 19px; height: 19px; padding: 0 5px; margin: 0 1px;
+    border-radius: 6px; background: var(--pitch-wash); color: var(--pitch); font-family: var(--sans);
+    font-size: 11px; font-weight: 600; text-decoration: none; vertical-align: 2px;
+  }
+  .cite:hover { background: var(--pitch); color: var(--sheet); }
+  .notice { font-size: 13px; color: var(--ink-soft); border-left: 2px solid var(--flood); padding: 2px 0 2px 10px; margin: 6px 0 12px; }
+  .thinking { font-size: 14px; color: var(--ink-soft); display: inline-flex; gap: 10px; align-items: center; }
+  .thinking i {
+    width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--rule); border-top-color: var(--pitch);
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .sources { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; margin-top: 14px; }
+  .src {
+    display: grid; grid-template-columns: 24px 1fr; gap: 10px; align-items: start; text-decoration: none; color: var(--ink);
+    border: 1px solid var(--rule); border-radius: var(--radius-s); padding: 10px 12px; background: var(--sheet);
+    transition: border-color .2s;
+  }
+  .src:hover { border-color: var(--pitch); }
+  .src .num { font-size: 12px; font-weight: 600; color: var(--pitch); padding-top: 1px; }
+  .src .t { font-size: 13px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .src .m { font-size: 12px; color: var(--ink-soft); margin-top: 3px; display: block; }
+  .meta { font-size: 12px; color: var(--ink-soft); margin-top: 10px; }
+
+  .scrim { display: none; }
+  @media (max-width: 880px) {
+    .app { grid-template-columns: 1fr; }
+    .side {
+      position: fixed; inset: 0 auto 0 0; width: min(86vw, 330px); z-index: 20;
+      transform: translateX(-102%); transition: transform .3s cubic-bezier(.2,.8,.2,1);
+    }
+    .side.open { transform: none; }
+    .scrim.show { display: block; position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 10; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--rule); }
+    .topbar button { border: 0; background: none; display: inline-flex; gap: 8px; align-items: center; font-weight: 500; cursor: pointer; padding: 6px; }
+    .prompts { grid-template-columns: 1fr; }
+    .hero { padding-bottom: 60px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  }
 </style>
 </head>
 <body>
-<header>
-  <h1>Vietnam SportsBot</h1>
-  <span>Answers only from collected news, with sources and publication times.</span>
-</header>
-<main>
-  <section aria-label="Latest news">
-    <h2><span><i id="live" class="dot"></i>Latest news</span><span id="count" class="meta"></span></h2>
-    <div id="feed"></div>
-  </section>
-  <section aria-label="Chat">
-    <h2>Ask about recent sports news</h2>
-    <div id="log" aria-live="polite"></div>
-    <form id="ask">
-      <input id="q" maxlength="2000" autocomplete="off"
-             placeholder="e.g. Kết quả trận Việt Nam gặp Thái Lan? / Who won last night?">
-      <button id="send">Ask</button>
-    </form>
-  </section>
-</main>
+<div class="app" id="app">
+  <aside class="side" id="side" aria-label="Thu thập dữ liệu trực tiếp">
+    <div class="brand">
+      <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+        <rect x="1" y="1" width="28" height="28" rx="9" fill="var(--pitch)"/>
+        <path d="M15 1v28M1 15h28" stroke="var(--sheet)" stroke-width="1.2" opacity=".55"/>
+        <circle cx="15" cy="15" r="6" fill="none" stroke="var(--sheet)" stroke-width="1.6"/>
+        <circle cx="15" cy="15" r="1.6" fill="var(--flood)"/>
+      </svg>
+      <b>SportsBot</b>
+    </div>
+    <button class="new-chat" id="newChat" type="button"><span class="plus" aria-hidden="true">+</span>Cuộc trò chuyện mới</button>
+
+    <section class="live" aria-live="polite">
+      <div class="live-head">
+        <h2>Đang thu thập</h2>
+        <span class="status"><i class="dot" id="dot"></i><span id="statusText">Đang kết nối</span></span>
+      </div>
+      <div class="board">
+        <div class="cell"><span class="n" id="sArticles">0</span><span class="l">bài đã lưu</span></div>
+        <div class="cell"><span class="n" id="sHour">0</span><span class="l">trong 1 giờ qua</span></div>
+        <div class="cell"><span class="n" id="sSources">0</span><span class="l">nguồn đang chạy</span></div>
+        <div class="cell"><span class="n" id="sLangs">0</span><span class="l">ngôn ngữ</span></div>
+      </div>
+      <ul class="feed" id="feed"><li><span></span><span class="empty">Hoạt động mới sẽ hiện ở đây.</span></li></ul>
+    </section>
+    <div class="side-foot">Nguồn: báo điện tử Việt Nam và quốc tế qua RSS, tôn trọng robots.txt.</div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <main class="main" id="main">
+    <div class="topbar">
+      <button id="openSide" type="button" aria-controls="side"><i class="dot on"></i>Đang thu thập</button>
+      <b style="font-family:var(--serif);font-size:20px;font-weight:500">SportsBot</b>
+      <button id="newChat2" type="button" aria-label="Cuộc trò chuyện mới">+</button>
+    </div>
+    <div class="scroll" id="scroll">
+      <div class="column">
+        <section class="hero" id="hero">
+          <h1 class="reveal" id="greet">Hôm nay sân cỏ có gì?</h1>
+          <p class="lede reveal">Hỏi về tin thể thao mới nhất. SportsBot chỉ trả lời từ những bài báo đã thu thập, và luôn ghi nguồn cùng giờ đăng.</p>
+          <form class="composer reveal" data-composer>
+            <textarea rows="1" maxlength="2000" placeholder="Hỏi về một trận đấu, đội bóng hay vận động viên…" aria-label="Câu hỏi"></textarea>
+            <div class="composer-row">
+              <span class="hint">Enter để gửi, Shift+Enter xuống dòng</span>
+              <button class="send" type="submit" aria-label="Gửi câu hỏi" disabled>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+              </button>
+            </div>
+          </form>
+          <div class="prompts reveal" id="prompts">
+            <button class="prompt" type="button" data-q="Arsenal thắng Liverpool như thế nào?"><b>Arsenal thắng Liverpool như thế nào?</b><span>Diễn biến trận đấu từ nhiều tờ báo</span></button>
+            <button class="prompt" type="button" data-q="Tin bóng đá Việt Nam mới nhất?"><b>Tin bóng đá Việt Nam mới nhất</b><span>V-League, đội tuyển, cúp châu Á</span></button>
+            <button class="prompt" type="button" data-q="V-League hiện tại đội nào dẫn đầu bảng xếp hạng?"><b>V-League: đội nào đang dẫn đầu?</b><span>Bảng xếp hạng theo bài mới nhất</span></button>
+            <button class="prompt" type="button" data-q="What did Luis Enrique say before the match?"><b>What did Luis Enrique say?</b><span>Hỏi bằng tiếng Anh, nguồn tiếng Tây Ban Nha</span></button>
+          </div>
+        </section>
+        <section class="thread" id="thread" aria-live="polite"></section>
+      </div>
+    </div>
+    <div class="dock">
+      <div class="column">
+        <form class="composer" data-composer>
+          <textarea rows="1" maxlength="2000" placeholder="Hỏi tiếp…" aria-label="Câu hỏi"></textarea>
+          <div class="composer-row">
+            <span class="hint">Chỉ trả lời từ tin đã thu thập</span>
+            <button class="send" type="submit" aria-label="Gửi câu hỏi" disabled>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+</div>
+
 <script>
-// The page is served by the backend at /app/, so the API is on the same origin.
-const API = location.origin;
-const feed = document.getElementById("feed");
-const seen = new Set();
+"use strict";
+const API = (window.SPORTSBOT_API || location.origin).replace(/\/$/, "");
+const $ = (s, el = document) => el.querySelector(s);
+const app = $("#app"), thread = $("#thread"), scroller = $("#scroll"), feed = $("#feed");
+let conversationId = null, busy = false;
 
-function fmtTime(iso) {
-  if (!iso) return "time unknown";
-  const d = new Date(iso);
-  return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
-}
-
-function el(tag, attrs = {}, text = "") {
-  const node = document.createElement(tag);
-  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
-  if (text) node.textContent = text;  // textContent: never inject HTML from articles
-  return node;
-}
-
-function addArticles(items, isNew) {
-  for (const a of items) {
-    if (seen.has(a.article_id)) continue;
-    seen.add(a.article_id);
-    const item = el("div", { class: "item" + (isNew ? " new" : "") });
-    item.append(el("a", { href: a.source_url, target: "_blank", rel: "noopener" }, a.title));
-    item.append(el("div", { class: "meta" },
-      `${a.source_name} · published ${fmtTime(a.published_at)}${a.language ? " · " + a.language : ""}`));
-    feed.prepend(item);
+// ---------------------------------------------------------------- helpers
+function el(tag, props = {}, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === "class") n.className = v; else if (k === "text") n.textContent = v; else n.setAttribute(k, v);
   }
-  document.getElementById("count").textContent = `${seen.size} shown`;
+  for (const k of kids) if (k != null) n.append(k);
+  return n;
 }
+const rtf = new Intl.RelativeTimeFormat("vi", { numeric: "auto" });
+function ago(iso) {
+  if (!iso) return "chưa rõ giờ đăng";
+  const s = (new Date(iso) - Date.now()) / 1000;
+  const units = [["year", 31536e3], ["month", 2592e3], ["day", 86400], ["hour", 3600], ["minute", 60]];
+  for (const [u, sec] of units) if (Math.abs(s) >= sec) return rtf.format(Math.round(s / sec), u);
+  return "vừa xong";
+}
+function stamp(iso) {
+  if (!iso) return "chưa rõ giờ đăng";
+  const d = new Date(iso);
+  const hm = d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+  return `${hm}, ${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+}
+function greet() {
+  const h = new Date().getHours();
+  const part = h < 11 ? "Chào buổi sáng" : h < 14 ? "Chào buổi trưa" : h < 18 ? "Chào buổi chiều" : "Chào buổi tối";
+  $("#greet").replaceChildren(`${part}.`, el("br"), "Hôm nay sân cỏ có gì?");
+}
+greet();
 
-function connectFeed() {
+// ------------------------------------------------------------ live panel
+const shown = new Set();
+function setCount(id, value) {
+  const n = $(id);
+  const next = Number(value || 0).toLocaleString("vi-VN");
+  if (n.textContent === next) return;
+  n.textContent = next;
+  n.classList.add("bump");
+  setTimeout(() => n.classList.remove("bump"), 900);
+}
+function pushFeed(li, fresh) {
+  const empty = feed.querySelector(".empty");
+  if (empty) empty.parentElement.remove();
+  if (fresh) li.classList.add("fresh");
+  feed.prepend(li);
+  while (feed.children.length > 60) feed.lastElementChild.remove();
+}
+function addArticles(items, fresh) {
+  for (const a of items) {
+    if (shown.has(a.article_id)) continue;
+    shown.add(a.article_id);
+    const link = el("a", { href: a.source_url, target: "_blank", rel: "noopener", text: a.title, title: a.title });
+    const sub = el("span", { class: "sub", text: `${a.source_name}, ${ago(a.published_at)}` });
+    pushFeed(el("li", {}, el("i", { class: "mark", "aria-hidden": "true" }), el("div", {}, link, sub)), fresh);
+  }
+}
+function addRuns(items, fresh) {
+  for (const r of items) {
+    const failed = r.status === "failed";
+    if (!failed && !(r.items_new > 0)) continue; // quiet runs are not news
+    const text = failed
+      ? `${r.source_name}: lỗi khi đọc nguồn${r.http_status ? ` (HTTP ${r.http_status})` : ""}`
+      : `${r.source_name}: ${r.items_new} bài mới được phát hiện`;
+    const sub = el("span", { class: "sub", text: ago(r.finished_at) });
+    pushFeed(el("li", {}, el("i", { class: `mark ${failed ? "fail" : "run"}`, "aria-hidden": "true" }),
+      el("div", {}, el("span", { text }), sub)), fresh);
+  }
+}
+function setLive(on, text) {
+  $("#dot").classList.toggle("on", on);
+  $("#statusText").textContent = text;
+}
+let firstBatch = true, retry = 1000;
+function connect() {
   const ws = new WebSocket(API.replace(/^http/, "ws") + "/ws/news");
-  let first = true;
-  ws.onopen = () => document.getElementById("live").classList.add("live");
+  ws.onopen = () => { setLive(true, "Trực tiếp"); retry = 1000; };
   ws.onmessage = (ev) => {
-    const msg = JSON.parse(ev.data);
-    if (msg.type === "articles") { addArticles(msg.items, !first); first = false; }
+    const m = JSON.parse(ev.data);
+    if (m.type === "articles") addArticles(m.items, !firstBatch);
+    else if (m.type === "runs") addRuns(m.items, !firstBatch);
+    else if (m.type === "stats") {
+      setCount("#sArticles", m.articles); setCount("#sHour", m.last_hour);
+      setCount("#sLangs", m.languages);
+      $("#sSources").textContent = `${m.sources_active ?? 0}/${m.sources_enabled ?? 0}`;
+      firstBatch = false;
+    }
   };
   ws.onclose = () => {
-    document.getElementById("live").classList.remove("live");
-    setTimeout(connectFeed, 5000);  // reconnect
+    setLive(false, "Mất kết nối, đang thử lại");
+    setTimeout(connect, retry);
+    retry = Math.min(retry * 2, 30000);
   };
 }
-connectFeed();
+connect();
 
-const log = document.getElementById("log");
-const form = document.getElementById("ask");
-const input = document.getElementById("q");
-const send = document.getElementById("send");
-let conversationId = null;
-
-function renderCitations(box, citations) {
-  if (!citations.length) return;
-  const list = el("ol", { class: "cites" });
+// ---------------------------------------------------------------- answer rendering
+// Text from the model is untrusted: escape first, then add the little markup we allow.
+function esc(s) { return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+function renderAnswer(text, citations) {
+  const urls = Object.fromEntries((citations || []).map((c) => [String(c.index), c]));
+  const inline = (s) => esc(s)
+    .replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")
+    .replace(/\[(\d+)\]/g, (m, n) => urls[n]
+      ? `<a class="cite" href="${esc(urls[n].source_url)}" target="_blank" rel="noopener" title="${esc(urls[n].title)}">${n}</a>`
+      : m);
+  const out = [];
+  let list = [];
+  const flush = () => { if (list.length) { out.push(`<ul>${list.map((i) => `<li>${inline(i)}</li>`).join("")}</ul>`); list = []; } };
+  for (const line of text.split(/\n/)) {
+    const t = line.trim();
+    if (/^[-*•]\s+/.test(t)) list.push(t.replace(/^[-*•]\s+/, ""));
+    else { flush(); if (t) out.push(`<p>${inline(t)}</p>`); }
+  }
+  flush();
+  return out.join("");
+}
+function sourceCards(citations) {
+  const wrap = el("div", { class: "sources" });
   for (const c of citations) {
-    const li = el("li", { value: String(c.index) });
-    li.append(el("a", { href: c.source_url, target: "_blank", rel: "noopener" }, c.title));
-    li.append(document.createTextNode(` — ${c.source_name}, published ${fmtTime(c.published_at)}`));
-    list.append(li);
+    wrap.append(el("a", { class: "src", href: c.source_url, target: "_blank", rel: "noopener" },
+      el("span", { class: "num", text: String(c.index) }),
+      el("span", {}, el("span", { class: "t", text: c.title }),
+        el("span", { class: "m", text: `${c.source_name}, ${stamp(c.published_at)}` }))));
   }
-  box.append(list);
+  return wrap;
 }
 
+// ---------------------------------------------------------------- chat
+function scrollDown() { scroller.scrollTop = scroller.scrollHeight; }
 async function ask(question) {
-  log.append(el("div", { class: "msg user" }, question));
-  const box = el("div", { class: "msg bot" });
-  const status = el("div", { class: "status" }, "Searching collected articles…");
-  const text = el("div");
-  box.append(status, text);
-  log.append(box);
-  log.scrollTop = log.scrollHeight;
+  if (busy) return;
+  busy = true; updateSend();
+  app.classList.add("chatting");
+  const turn = el("div", { class: "turn" }, el("div", { class: "q", text: question }));
+  const answer = el("div", { class: "a" });
+  const body = el("div", { class: "body" });
+  const thinking = el("div", { class: "thinking" }, el("i"), el("span", { text: "Đang tìm trong các bài đã thu thập…" }));
+  answer.append(thinking, body);
+  turn.append(answer);
+  thread.append(turn);
+  scrollDown();
 
-  const resp = await fetch(API + "/chat/stream", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message: question, conversation_id: conversationId }),
-  });
-  if (!resp.ok) {
-    const err = await resp.json().catch(() => ({}));
-    status.textContent = (err.error && err.error.message) || `Error ${resp.status}`;
-    return;
-  }
-  const reader = resp.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  for (;;) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    let cut;
-    while ((cut = buffer.indexOf("\n\n")) >= 0) {
-      const block = buffer.slice(0, cut);
-      buffer = buffer.slice(cut + 2);
-      const event = /event: (.*)/.exec(block)[1];
-      const data = JSON.parse(/data: (.*)/s.exec(block)[1]);
-      if (event === "status") status.textContent = data.stage === "answering" ? "" : "Searching collected articles…";
-      else if (event === "delta") text.textContent += data.text;
-      else if (event === "citations") renderCitations(box, data);
-      else if (event === "done") {
-        conversationId = data.conversation_id;
-        if (data.notice) box.append(el("div", { class: "notice" }, data.notice));
-        const llm = data.meta && data.meta.llm ? ` · ${data.meta.llm}` : "";
-        status.textContent = `${data.mode}${llm}`;
-        box.append(status);
-      } else if (event === "error") status.textContent = data.message;
-      log.scrollTop = log.scrollHeight;
+  let text = "";
+  try {
+    const resp = await fetch(API + "/chat/stream", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: question, conversation_id: conversationId }),
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error((err.error && err.error.message) || `Máy chủ trả lỗi ${resp.status}`);
     }
+    const reader = resp.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "";
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let cut;
+      while ((cut = buf.indexOf("\n\n")) >= 0) {
+        const block = buf.slice(0, cut); buf = buf.slice(cut + 2);
+        const ev = (/^event: (.*)$/m.exec(block) || [])[1];
+        const data = JSON.parse((/^data: (.*)$/m.exec(block) || [, "null"])[1]);
+        if (ev === "status" && data.stage === "answering") thinking.lastChild.textContent = "Đang viết câu trả lời…";
+        else if (ev === "delta") { text += data.text; body.innerHTML = renderAnswer(text, []); thinking.remove(); }
+        else if (ev === "citations") {
+          body.innerHTML = renderAnswer(text, data);
+          if (data.length) answer.append(sourceCards(data));
+        } else if (ev === "done") {
+          conversationId = data.conversation_id;
+          if (data.notice) answer.insertBefore(el("div", { class: "notice", text: data.notice }), body);
+          const parts = [];
+          if (data.meta && data.meta.llm) parts.push(`Trả lời bởi ${data.meta.llm.replace(/^gemini:/, "Gemini ")}`);
+          if (data.meta && data.meta.seconds) parts.push(`${data.meta.seconds} giây`);
+          if (data.mode === "excerpts") parts.push("hiển thị trích đoạn");
+          if (parts.length) answer.append(el("div", { class: "meta", text: parts.join(", ") }));
+        } else if (ev === "error") throw new Error(data.message);
+        scrollDown();
+      }
+    }
+  } catch (e) {
+    thinking.remove();
+    answer.append(el("div", { class: "notice", text: `Không nhận được câu trả lời: ${e.message}. Thử lại sau ít phút.` }));
+  } finally {
+    busy = false; updateSend(); scrollDown();
   }
 }
 
-form.addEventListener("submit", async (ev) => {
-  ev.preventDefault();
-  const q = input.value.trim();
-  if (!q) return;
-  input.value = "";
-  send.disabled = true;
-  try { await ask(q); } catch (e) { log.append(el("div", { class: "msg bot" }, "Network error: " + e)); }
-  finally { send.disabled = false; input.focus(); }
+// ---------------------------------------------------------------- composer wiring
+const forms = document.querySelectorAll("[data-composer]");
+function updateSend() {
+  forms.forEach((f) => { $("button", f).disabled = busy || !$("textarea", f).value.trim(); });
+}
+forms.forEach((f) => {
+  const ta = $("textarea", f);
+  const grow = () => { ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight, 200) + "px"; updateSend(); };
+  ta.addEventListener("input", grow);
+  ta.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); f.requestSubmit(); }
+  });
+  f.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const q = ta.value.trim();
+    if (!q || busy) return;
+    ta.value = ""; grow();
+    ask(q);
+    $(".dock textarea").focus();
+  });
 });
+document.querySelectorAll(".prompt").forEach((b) => b.addEventListener("click", () => ask(b.dataset.q)));
+function newChat() {
+  conversationId = null; thread.replaceChildren(); app.classList.remove("chatting");
+  closeSide(); $(".hero textarea").focus();
+}
+$("#newChat").addEventListener("click", newChat);
+$("#newChat2").addEventListener("click", newChat);
+const side = $("#side"), scrim = $("#scrim");
+function closeSide() { side.classList.remove("open"); scrim.classList.remove("show"); }
+$("#openSide").addEventListener("click", () => { side.classList.add("open"); scrim.classList.add("show"); });
+scrim.addEventListener("click", closeSide);
 </script>
 </body>
 </html>

@@ -59,17 +59,21 @@ async def sources(request: Request) -> list[dict[str, Any]]:
 
 @router.websocket("/ws/news")
 async def news_feed(websocket: WebSocket) -> None:
-    """Push new articles to the browser.
+    """Live feed for the web page: new articles, crawl activity and corpus counters.
 
-    On connect: the 20 most recently stored articles. Then every `poll_seconds`, articles stored
-    since the last push. Polling the indexed `ingested_at` column is simple and survives
-    database restarts; at this scale it costs one small query per client every few seconds.
+    Messages (JSON):
+    - {"type": "articles", "items": [ArticleSummary]}  latest 20 on connect, then new ones
+    - {"type": "runs", "items": [run]}                  finished collection runs (activity)
+    - {"type": "stats", ...counters}                    on connect, then every few polls
+    Polling indexed columns every `poll_seconds` is simple and survives database restarts.
     """
     await websocket.accept()
     app = websocket.app
     repo = app.state.news_repo
     poll = app.state.news_poll_seconds
     last_seen: datetime | None = None
+    last_run: int | None = None
+    tick = 0
     try:
         while True:
             rows = await run_in_threadpool(repo.since, last_seen, 20)
@@ -77,6 +81,14 @@ async def news_feed(websocket: WebSocket) -> None:
                 last_seen = max(r["ingested_at"] for r in rows)
                 items = [to_summary(r) for r in reversed(rows)]  # oldest first
                 await websocket.send_json({"type": "articles", "items": items})
+            runs = await run_in_threadpool(repo.runs_since, last_run, 15)
+            if runs:
+                last_run = max(r["run_id"] for r in runs)
+                await websocket.send_json({"type": "runs", "items": runs})
+            if tick % 3 == 0:
+                stats = await run_in_threadpool(repo.stats)
+                await websocket.send_json({"type": "stats", **stats})
+            tick += 1
             await asyncio.sleep(poll)
     except WebSocketDisconnect:
         return

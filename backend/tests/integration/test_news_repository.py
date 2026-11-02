@@ -79,3 +79,24 @@ def test_latest_pages_with_cursor_and_limits_excerpt(engine):
     assert repo.get("f" * 64) is None
     assert any(r["source_id"] == SOURCE for r in repo.sources())
     assert len(repo.since(None, 3)) == 3
+
+
+def test_stats_and_runs_for_the_live_panel(engine):
+    repo = PostgresNewsRepository(engine)
+    stats = repo.stats()
+    assert stats["articles"] >= 5 and stats["languages"] >= 1
+    assert {"last_hour", "last_24h", "sources_enabled", "sources_active"} <= stats.keys()
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO collection_runs (source_id, status, items_fetched, items_new, "
+                "finished_at) VALUES (:s, 'success', 10, 3, now())"
+            ),
+            {"s": SOURCE},
+        )
+    runs = repo.runs_since(None, 5)
+    mine = [r for r in runs if r["source_id"] == SOURCE]
+    assert mine and mine[-1]["items_new"] == 3 and mine[-1]["source_name"] == "ITest"
+    assert repo.runs_since(mine[-1]["run_id"], 5) == []
+    with engine.begin() as conn:
+        conn.execute(text("DELETE FROM collection_runs WHERE source_id = :s"), {"s": SOURCE})
