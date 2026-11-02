@@ -140,12 +140,12 @@ Both run on one host, so they are reported as **single-machine / pseudo-distribu
 
 RSS feeds and official APIs come first. Page extraction is enabled per source only after checking robots.txt and the terms of service. Full text is stored for internal processing; the bot displays only a title, a short excerpt and a link to the original.
 
-Live check on 2026-11-02 (`make sources-check`, run from a GitHub-hosted runner in the US):
+Live check on 2026-11-02 (`make sources-check`, from a GitHub-hosted runner in the US and from Vietnam):
 
 | Source | Language | Type | Coverage | Status |
 |---|---|---|---|---|
 | Tuổi Trẻ Thể thao | Vietnamese | RSS | All sports, incl. volleyball | Working (50 entries) |
-| VnExpress Thể thao | Vietnamese | RSS | All sports | HTTP 404 from the US runner; re-check from Vietnam |
+| VnExpress Thể thao | Vietnamese | RSS | All sports | Working from Vietnam (60 entries); HTTP 404 from the US runner |
 | BBC Sport football, tennis, basketball | English | RSS | Football, tennis, basketball | Working (74 / 55 / 17 entries, all dated) |
 | The Guardian Football | English | RSS | Football | Working (59 entries) |
 | MARCA Fútbol | Spanish | RSS | Football | Working (47 entries) |

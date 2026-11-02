@@ -21,4 +21,5 @@
 - "Near real time" means within one source interval plus the Silver/Gold batch; the lag is measured from `published_at`, `collected_at` and `collection_runs`.
 - Exact duplicates within a source are removed at collection; duplicates across sources (the same story from two outlets) are left for the Silver job (MinHashLSH), which needs all sources together.
 - Sources must be re-checked regularly (`make sources-check`); results go into the registry notes.
-- Open: VnExpress must be re-checked from Vietnam (the 404 may be specific to the runner's location); a French source that accepts us is still needed.
+- VnExpress answers from Vietnam (60 entries, checked 2026-11-02 on TMK's Mac) but returns 404 to a US GitHub runner, so the collector must run from Vietnam to include it; CI's live check is informational only.
+- Open: a French source that accepts us is still needed.
