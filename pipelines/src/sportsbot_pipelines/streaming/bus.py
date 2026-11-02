@@ -115,18 +115,27 @@ class KafkaBus:
             }
         )
 
+    @staticmethod
+    def _on_delivery(err: Any, msg: Any) -> None:
+        if err is not None:  # e.g. broker down longer than the producer's retry window
+            logger.error("kafka_delivery_failed", extra={"topic": msg.topic(), "error": str(err)})
+
     def publish(self, topic: str, key: str, value: dict[str, Any]) -> None:
         data = json.dumps(value, ensure_ascii=False).encode("utf-8")
         while True:
             try:
-                self._producer.produce(topic, key=key.encode("utf-8"), value=data)
+                self._producer.produce(
+                    topic, key=key.encode("utf-8"), value=data, on_delivery=self._on_delivery
+                )
                 break
             except BufferError:  # local queue full: let it drain, then retry
                 self._producer.poll(0.5)
         self._producer.poll(0)
 
     def flush(self) -> None:
-        self._producer.flush(30)
+        remaining = self._producer.flush(30)
+        if remaining:
+            logger.error("kafka_flush_incomplete", extra={"pending_messages": remaining})
 
 
 def run_consumer(

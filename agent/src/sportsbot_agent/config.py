@@ -74,7 +74,8 @@ class AgentConfig:
             articles_dir=Path(env.get("ARTICLES_DIR") or d.articles_dir),
             top_k=_int(env, "RETRIEVAL_TOP_K", d.top_k),
             min_matched_terms=_int(env, "RETRIEVAL_MIN_MATCHED_TERMS", d.min_matched_terms),
-            gemini_api_key=env.get("GEMINI_API_KEY", ""),
+            # strip(): a .env saved with Windows line endings must not break the key.
+            gemini_api_key=env.get("GEMINI_API_KEY", "").strip(),
             gemini_base_url=(env.get("GEMINI_BASE_URL") or d.gemini_base_url).rstrip("/"),
             gemini_models=_list(env, "GEMINI_MODELS", d.gemini_models),
             llm_cooldown_seconds=_float(env, "LLM_COOLDOWN_SECONDS", d.llm_cooldown_seconds),

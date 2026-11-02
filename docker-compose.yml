@@ -347,10 +347,12 @@ services:
 
   # ------------------------------------------------------------------ ai ----
   # llama.cpp server with GGUF models from ./models (download: `make models`).
+  # Pinned release tag: versioned tags ship linux/amd64 and linux/arm64 (Apple Silicon); the
+  # moving `:server` tag has been reported as amd64-only.
   # CPU inside Docker. On a Mac, a native `llama-server` (brew install llama.cpp) uses the GPU
   # and is several times faster: see docs/runbooks/streaming-stack.md.
   embedder:
-    image: ${LLAMA_CPP_IMAGE:-ghcr.io/ggml-org/llama.cpp:server}
+    image: ${LLAMA_CPP_IMAGE:-ghcr.io/ggml-org/llama.cpp:server-v0.5.0}
     profiles: [ai]
     command:
       ["-m", "/models/${EMBEDDING_GGUF:-bge-m3-q8_0.gguf}", "--embedding", "--pooling", "cls",
@@ -367,7 +369,7 @@ services:
       retries: 30
 
   reranker:
-    image: ${LLAMA_CPP_IMAGE:-ghcr.io/ggml-org/llama.cpp:server}
+    image: ${LLAMA_CPP_IMAGE:-ghcr.io/ggml-org/llama.cpp:server-v0.5.0}
     profiles: [ai]
     command:
       ["-m", "/models/${RERANK_GGUF:-bge-reranker-v2-m3-Q8_0.gguf}", "--reranking", "--embedding",

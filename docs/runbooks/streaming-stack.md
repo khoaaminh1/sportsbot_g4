@@ -1,7 +1,12 @@
 # Runbook: streaming pipeline, AI services and the demo
 
-Covers ADR 0005-0007. Works on macOS (Docker Desktop or OrbStack) and Windows (Docker Desktop
-with WSL2; run the commands inside Ubuntu). Commands run from the repository root.
+Covers ADR 0005-0007. Works on macOS, Intel or Apple Silicon (Docker Desktop or OrbStack), and
+Windows (Docker Desktop with WSL2: clone and run the commands inside Ubuntu, not in PowerShell).
+Commands run from the repository root. CI runs the stack on x86_64 (Intel/AMD) Linux.
+
+Intel CPUs: the embedder and reranker run on the CPU. Give Docker at least 8 GB of memory and
+4 CPUs (Docker Desktop → Settings → Resources), and expect slower embedding than on Apple
+Silicon; `make crawl-stats` shows whether vectors keep up with new articles.
 
 ## 0. One-time setup
 
@@ -67,9 +72,10 @@ make ask-no-llm Q="Hà Nội FC"       # which articles the retrieval finds, wit
 The answer lists sources with titles, publication times and links. "no_evidence" means no
 stored article matched: the LLM was not called.
 
-## 4. Faster AI services on a Mac (optional)
+## 4. Faster AI services on an Apple Silicon Mac (optional)
 
-Docker on macOS has no GPU access. Native llama.cpp uses Metal:
+Only for M1-M5 Macs: Docker has no GPU access, native llama.cpp uses Metal. On Intel Macs and
+Windows PCs keep the Docker services (CPU); they are the tested path (`linux/amd64`).
 
 ```bash
 brew install llama.cpp
