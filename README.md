@@ -1,6 +1,6 @@
 # Vietnam SportsBot
 
-![Status: planning](https://img.shields.io/badge/status-phase%202%20infrastructure-blue.svg)
+![Status: phase 3](https://img.shields.io/badge/status-phase%203%20data%20engineering-blue.svg)
 ![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)
 ![Course: Big Data](https://img.shields.io/badge/course-Big%20Data-orange.svg)
 
@@ -8,7 +8,7 @@ A real-time multilingual sports news chatbot. It continuously collects sports ne
 
 Initial focus: **Vietnamese football and volleyball**, with basketball, tennis and badminton next. The architecture is built to add sports, sources and languages later.
 
-> **Status (2026-11-02): Phase 2, core infrastructure, done (pending merge).** The Docker stack (PostgreSQL, Qdrant, HDFS with 2 DataNodes, Spark), the backend foundation with health checks, the database schema, the frozen contracts and CI are implemented and verified in CI ([Phase 2 report](docs/reports/phase-2.md)). Data collection, ML, retrieval and the chatbot itself are still *planned*. Implemented features are marked as such, with the command that demonstrates them. Plan and decisions: [Phase 1 technical assessment](https://claude.ai/artifact/7ZYx8ciw2dSwvCWihkrqvk).
+> **Status (2026-11-02): Phase 3 in progress.** Implemented and verified: the Docker stack (PostgreSQL, Qdrant, HDFS with 2 DataNodes, Spark), the backend foundation with health checks, the database schema, the frozen contracts, CI, and automatic news collection from 7 sources in 3 languages into HDFS ([Phase 2 report](docs/reports/phase-2.md), [ADR 0003](docs/decisions/0003-collection-and-bronze.md)). Spark Silver/Gold processing, ML, retrieval and the chatbot itself are still *planned*. Implemented features are marked as such, with the command that demonstrates them. Plan and decisions: [Phase 1 technical assessment](docs/plan/phase-1-assessment.md).
 
 ## Table of contents
 
@@ -77,7 +77,7 @@ The request path never reads HDFS or runs Spark. HDFS keeps every raw and proces
 
 | Component | Status | Evidence |
 |---|---|---|
-| Project brief and Phase 1 assessment | Done | This README, [assessment](https://claude.ai/artifact/7ZYx8ciw2dSwvCWihkrqvk) |
+| Project brief and Phase 1 assessment | Done | This README, [assessment](docs/plan/phase-1-assessment.md) |
 | Local prototype (terminal + Streamlit, synthetic records, keyword matching) | Exists locally, **not published** | To be pushed to a branch for audit |
 | Docker stack (core + bigdata profiles), PostgreSQL schema, contracts, CI | **Implemented** (Phase 2) | `make up-core`, `make up-bigdata`, `make spark-smoke`; [Phase 2 report](docs/reports/phase-2.md) |
 | Backend foundation: config, JSON logging, errors, `/health` | **Implemented** (Phase 2) | `curl localhost:8000/health`; `make test` |
