@@ -67,6 +67,10 @@ class NewsRepository(Protocol):
 
     def sources(self) -> list[dict[str, Any]]: ...
 
+    def stats(self) -> dict[str, Any]: ...
+
+    def runs_since(self, after_run_id: int | None, limit: int) -> list[dict[str, Any]]: ...
+
 
 class PostgresNewsRepository:
     def __init__(self, engine: Engine) -> None:
@@ -146,3 +150,47 @@ class PostgresNewsRepository:
         with self.engine.connect() as conn:
             rows = conn.execute(text(sql)).mappings().all()
         return [{**dict(r), "last_success_at": _iso(r["last_success_at"])} for r in rows]
+
+    def stats(self) -> dict[str, Any]:
+        """Corpus counters for the live crawl panel (cheap: indexed columns only)."""
+        sql = """
+            SELECT
+              (SELECT count(*) FROM articles WHERE content IS NOT NULL) AS articles,
+              (SELECT count(*) FROM articles
+                WHERE content IS NOT NULL AND ingested_at > now() - interval '1 hour')
+                AS last_hour,
+              (SELECT count(*) FROM articles
+                WHERE content IS NOT NULL AND ingested_at > now() - interval '24 hours')
+                AS last_24h,
+              (SELECT count(DISTINCT language) FROM articles WHERE content IS NOT NULL)
+                AS languages,
+              (SELECT count(*) FROM sources WHERE enabled) AS sources_enabled,
+              (SELECT count(DISTINCT source_id) FROM collection_runs
+                WHERE status = 'success' AND started_at > now() - interval '2 hours')
+                AS sources_active,
+              (SELECT max(ingested_at) FROM articles) AS newest_ingested_at
+        """
+        with self.engine.connect() as conn:
+            row = dict(conn.execute(text(sql)).mappings().one())
+        row["newest_ingested_at"] = _iso(row["newest_ingested_at"])
+        return {k: (int(v) if isinstance(v, int) else v) for k, v in row.items()}
+
+    def runs_since(self, after_run_id: int | None, limit: int) -> list[dict[str, Any]]:
+        """Finished collection runs (newest last), for the live activity feed."""
+        sql = """
+            SELECT r.run_id, r.source_id, s.name AS source_name, s.language, r.status,
+                   r.items_fetched, r.items_new, r.http_status, r.finished_at,
+                   left(r.error, 160) AS error
+            FROM collection_runs r JOIN sources s USING (source_id)
+            WHERE r.finished_at IS NOT NULL
+        """
+        params: dict[str, Any] = {"limit": limit}
+        if after_run_id is not None:
+            sql += " AND r.run_id > :after"
+            params["after"] = after_run_id
+        sql += " ORDER BY r.run_id DESC LIMIT :limit"
+        with self.engine.connect() as conn:
+            rows = [dict(r) for r in conn.execute(text(sql), params).mappings()]
+        for r in rows:
+            r["finished_at"] = _iso(r["finished_at"])
+        return list(reversed(rows))
