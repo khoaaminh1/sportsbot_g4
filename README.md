@@ -1,168 +1,154 @@
+<div align="center">
+
 # Vietnam SportsBot
 
-![Status: presentation 10 Nov](https://img.shields.io/badge/presentation-10%20Nov%202026-blue.svg)
-![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)
-![Course: Big Data](https://img.shields.io/badge/course-Big%20Data-orange.svg)
+**A multilingual sports news assistant that answers only from the news it has collected, and shows its sources.**
 
-A near-real-time multilingual sports news chatbot. It collects sports news from Vietnamese and international sites, streams it through Kafka into PostgreSQL and a vector index, archives it to HDFS for Spark processing, and answers questions in **Vietnamese or English** only from the articles it has collected. Every answer cites its sources with links and publication times; without evidence, the bot says so instead of guessing.
+[![CI](https://github.com/khoaaminh1/sportsbot_g4/actions/workflows/ci.yml/badge.svg)](https://github.com/khoaaminh1/sportsbot_g4/actions/workflows/ci.yml)
+![Python 3.11](https://img.shields.io/badge/python-3.11-3776AB.svg)
+![Kafka](https://img.shields.io/badge/stream-Kafka%203.9-231F20.svg)
+![Spark](https://img.shields.io/badge/batch-Spark%203.5%20%2B%20HDFS-E25A1C.svg)
+![Course](https://img.shields.io/badge/Big%20Data%20course-Group%204-1f4e79.svg)
 
-> **Status (2026-11-02, branch `feature/stream-rag-skeleton`).** Presentation: **Tuesday 10 November 2026**. The pipeline from the team diagram is implemented as a working skeleton and tested (unit tests, PostgreSQL 16, Qdrant 1.19, and a CI job through a real Kafka broker). It has **not yet run on a team laptop with real news sites and the real models**: that is step 1 of the [plan](docs/plans/2026-11-02-plan-to-presentation.md). Spark Silver/Gold, the classifier and the evaluation are still to do. Earlier phases: [Phase 1 assessment](docs/plan/phase-1-assessment.md), [Phase 2 report](docs/reports/phase-2.md).
+[Architecture](#architecture) · [Status](#status) · [Quick start](#quick-start) · [Team](#team) · [Documentation](#documentation)
 
-## Contents
+</div>
 
-1. [Architecture](#architecture)
-2. [Implementation status](#implementation-status)
-3. [Quick start (demo)](#quick-start-demo)
-4. [Plan and team](#plan-and-team)
-5. [Repository map](#repository-map)
-6. [Data sources](#data-sources)
-7. [RAG and models](#rag-and-models)
-8. [API](#api)
-9. [Big Data layer](#big-data-layer)
-10. [Working on this repo](#working-on-this-repo)
-11. [Honesty rules](#honesty-rules)
+SportsBot collects sports news (football, tennis, basketball, volleyball, badminton, F1, athletics and more) from Vietnamese and international publishers, streams it through **Kafka** into **PostgreSQL** and a **Qdrant** vector index, archives it on **HDFS** for **Spark**, and answers questions in Vietnamese or English with **hybrid retrieval-augmented generation**. Every answer cites the articles it used, with links and publication times. When the collected news does not contain the answer, the bot says so instead of guessing.
+
+<table>
+<tr><td><b>Grounded answers</b></td><td>Keyword + vector search, reranking, numbered citations; no evidence means no LLM call.</td></tr>
+<tr><td><b>Near real time</b></td><td>RSS discovery every 30-60 minutes per source, sitemap and section backfill, live feed in the web page over WebSocket.</td></tr>
+<tr><td><b>Multilingual</b></td><td>Vietnamese, English, Spanish and French sources; questions in Vietnamese or English; follow-up questions understood ("anh ấy" after "Rooney").</td></tr>
+<tr><td><b>Free to run</b></td><td>Open models on CPU (BGE-M3, bge-reranker-v2-m3 via llama.cpp) and free Gemini models in rotation.</td></tr>
+<tr><td><b>Responsible crawling</b></td><td>robots.txt respected, one request per site every 3 s, failing sources backed off and reported.</td></tr>
+</table>
 
 ## Architecture
 
 ```mermaid
-flowchart TD
-  S[sources.json: 23 RSS feeds + sitemaps] --> D[Discovery: RSS scan, sitemap backfill, URL normalisation]
-  D --> K1[[Kafka: articles.discovered]]
-  K1 --> X[Extractor: fetch politely, extract text, de-duplicate]
-  X --> K2[[Kafka: articles.extracted]]
-  X -. errors .-> DL[[Kafka: articles.dead-letter]]
-  K2 --> CO[Consumer operational] --> PG[(PostgreSQL: articles, keyword index)]
-  K2 --> CS[Consumer semantic: chunks -> BGE-M3] --> QD[(Qdrant: vectors)]
-  K2 --> CA[Consumer archive] --> HD[(HDFS Bronze)] --> SP[Spark: Silver/Gold, near-dup, experiments]
-  PG & QD --> RAG[Advanced RAG: keyword + vector, RRF, bge-reranker]
-  RAG --> LLM[Free Gemini models, tried in turn]
-  PG --> N[FastAPI: news + WebSocket]
-  RAG --> C[FastAPI: chat over SSE]
-  N & C --> FE[Demo page /app/]
+flowchart LR
+  S[sources.json<br/>48 feeds + sitemaps + section pages] --> D[Discovery]
+  D --> K1[[Kafka<br/>articles.discovered]]
+  K1 --> X[Extractor<br/>fetch, extract, dedup]
+  X --> K2[[Kafka<br/>articles.extracted]]
+  X -. failures .-> DL[[Kafka<br/>articles.dead-letter]]
+  K2 --> CO[Operational consumer] --> PG[(PostgreSQL<br/>articles + full-text search)]
+  K2 --> CS[Semantic consumer<br/>chunks, BGE-M3] --> QD[(Qdrant<br/>vectors)]
+  K2 --> CA[Archive consumer] --> HD[(HDFS Bronze)] --> SP[Spark<br/>Silver/Gold, near-duplicates]
+  PG & QD --> RAG[Hybrid RAG<br/>RRF + reranker]
+  RAG --> LLM[Gemini models<br/>in rotation]
+  PG --> API[FastAPI<br/>REST, WebSocket, SSE]
+  RAG --> API
+  API --> UI[Web app /app/]
+  PG -.-> M[Monitor] -. alerts .-> AL[Discord / Telegram]
 ```
 
-Decisions: [ADR 0005 streaming with Kafka](docs/decisions/0005-streaming-pipeline-kafka.md), [ADR 0006 Gemini rotation](docs/decisions/0006-llm-gemini-model-rotation.md), [ADR 0007 BGE-M3 + reranker GGUF](docs/decisions/0007-bge-m3-and-reranker-gguf.md). Earlier: [0001-0004](docs/decisions/).
+Design decisions are recorded as ADRs: [streaming with Kafka](docs/decisions/0005-streaming-pipeline-kafka.md), [Gemini model rotation](docs/decisions/0006-llm-gemini-model-rotation.md), [BGE-M3 and reranker GGUF](docs/decisions/0007-bge-m3-and-reranker-gguf.md), and [earlier ones](docs/decisions/).
 
-## Implementation status
+## Status
 
-| Component | Status | How to see it |
-|---|---|---|
-| Docker stack, PostgreSQL schema, HDFS (2 DataNodes), Spark, CI | Done (Phase 2) | `make up-core`, `make up-bigdata`, `make spark-smoke` |
-| RSS collector into HDFS Bronze (Phase 3a) | Done | `make collect-once`, `make bronze-ls` |
-| Kafka topics, discovery, sitemap backfill | Skeleton, tested | `make up-stream`, `make backfill` |
-| Extractor (trafilatura, robots.txt, URL + text dedup, dead letters) | Skeleton, tested | `make logs-stream`, `make dead-letters` |
-| Operational consumer → PostgreSQL, accent-insensitive search (migration 003) | Skeleton, tested on PostgreSQL 16 | `make crawl-stats` |
-| Semantic consumer → BGE-M3 → Qdrant | Skeleton, tested on Qdrant 1.19 with fake vectors | `make crawl-stats` (`qdrant_chunks`) |
-| Hybrid RAG: keyword + vectors, RRF, bge-reranker, cited answers | Skeleton, unit-tested | `make ask Q="..."` |
-| LLM router: free Gemini models in rotation | Unit-tested; model names to verify with a key | `make llm-check` |
-| FastAPI: `/chat`, `/chat/stream` (SSE), `/news/latest`, `/ws/news`, ... | Done, tested with fakes | http://localhost:8000/docs |
-| Demo page (news feed + chat) | Done | http://localhost:8000/app/ |
-| Spark Silver/Gold, near-duplicates (MinHashLSH), scaling runs | **To do** (plan task 6, 9) | — |
-| Sport classifier (trained, evaluated) | **To do** (plan task 7) | — |
-| Golden questions and retrieval evaluation | **To do** (plan task 4, 8) | — |
-| Real models (BGE-M3, reranker) and real sites, end to end | **Not run yet** (plan task 1) | — |
+Presentation: **Tuesday 10 November 2026**. The system runs 24/7 on the team lead's PC (Windows 11, WSL2, Docker Desktop, i5-14400F, 32 GB).
 
-Tests: `make test` runs 157 unit and contract tests (2026-11-02); `make test-integration` runs the database and stack tests.
+| Component | State |
+|---|---|
+| Kafka pipeline: discovery, extractor, 3 consumers, dead letters, replay | Running |
+| Backfill from sitemaps and paginated sports sections | Running |
+| PostgreSQL full-text search (accent-insensitive) and Qdrant vectors (BGE-M3) | Running |
+| Hybrid RAG with reranker and cited answers | Running |
+| Conversation memory for follow-up questions | Merged and unit-tested; first live check pending |
+| FastAPI (`/chat`, `/chat/stream`, `/news/latest`, `/ws/news`, ...) and web app | Running |
+| Monitoring with Discord / Telegram alerts, circuit breaker per source | Running |
+| Private Kaggle dataset for sharing the corpus inside the team | Running |
+| HDFS + Spark stack (NameNode, 2 DataNodes, Spark 3.5) | Ready; Silver/Gold jobs in progress |
+| Spark near-duplicate detection, sport classifier, scaling runs | In progress (VNP) |
+| Golden questions, hand labels, retrieval evaluation | In progress (LTN, TMK) |
 
-## Quick start (demo)
+Measured on 2026-11-03: 1,240 articles stored, 4 languages, 20 sources active before the 28 multi-sport feeds were added. Corpus figures in reports always come from `make crawl-stats` with the date.
 
-Requirements: Docker (Docker Desktop or OrbStack on macOS; Docker Desktop + WSL2 on Windows), Python 3.11, Git, `make`. Full guide and troubleshooting: [docs/runbooks/streaming-stack.md](docs/runbooks/streaming-stack.md).
+## Quick start
+
+Requirements: Docker (Docker Desktop with WSL2 on Windows), Python 3.11, Git, `make`, about 6 GB of free RAM.
+Windows users work inside Ubuntu (WSL2); the full setup is in [docs/TEAM_ONBOARDING.md](docs/TEAM_ONBOARDING.md).
 
 ```bash
 git clone https://github.com/khoaaminh1/sportsbot_g4.git && cd sportsbot_g4
-git checkout feature/stream-rag-skeleton
-cp .env.example .env      # set GEMINI_API_KEY (free: https://aistudio.google.com/apikey); never commit .env
-make setup && make test   # Python tools, then all unit tests
-make models               # BGE-M3 + reranker GGUF files (~1.3 GB, once)
-make up-demo              # PostgreSQL, Qdrant, backend, Kafka, workers, embedder, reranker
-make llm-check            # which Gemini models answer with your key
-make discover-once        # start collecting now (the discover service also runs on a timer)
-make crawl-stats          # articles per source, vectors in Qdrant
-make ask Q="Tin bóng đá Việt Nam mới nhất?"
-open http://localhost:8000/app/   # demo page (Windows: open the URL in a browser)
-make down                 # stop (data is kept in Docker volumes)
+python3 -m venv .venv && source .venv/bin/activate
+cp .env.example .env          # add your own free GEMINI_API_KEY; never commit .env
+make setup && make test
 ```
 
-Memory (estimate): `up-demo` about 3.5-4 GB; HDFS + Spark add 1.5-3.5 GB.
+**Team members (use the shared corpus, no crawling):**
 
-## Plan and team
+```bash
+make team-data                # Kaggle download, models, start, import, build vectors
+open http://localhost:8000/app/
+```
 
-New team member? Start with [docs/TEAM_ONBOARDING.md](docs/TEAM_ONBOARDING.md) (install, run, get TMK's data, common problems).
+**Crawler machine (collect news 24/7):**
 
-Full plan with daily gates and step-by-step tasks: [docs/plans/2026-11-02-plan-to-presentation.md](docs/plans/2026-11-02-plan-to-presentation.md).
+```bash
+make models                   # BGE-M3 + reranker GGUF, about 1.3 GB, once
+make up-demo                  # Kafka, workers, PostgreSQL, Qdrant, AI services, backend
+make backfill SINCE=2026-09-01 MAX=3000
+make crawl-stats              # articles per source, vectors
+```
 
-| Member | Code | AI assistant | Owns until 10 Nov |
-|---|---|---|---|
-| Trần Minh Khoa (lead) | TMK | Claude | Stack running 24/7 and crawling, RAG quality and evaluation, API and demo page, merges, demo |
-| Võ Ngọc Phú | VNP | Claude | Spark Silver/Gold and near-duplicates, sport classifier, scaling experiment |
-| Lê Tấn Nguyên | LTN | none | Source checks and sitemaps, hand labels, golden questions, slides, testing the demo page |
+`make help` lists every command. Stop everything with `make down` (data stays in Docker volumes).
 
-LTN works without an AI assistant, so LTN's tasks are commands to run and files to fill in, not code to write. Cut list if a gate slips: second model (already cut), public-corpus scaling, improved classifier, live HDFS in the demo.
+## Team
 
-## Repository map
+| Member | Role | Owns |
+|---|---|---|
+| Trần Minh Khoa (TMK) | Lead | Pipeline and crawler PC, RAG, API and web app, data sharing, merges, demo |
+| Võ Ngọc Phú (VNP) | Data engineering and ML | Spark Silver/Gold, near-duplicates, sport classifier, scaling experiment |
+| Lê Tấn Nguyên (LTN) | Data quality and evaluation | Source checks, hand labels, golden questions, slides, UI testing |
 
-| Path | Purpose |
+Plan with daily gates: [docs/plans/2026-11-02-plan-to-presentation.md](docs/plans/2026-11-02-plan-to-presentation.md).
+
+## Repository
+
+| Path | Contents |
 |---|---|
-| `pipelines/` | Discovery (RSS, sitemaps), extractor, Kafka consumers, Bronze writers, Spark jobs, CLI (`python -m sportsbot_pipelines --help`) |
-| `pipelines/sources.json` | Source registry: URL, language, timezone, interval, domains, sitemaps |
-| `agent/` | RAG: hybrid retrieval, reranker/embedding/Qdrant clients, LLM router, grounded answers, terminal tools |
-| `backend/` | FastAPI: health, news, WebSocket feed, chat (JSON and SSE) |
-| `frontend/index.html` | Demo page served by the backend at `/app/` (no build step) |
-| `infra/` | PostgreSQL migrations (001-003), HDFS configuration |
-| `evaluation/` | Golden questions and evaluation scripts |
-| `scripts/download_models.sh` | Downloads the GGUF models |
-| `docs/` | Contracts, ADRs, plans, runbooks, reports |
+| [`pipelines/`](pipelines/) | Discovery, backfill, extractor, Kafka consumers, monitor, Spark jobs, CLI |
+| [`pipelines/sources.json`](pipelines/sources.json) | Source registry: feeds, languages, time zones, sitemaps, section pages |
+| [`agent/`](agent/) | Hybrid retrieval, reranker and embedding clients, LLM router, grounded answers, memory |
+| [`backend/`](backend/) | FastAPI service matching [`docs/contracts/api.openapi.yaml`](docs/contracts/api.openapi.yaml) |
+| [`frontend/`](frontend/) | Web app served at `/app/` (single page, no build step) |
+| [`infra/`](infra/) | PostgreSQL migrations, HDFS configuration |
+| [`ml/`](ml/), [`evaluation/`](evaluation/) | Classifier work, golden questions and metrics |
+| [`docs/`](docs/) | Onboarding, data guide, contracts, ADRs, plans, runbooks, reports |
 
-## Data sources
+## How an answer is made
 
-23 feeds in [`pipelines/sources.json`](pipelines/sources.json): 10 Vietnamese, 8 English, 3 Spanish, 2 French (one disabled). Seven were checked live on 2026-11-02 (VnExpress, Tuổi Trẻ, BBC × 3, Guardian, MARCA); the 15 added on 2026-11-02 are marked `"verified": false` until `make sources-check` confirms them (plan task 2).
+1. **Keyword search** in PostgreSQL over unaccented title and text ("doi tuyen viet nam" finds "Đội tuyển Việt Nam").
+2. **Vector search** in Qdrant over 1,200-character chunks embedded with BGE-M3.
+3. **Reciprocal Rank Fusion**, then **bge-reranker-v2-m3** drops weak candidates.
+4. A follow-up question is first rewritten into a standalone query using the last turns of the conversation.
+5. The LLM sees only the retrieved articles and must cite them as `[n]`; answers with invalid citations or URLs are replaced by article excerpts.
+6. Free Gemini models are tried in turn; a model that hits its quota rests until the quota resets.
 
-Rules: robots.txt is respected (an unreadable robots.txt means skip), at most one request per site every 3 seconds, the User-Agent names the project and a contact. Full text is stored for processing only; users see the title, a short excerpt and the link to the original. RSS lists only recent items, so older articles come from sitemaps (`make backfill`). VnExpress answers only from Vietnamese IP addresses.
+## Data and ethics
 
-## RAG and models
+- The repository is public; **collected articles are not**. Full text belongs to the publishers, so the corpus is shared only inside the team through a **private** Kaggle dataset. See [docs/DATA.md](docs/DATA.md).
+- Users see a title, a short excerpt and a link to the original article, never the full text.
+- Crawling follows robots.txt and a per-site delay; blocked sites are not worked around (BBC pages are blocked from the team's network, so BBC items keep the feed summary only).
+- No result in this project is invented: figures come from real runs with the command and date, public or synthetic data is labelled by origin, and the single-machine HDFS/Spark setup is described as pseudo-distributed, not as a production cluster.
 
-1. **Keyword search** in PostgreSQL: full-text over unaccented title + text ("doi tuyen viet nam" finds "Đội tuyển Việt Nam").
-2. **Vector search** in Qdrant: BGE-M3 (GGUF, llama.cpp) over 1,200-character chunks.
-3. **Fusion** with Reciprocal Rank Fusion, then **reranking** with bge-reranker-v2-m3 (GGUF); weak candidates are dropped.
-4. **Answer** with an LLM that sees only these articles and must cite `[n]`; answers with URLs or invalid citations are replaced by excerpts. No candidate → "no evidence", no LLM call.
-5. **LLM router:** free Gemini models in turn (a model that hits its quota rests). If all are out of quota, the bot shows excerpts of the matching articles with links.
+## Documentation
 
-Trained model (plan task 7): sport category of an article; TF-IDF + logistic regression (Spark MLlib) baseline vs BGE-M3 vectors + logistic regression, evaluated on hand labels. No LLM is trained or fine-tuned.
-
-## API
-
-Contract: [`docs/contracts/api.openapi.yaml`](docs/contracts/api.openapi.yaml) (version 0.3.0). Interactive docs at http://localhost:8000/docs.
-
-| Endpoint | Purpose |
+| Read this | When |
 |---|---|
-| `GET /health/live`, `GET /health` | Liveness and readiness (PostgreSQL, Qdrant, optional HDFS) |
-| `POST /chat` | Answer with citations (`insufficient_evidence` when there is none) |
-| `POST /chat/stream` | Same, as Server-Sent Events (`status`, `delta`, `citations`, `done`) |
-| `GET /news/latest` | Latest articles, filter by sport and language, cursor paging |
-| `GET /articles/{id}`, `GET /categories`, `GET /sources` | Article summary, sport counts, source status |
-| `WS /ws/news` | Pushes newly stored articles to the browser |
-| `GET /news/search`, `GET /conversations/{id}` | Planned |
+| [Team onboarding](docs/TEAM_ONBOARDING.md) | First time on a machine: install, Kaggle data, run, common problems |
+| [Data guide](docs/DATA.md) | What the snapshot files contain and how to load them |
+| [Streaming stack runbook](docs/runbooks/streaming-stack.md) | Operating the crawler, backfill, monitoring, troubleshooting |
+| [Chat runbook](docs/runbooks/chat-prototype.md) | RAG settings, Gemini rotation, conversation memory |
+| [VNP handoff](docs/handoff/VNP.md) | Spark and classifier tasks, with rules for VNP's AI assistant |
+| [API contract](docs/contracts/api.openapi.yaml) | Endpoints; interactive docs at http://localhost:8000/docs |
+| [AGENTS.md](AGENTS.md), [CONTRIBUTING.md](CONTRIBUTING.md) | Rules for people and AI assistants working in the repository |
 
-## Big Data layer
+Contributions go through pull requests to the protected `main` branch; CI runs `make lint test` and a streaming end-to-end check.
 
-- **Kafka:** 3 topics, 6 partitions keyed by source, two weeks of retention.
-- **HDFS:** Bronze RSS records (collector) and full extracted articles (`consumer-archive`, set `STREAM_BRONZE_BACKEND=hdfs`). NameNode + 2 DataNodes, replication 2.
-- **Spark (to do, plan task 6 and 9):** Silver (clean, exact and near-duplicate detection with `MinHashLSH`), Gold statistics, the MLlib baseline, and runs at increasing sizes comparing `local[*]` with the 2-worker standalone cluster. All on one machine: reported as pseudo-distributed, never as a production cluster.
+---
 
-## Working on this repo
-
-- `main` is protected: pull requests only, CI (`lint-test`, `stack`) must pass.
-- Branches `feature/...`, `fix/...`, `docs/...`; Conventional Commits in English.
-- Configuration in `.env` (template: `.env.example`, checked by a test). Never commit `.env`, keys, data or model files.
-- `AGENTS.md` and `CONTRIBUTING.md` hold the rules for people and AI assistants.
-
-## Honesty rules
-
-- Collected data, benchmarks and training results are never fabricated.
-- Synthetic and public historical datasets are always labeled with their origin.
-- Single-machine runs are never presented as a production cluster.
-- Implemented and planned features are kept apart in all documentation (see the status table).
-- Publication time, event time and collection time are kept separate.
-- The chatbot says when information is unavailable instead of guessing.
-
-Developed for a Big Data course by Group 4. Architectural reference: [scitech-rag-agent](https://github.com/Tdat10052499/scitech-rag-agent) (MIT), used as a reference, not copied. Use of AI assistance is documented as the course requires.
+Built by Group 4 for a university Big Data course. Architectural reference: [scitech-rag-agent](https://github.com/Tdat10052499/scitech-rag-agent) (MIT), studied, not copied. Use of AI assistance is documented as the course requires.
