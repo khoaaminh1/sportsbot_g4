@@ -81,6 +81,30 @@ Demo page: http://localhost:8000/app/ · API docs: http://localhost:8000/docs ·
 
 ## 5. Use TMK's data instead of crawling yourself
 
+### Recommended: the private Kaggle dataset (versioned)
+One-time, each member: Kaggle account → Settings → API → **Create New Token**; put it in your
+`.env` as `KAGGLE_API_TOKEN=...` (or save the legacy `kaggle.json` in `~/.kaggle/`, `chmod 600`).
+Everyone sets the same `KAGGLE_DATASET=<owner>/sportsbot-corpus` (TMK tells you the value).
+
+TMK (crawler PC), e.g. every evening:
+```bash
+make kaggle-export   # data/kaggle/articles.jsonl.gz + sportsbot.sql.gz + export-summary.json
+make kaggle-push     # first time: creates the PRIVATE dataset; then a new version each run
+```
+First time only: on the dataset page → Settings → Sharing → add VNP and LTN as collaborators.
+
+Teammates:
+```bash
+make kaggle-pull                                    # downloads into data/kaggle/
+make db-import FILE=data/kaggle/sportsbot.sql.gz    # only if you run the stack
+make reindex
+```
+In a Kaggle notebook (VNP): "Add data" → the team dataset; read
+`articles.jsonl.gz` with pandas (`pd.read_json(path, lines=True)`) or Spark
+(`spark.read.json(path)`), one article per line. The dataset must stay **private**: the full
+text belongs to the publishers.
+
+### Without Kaggle (files over Google Drive)
 TMK exports (on the crawler PC):
 ```bash
 make db-export       # data/snapshots/sportsbot-<date>.sql.gz  (articles, sources, runs)
@@ -116,6 +140,7 @@ LTN's labeling file: TMK runs `make export-labeling N=400` and sends
 | `make sources-sitemaps` | sitemap URLs from robots.txt (for backfill) |
 | `make backfill SINCE=2026-10-01 MAX=3000` | older articles from sitemaps (TMK's PC only) |
 | `make ask Q="..."` | chatbot in the terminal |
+| `make kaggle-export` / `make kaggle-push` / `make kaggle-pull` | share the corpus through the private Kaggle dataset |
 
 ## 7. Problems we already hit (and the fix)
 

@@ -1,4 +1,4 @@
-.PHONY: help setup lint format test test-integration run up-core up-bigdata up up-collect collect-once sources-check bronze-ls articles-export chat chat-no-llm down ps logs hdfs-init hdfs-ls spark-smoke clean-volumes up-stream up-ai up-tools up-demo models discover-once backfill sources-sitemaps crawl-stats dead-letters logs-stream ask ask-no-llm llm-check export-labeling reindex replay-dead-letters monitor-once alert-test db-export db-import bronze-export
+.PHONY: help setup lint format test test-integration run up-core up-bigdata up up-collect collect-once sources-check bronze-ls articles-export chat chat-no-llm down ps logs hdfs-init hdfs-ls spark-smoke clean-volumes up-stream up-ai up-tools up-demo models discover-once backfill sources-sitemaps crawl-stats dead-letters logs-stream ask ask-no-llm llm-check export-labeling reindex replay-dead-letters monitor-once alert-test db-export db-import bronze-export kaggle-export kaggle-push kaggle-pull
 
 # The project virtualenv when it exists (no need to activate it), else python3.
 PYTHON ?= $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
@@ -134,6 +134,18 @@ bronze-export:  ## Archive the extracted-article Bronze files (for Spark) to dat
 	mkdir -p data/snapshots
 	docker run --rm -v sportsbot_bronze_data:/bronze:ro -v "$$PWD/data/snapshots:/out" alpine tar czf /out/bronze-$$(date +%Y%m%d-%H%M).tgz -C /bronze .
 	@ls -lh data/snapshots | tail -n 3
+
+kaggle-export:  ## Corpus for the private Kaggle dataset: data/kaggle/{articles.jsonl.gz,sportsbot.sql.gz}
+	mkdir -p data/kaggle
+	$(COMPOSE) $(STREAM) run --rm --no-deps -v ./data/kaggle:/app/data/kaggle discover export-corpus --out /app/data/kaggle/articles.jsonl.gz
+	$(COMPOSE) $(STREAM) exec -T postgres sh -c 'pg_dump -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" --clean --if-exists --no-owner' | gzip > data/kaggle/sportsbot.sql.gz
+	@ls -lh data/kaggle
+
+kaggle-push:  ## Upload data/kaggle as a new version of the PRIVATE dataset KAGGLE_DATASET
+	PYTHON=$(PYTHON) bash scripts/kaggle_dataset.sh push
+
+kaggle-pull:  ## Download the team dataset into data/kaggle (then make db-import + make reindex)
+	PYTHON=$(PYTHON) bash scripts/kaggle_dataset.sh pull
 
 logs-stream:  ## Follow the streaming workers' logs
 	$(COMPOSE) $(STREAM) logs -f discover extractor consumer-operational consumer-semantic consumer-archive monitor

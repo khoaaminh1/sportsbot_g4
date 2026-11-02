@@ -19,6 +19,7 @@ reindex [--all]      build missing vectors from PostgreSQL (all with --all)
 replay [--reasons]   send retryable extract dead letters back to articles.discovered
 monitor [--once]     health checks every 15 min; alerts to Discord / Telegram
 export-sample        random articles as CSV for hand labeling (sport category, golden set)
+export-corpus        all stored articles as gzip JSON Lines (Kaggle dataset, Spark, pandas)
 """
 
 from __future__ import annotations
@@ -485,6 +486,44 @@ def cmd_export_sample(settings: PipelineSettings, n: int, out: str, seed: float)
     return 0
 
 
+CORPUS_SQL = """
+    SELECT article_id, source_id, source_name, language, title, content AS text, summary,
+           source_url AS url, published_at, collected_at, ingested_at, extracted_at,
+           word_count, discovered_via, content_hash, sport_category
+    FROM articles WHERE content IS NOT NULL ORDER BY ingested_at
+"""
+
+
+def cmd_export_corpus(settings: PipelineSettings, out: str) -> int:
+    import gzip
+    from pathlib import Path
+
+    from sqlalchemy import text
+
+    engine = create_engine(settings.database_url, pool_pre_ping=True)
+    path = Path(out)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    count = 0
+    languages: dict[str, int] = {}
+    with engine.connect() as conn, gzip.open(path, "wt", encoding="utf-8") as handle:
+        result = conn.execution_options(stream_results=True).execute(text(CORPUS_SQL))
+        for row in result.mappings():
+            record = {k: (v.isoformat() if hasattr(v, "isoformat") else v) for k, v in row.items()}
+            handle.write(json.dumps(record, ensure_ascii=False) + "\n")
+            count += 1
+            lang = record.get("language") or "?"
+            languages[lang] = languages.get(lang, 0) + 1
+    summary = {
+        "exported": count,
+        "languages": languages,
+        "file": str(path),
+        "exported_at": datetime.now(UTC).isoformat(),
+    }
+    (path.parent / "export-summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+    print(json.dumps(summary))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="sportsbot_pipelines")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -512,6 +551,8 @@ def main(argv: list[str] | None = None) -> int:
     mon.add_argument("--test-alert", action="store_true", help="send one test message")
     rep = sub.add_parser("replay")
     rep.add_argument("--reasons", help="comma-separated reasons (default: retryable ones)")
+    cor = sub.add_parser("export-corpus")
+    cor.add_argument("--out", default="data/kaggle/articles.jsonl.gz")
     exp = sub.add_parser("export-sample")
     exp.add_argument("--n", type=int, default=400)
     exp.add_argument("--out", default="data/labeling/sample.csv")
@@ -545,6 +586,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_monitor(settings, args.once, args.test_alert)
     if args.command == "replay":
         return cmd_replay(settings, args.reasons)
+    if args.command == "export-corpus":
+        return cmd_export_corpus(settings, args.out)
     if args.command == "export-sample":
         return cmd_export_sample(settings, args.n, args.out, args.seed)
     if args.command == "collect":
