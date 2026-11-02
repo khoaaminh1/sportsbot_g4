@@ -28,4 +28,4 @@ Development settings, stated so nobody mistakes them for production: HDFS permis
 ## Consequences
 - Windows members run everything inside WSL2; no native Windows path is supported.
 - CI boots both profiles on GitHub-hosted runners, so "the stack starts" is checked on every PR, not only on one laptop.
-- Measure the real memory of each profile in Phase 2 and record it in `docs/runbooks/stack.md`; revisit (for example 1 DataNode on small machines) if a member's laptop cannot run `bigdata`.
+- Measured 2026-11-02 in CI: about 1.5 GiB idle for both profiles together (`docs/reports/phase-2.md`); the 8-10 GB estimate in Context was far too high. Peak memory under real Phase 3 jobs is still to be measured. Revisit (for example 1 DataNode on small machines) if a member's laptop cannot run `bigdata`.

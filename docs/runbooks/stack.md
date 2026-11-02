@@ -31,7 +31,7 @@ For the backend to also check HDFS, set `STACK_HDFS_WEBHDFS_URL=http://namenode:
 | API docs | http://localhost:8000/docs | Swagger UI |
 
 ## Resource use
-Measured in CI on a GitHub-hosted runner by the `Memory use per service` step of `.github/workflows/ci.yml`; see the latest run's log and `docs/reports/phase-2.md`. On a small laptop, run only the profile your task needs.
+Measured idle in CI (GitHub-hosted runner, 2026-11-02, details in `docs/reports/phase-2.md`): about **1.5 GiB in total** (NameNode 418 MiB, DataNodes 266 and 291 MiB, Spark master 188 MiB, Spark worker 203 MiB, backend 70 MiB, Qdrant and PostgreSQL about 27 MiB each). A running Spark job adds up to the worker's 2 GB executor limit plus the driver. The CI step `Memory use per service` prints fresh numbers on every run. On a small laptop, run only the profile your task needs.
 
 ## Troubleshooting
 - **Port already in use:** another PostgreSQL or service runs on the host. Stop it, or change `POSTGRES_PORT` in `.env` (other ports: edit `docker-compose.yml` through an issue).
