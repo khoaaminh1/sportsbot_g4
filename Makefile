@@ -1,13 +1,14 @@
-.PHONY: help setup lint format test test-integration run up-core up-bigdata up down ps logs hdfs-init hdfs-ls spark-smoke clean-volumes
+.PHONY: help setup lint format test test-integration run up-core up-bigdata up up-collect collect-once sources-check bronze-ls down ps logs hdfs-init hdfs-ls spark-smoke clean-volumes
 
 PYTHON ?= python
 COMPOSE ?= docker compose
+ALL_PROFILES = --profile core --profile bigdata --profile collect
 
 help:  ## List targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-18s %s\n", $$1, $$2}'
 
 setup:  ## Install dev tools and backend dependencies, install git hooks
-	$(PYTHON) -m pip install -r requirements-dev.txt -r backend/requirements.txt
+	$(PYTHON) -m pip install -r requirements-dev.txt -r backend/requirements.txt -r pipelines/requirements.txt
 	pre-commit install
 
 lint:  ## Static checks (ruff)
@@ -38,14 +39,28 @@ up:  ## Start everything (needs about 8-10 GB RAM, estimate)
 	$(COMPOSE) --profile core --profile bigdata up -d --build --wait namenode datanode1 datanode2 spark-master spark-worker postgres qdrant backend
 	$(COMPOSE) --profile bigdata run --rm hdfs-init
 
+up-collect:  ## Start the collector scheduler (also starts core and bigdata services it needs)
+	$(COMPOSE) $(ALL_PROFILES) up -d --build --wait postgres namenode datanode1 datanode2
+	$(COMPOSE) --profile bigdata run --rm hdfs-init
+	$(COMPOSE) $(ALL_PROFILES) up -d --build collector
+
+collect-once:  ## One collection pass over all enabled sources into HDFS Bronze (stack must be up)
+	$(COMPOSE) $(ALL_PROFILES) run --rm --build collector collect
+
+sources-check:  ## Fetch robots.txt and every feed once, print a table (no writes)
+	$(COMPOSE) $(ALL_PROFILES) run --rm --no-deps --build collector sources check
+
+bronze-ls:  ## List Bronze files in HDFS
+	$(COMPOSE) --profile bigdata exec -T namenode hdfs dfs -ls -R /sportsbot/bronze
+
 down:  ## Stop all services (named volumes keep the data)
-	$(COMPOSE) --profile core --profile bigdata down
+	$(COMPOSE) $(ALL_PROFILES) down
 
 ps:  ## Show service status
-	$(COMPOSE) --profile core --profile bigdata ps
+	$(COMPOSE) $(ALL_PROFILES) ps
 
 logs:  ## Follow logs of all services
-	$(COMPOSE) --profile core --profile bigdata logs -f
+	$(COMPOSE) $(ALL_PROFILES) logs -f
 
 hdfs-init:  ## Create /sportsbot/{bronze,silver,gold} in HDFS (idempotent)
 	$(COMPOSE) --profile bigdata run --rm hdfs-init
@@ -58,4 +73,4 @@ spark-smoke:  ## Run a Spark job on the cluster that writes and reads Parquet on
 		--master spark://spark-master:7077 /opt/sportsbot/pipelines/spark/jobs/hdfs_smoke.py
 
 clean-volumes:  ## DANGER: stop everything and delete all data volumes
-	$(COMPOSE) --profile core --profile bigdata down -v
+	$(COMPOSE) $(ALL_PROFILES) down -v

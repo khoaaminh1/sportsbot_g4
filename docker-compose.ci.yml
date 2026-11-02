@@ -1,0 +1,14 @@
+# CI-only additions (used with: docker compose -f docker-compose.yml -f docker-compose.ci.yml ...).
+# Serves the SYNTHETIC fixture feed so the collector can be tested end to end without the internet.
+services:
+  fixture-feed:
+    image: python:3.11-slim
+    profiles: [collect]
+    command: ["python", "-m", "http.server", "8000", "--directory", "/srv"]
+    volumes:
+      - ./pipelines/tests/fixtures:/srv:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/robots.txt', timeout=2)"]
+      interval: 3s
+      timeout: 3s
+      retries: 20

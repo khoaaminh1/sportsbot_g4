@@ -26,8 +26,11 @@ jobs:
           cache-dependency-path: |
             requirements-dev.txt
             backend/requirements.txt
+            pipelines/requirements.txt
       - name: Install dependencies
-        run: pip install -r requirements-dev.txt -r backend/requirements.txt
+        run: pip install -r requirements-dev.txt -r backend/requirements.txt -r pipelines/requirements.txt
+      - name: Validate source registry
+        run: PYTHONPATH=pipelines/src python -m sportsbot_pipelines sources validate
       - name: Lint
         run: |
           ruff check .
@@ -41,7 +44,7 @@ jobs:
     needs: lint-test
     timeout-minutes: 30
     env:
-      COMPOSE: docker compose --profile core --profile bigdata
+      COMPOSE: docker compose -f docker-compose.yml -f docker-compose.ci.yml --profile core --profile bigdata --profile collect
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -51,8 +54,9 @@ jobs:
           cache-dependency-path: |
             requirements-dev.txt
             backend/requirements.txt
+            pipelines/requirements.txt
       - name: Install test dependencies
-        run: pip install -r requirements-dev.txt -r backend/requirements.txt
+        run: pip install -r requirements-dev.txt -r backend/requirements.txt -r pipelines/requirements.txt
       - name: Prepare .env
         run: |
           cp .env.example .env
@@ -80,6 +84,25 @@ jobs:
           SPORTSBOT_INTEGRATION: "1"
           EXPECT_HDFS: "1"
         run: python -m pytest -m integration -v
+      - name: Collector end to end (synthetic fixture feed -> HDFS Bronze -> PostgreSQL)
+        run: |
+          $COMPOSE up -d --wait fixture-feed
+          RUN="$COMPOSE run --rm --build -e SOURCES_FILE=/fixtures/sources_fixture.yaml -e MIN_SECONDS_BETWEEN_REQUESTS_PER_HOST=0 -v ./pipelines/tests/fixtures:/fixtures:ro collector collect"
+          $RUN | tee collect1.log
+          grep -q '"items_new": 3' collect1.log
+          $RUN | tee collect2.log
+          grep -q '"items_new": 0' collect2.log
+      - name: Bronze in HDFS and runs in PostgreSQL
+        run: |
+          $COMPOSE exec -T namenode hdfs dfs -ls -R /sportsbot/bronze/source=fixture_vi
+          LINES=$($COMPOSE exec -T namenode bash -c 'hdfs dfs -text "/sportsbot/bronze/source=fixture_vi/*/*/*.jsonl.gz" | wc -l')
+          echo "Bronze lines: $LINES"
+          test "$LINES" -eq 3
+          $COMPOSE exec -T postgres psql -U sportsbot -d sportsbot -c \
+            "SELECT source_id, status, http_status, items_fetched, items_new, items_dropped FROM collection_runs ORDER BY run_id"
+      - name: Live check of real sources (informational, does not fail CI)
+        continue-on-error: true
+        run: $COMPOSE run --rm --no-deps collector sources check
       - name: Memory use per service
         if: always()
         run: docker stats --no-stream --format "table {{.Name}}\t{{.MemUsage}}\t{{.CPUPerc}}"

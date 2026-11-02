@@ -16,11 +16,11 @@ extend-exclude = ["data", "frontend"]
 select = ["E", "F", "W", "I", "B", "UP", "SIM"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["app"]
+known-first-party = ["app", "sportsbot_pipelines"]
 
 [tool.pytest.ini_options]
-testpaths = ["backend/tests", "tests"]
-pythonpath = ["backend/src", "backend/tests"]
+testpaths = ["backend/tests", "pipelines/tests", "tests"]
+pythonpath = ["backend/src", "backend/tests", "pipelines/src"]
 addopts = "-ra"
 markers = [
     "integration: needs the running Docker stack (set SPORTSBOT_INTEGRATION=1)",

@@ -6,6 +6,7 @@ Skipped unless SPORTSBOT_INTEGRATION=1. CI runs them after booting the stack wit
 from __future__ import annotations
 
 import os
+import re
 
 import httpx
 import pytest
@@ -32,7 +33,7 @@ def test_backend_is_ready_with_real_dependencies():
 
 def test_migrations_applied():
     body = httpx.get(f"{BACKEND_URL}/health", timeout=10).json()
-    assert body["checks"]["postgres"]["detail"].startswith("schema 001"), body
+    assert re.fullmatch(r"schema \d{3}", body["checks"]["postgres"]["detail"]), body
 
 
 def test_openapi_served():

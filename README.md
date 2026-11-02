@@ -81,7 +81,8 @@ The request path never reads HDFS or runs Spark. HDFS keeps every raw and proces
 | Local prototype (terminal + Streamlit, synthetic records, keyword matching) | Exists locally, **not published** | To be pushed to a branch for audit |
 | Docker stack (core + bigdata profiles), PostgreSQL schema, contracts, CI | **Implemented** (Phase 2) | `make up-core`, `make up-bigdata`, `make spark-smoke`; [Phase 2 report](docs/reports/phase-2.md) |
 | Backend foundation: config, JSON logging, errors, `/health` | **Implemented** (Phase 2) | `curl localhost:8000/health`; `make test` |
-| Collectors, HDFS, Spark Bronze/Silver/Gold | Planned (Phase 3) | — |
+| Collectors and HDFS Bronze ingestion (7 RSS sources, vi/en/es) | **Implemented** (Phase 3a) | `make sources-check`, `make collect-once`, `make bronze-ls`; [ADR 0003](docs/decisions/0003-collection-and-bronze.md) |
+| Spark Silver/Gold jobs, cross-source dedup, scaling experiments | Planned (Phase 3b) | — |
 | Classifier, multilingual retrieval, RAG | Planned (Phase 4) | — |
 | FastAPI backend | Planned (Phase 5) | — |
 | Web frontend | Planned (Phase 6) | — |
@@ -139,18 +140,20 @@ Both run on one host, so they are reported as **single-machine / pseudo-distribu
 
 RSS feeds and official APIs come first. Page extraction is enabled per source only after checking robots.txt and the terms of service. Full text is stored for internal processing; the bot displays only a title, a short excerpt and a link to the original.
 
+Live check on 2026-11-02 (`make sources-check`, from a GitHub-hosted runner in the US and from Vietnam):
+
 | Source | Language | Type | Coverage | Status |
 |---|---|---|---|---|
-| VnExpress Thể thao | Vietnamese | RSS | All sports | Candidate; feed URL to verify |
-| Tuổi Trẻ, Thanh Niên, Dân Trí, VTC News | Vietnamese | RSS | All sports, incl. volleyball | Candidates; feed URLs to verify |
+| Tuổi Trẻ Thể thao | Vietnamese | RSS | All sports, incl. volleyball | Working (50 entries) |
+| VnExpress Thể thao | Vietnamese | RSS | All sports | Working from Vietnam (60 entries); HTTP 404 from the US runner |
+| BBC Sport football, tennis, basketball | English | RSS | Football, tennis, basketball | Working (74 / 55 / 17 entries, all dated) |
+| The Guardian Football | English | RSS | Football | Working (59 entries) |
+| MARCA Fútbol | Spanish | RSS | Football | Working (47 entries) |
+| L'Équipe | French | RSS | All sports | Disabled: HTTP 403 (access refused); a French replacement is needed |
 | VFF, VPF, VFV official sites | Vietnamese | Official pages | Football, volleyball | Candidates; robots.txt to check |
-| VnExpress International | English | RSS / pages | Vietnamese sport in English | Candidate |
-| BBC Sport | English | RSS | Football, tennis, basketball | Candidate |
-| MARCA | Spanish | RSS | Football | Candidate |
-| L'Équipe, Maxifoot | French | RSS | Football | Candidates |
-| API-Football (API-Sports) | — | REST API, free tier 100 requests/day | Fixtures, results, standings | Candidate; V.League coverage to verify |
+| API-Football (API-Sports) | — | REST API, free tier 100 requests/day | Fixtures, results, standings | Candidate (later in Phase 3) |
 
-The final list, with intervals and licence notes, will live in `pipelines/sources.yaml` and `docs/data-sources.md`.
+The registry with intervals, timezones and notes is [`pipelines/sources.yaml`](pipelines/sources.yaml).
 
 ## NLP pipeline
 

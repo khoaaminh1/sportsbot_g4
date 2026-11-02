@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SYNTHETIC test feed written by hand. Not real news: titles, links and dates are made up. -->
+<rss version="2.0">
+  <channel>
+    <title>Fixture Thể thao (synthetic)</title>
+    <link>https://news.fixture.test/the-thao</link>
+    <description>Synthetic feed for collector tests</description>
+    <item>
+      <title>Synthetic: Đội tuyển tập luyện chuẩn bị cho vòng loại</title>
+      <link>https://news.fixture.test/bong-da/bai-1.html?utm_source=rss&amp;utm_medium=feed</link>
+      <description><![CDATA[<p>Tóm tắt <b>giả lập</b> số 1.</p>]]></description>
+      <pubDate>Mon, 02 Nov 2026 08:30:00 +0700</pubDate>
+      <category>Bóng đá</category>
+    </item>
+    <item>
+      <title>Synthetic: Giải bóng chuyền nữ khởi tranh</title>
+      <link>https://news.fixture.test/bong-chuyen/bai-2.html</link>
+      <description>Tóm tắt giả lập số 2.</description>
+      <pubDate>Mon, 02 Nov 2026 07:00:00 +0700</pubDate>
+      <category>Bóng chuyền</category>
+    </item>
+    <item>
+      <title>Synthetic: Bài không có ngày đăng</title>
+      <link>https://www.news.fixture.test/cac-mon-khac/bai-3.html#comments</link>
+      <description>Tóm tắt giả lập số 3, không có pubDate.</description>
+    </item>
+    <item>
+      <title>Synthetic: Trùng lặp với bài 1 (khác tham số theo dõi)</title>
+      <link>https://news.fixture.test/bong-da/bai-1.html?utm_campaign=x</link>
+      <description>Trùng URL chuẩn hoá với bài 1.</description>
+      <pubDate>Mon, 02 Nov 2026 08:31:00 +0700</pubDate>
+    </item>
+    <item>
+      <title>Synthetic: Liên kết sang tên miền khác</title>
+      <link>https://other-site.test/bai-4.html</link>
+      <description>Phải bị loại vì tên miền không thuộc nguồn.</description>
+    </item>
+    <item>
+      <title>Synthetic: Liên kết không an toàn</title>
+      <link>javascript:alert(1)</link>
+    </item>
+    <item>
+      <title></title>
+      <link>https://news.fixture.test/bai-khong-tieu-de.html</link>
+    </item>
+  </channel>
+</rss>

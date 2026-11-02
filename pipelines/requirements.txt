@@ -1,0 +1,9 @@
+# Pipelines runtime dependencies (pinned). Installed in pipelines/Dockerfile and by `make setup`.
+feedparser==6.0.11
+httpx==0.28.1
+pydantic==2.10.4
+pydantic-settings==2.7.1
+pyyaml==6.0.2
+sqlalchemy==2.0.36
+psycopg[binary]==3.2.3
+tzdata==2024.2
