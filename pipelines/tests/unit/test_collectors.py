@@ -215,3 +215,18 @@ def test_webhdfs_writer_follows_two_step_create():
         0
     ].url.path.endswith("/sportsbot/bronze/source=a/part-1.jsonl.gz")
     assert len(calls) == 2
+
+
+def test_double_escaped_titles_are_unescaped(source):
+    from datetime import UTC, datetime
+
+    from sportsbot_pipelines.collectors.rss import parse_feed
+
+    title = "CLB TP.Đồng Nai vẫn dưới đ&amp;aacute;y"  # as the Thanh Niên feed sends it
+    feed = (
+        '<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>x</title>'
+        f"<item><title>{title}</title><link>https://news.fixture.test/a.html</link></item>"
+        "</channel></rss>"
+    ).encode()
+    parsed = parse_feed(feed, source, collected_at=datetime(2026, 11, 3, tzinfo=UTC), run_id="r")
+    assert parsed.records[0].title.endswith("dưới đáy")
