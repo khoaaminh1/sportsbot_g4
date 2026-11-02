@@ -1,0 +1,339 @@
+openapi: 3.1.0
+info:
+  title: Vietnam SportsBot API
+  version: 0.2.0
+  description: |
+    Contract between the backend and its clients (frontend, evaluation, CLI).
+    Frozen 2026-11-02 (Phase 2). Change only through an approved issue.
+
+    Every operation carries `x-status`:
+    - `implemented`: served by the backend now; contract tests check it.
+    - `planned`: agreed shape, not implemented yet (Phase 4-5).
+
+    Errors always use `ErrorResponse`. Times are RFC 3339 in UTC.
+servers:
+  - url: http://localhost:8000
+paths:
+  /health/live:
+    get:
+      x-status: implemented
+      summary: Liveness, no dependency checks
+      operationId: live
+      tags: [health]
+      responses:
+        "200":
+          description: Process is up
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LivenessResponse" }
+  /health:
+    get:
+      x-status: implemented
+      summary: Readiness with PostgreSQL, Qdrant and optional HDFS checks
+      operationId: health
+      tags: [health]
+      responses:
+        "200":
+          description: ok or degraded (an optional dependency failed)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HealthResponse" }
+        "503":
+          description: A required dependency failed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HealthResponse" }
+  /chat:
+    post:
+      x-status: planned
+      summary: Ask a question; answer grounded in retrieved articles with citations
+      operationId: chat
+      tags: [chat]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChatRequest" }
+      responses:
+        "200":
+          description: Answer, citations, or a clarification question
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatResponse" }
+        "422":
+          description: Invalid request
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+  /news/latest:
+    get:
+      x-status: planned
+      summary: Latest articles, newest first
+      operationId: latestNews
+      tags: [news]
+      parameters:
+        - { $ref: "#/components/parameters/Sport" }
+        - { $ref: "#/components/parameters/Language" }
+        - { $ref: "#/components/parameters/Limit" }
+        - { $ref: "#/components/parameters/Cursor" }
+      responses:
+        "200":
+          description: A page of articles
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ArticlePage" }
+  /news/search:
+    get:
+      x-status: planned
+      summary: Hybrid keyword + semantic search over articles
+      operationId: searchNews
+      tags: [news]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 300 }
+        - { $ref: "#/components/parameters/Sport" }
+        - { $ref: "#/components/parameters/Language" }
+        - name: since
+          in: query
+          schema: { type: string, format: date-time }
+        - { $ref: "#/components/parameters/Limit" }
+      responses:
+        "200":
+          description: Ranked articles
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ArticlePage" }
+  /categories:
+    get:
+      x-status: planned
+      summary: Sports categories with article counts
+      operationId: categories
+      tags: [news]
+      responses:
+        "200":
+          description: Categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Category" }
+  /articles/{article_id}:
+    get:
+      x-status: planned
+      summary: Article metadata, excerpt and original link
+      operationId: getArticle
+      tags: [news]
+      parameters:
+        - name: article_id
+          in: path
+          required: true
+          schema: { type: string, pattern: "^[a-f0-9]{16,64}$" }
+      responses:
+        "200":
+          description: The article
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ArticleSummary" }
+        "404":
+          description: Unknown article
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+  /sources:
+    get:
+      x-status: planned
+      summary: Configured sources with their latest collection status
+      operationId: listSources
+      tags: [sources]
+      responses:
+        "200":
+          description: Sources
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SourceStatus" }
+  /conversations/{conversation_id}:
+    get:
+      x-status: planned
+      summary: Conversation history
+      operationId: getConversation
+      tags: [chat]
+      parameters:
+        - name: conversation_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Messages in order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Conversation" }
+        "404":
+          description: Unknown conversation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+components:
+  parameters:
+    Sport:
+      name: sport
+      in: query
+      schema: { $ref: "#/components/schemas/SportCategory" }
+    Language:
+      name: language
+      in: query
+      schema: { type: string, pattern: "^[a-z]{2}$" }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    Cursor:
+      name: cursor
+      in: query
+      schema: { type: string }
+  schemas:
+    LivenessResponse:
+      type: object
+      required: [status, version]
+      properties:
+        status: { const: ok }
+        version: { type: string }
+    DependencyCheck:
+      type: object
+      required: [status, required]
+      properties:
+        status: { enum: [ok, error, skipped] }
+        required: { type: boolean }
+        latency_ms: { type: [number, "null"] }
+        detail: { type: [string, "null"] }
+    HealthResponse:
+      type: object
+      required: [status, version, environment, checks]
+      properties:
+        status: { enum: [ok, degraded, error] }
+        version: { type: string }
+        environment: { type: string }
+        checks:
+          type: object
+          additionalProperties: { $ref: "#/components/schemas/DependencyCheck" }
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, request_id]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            request_id: { type: string }
+            details: {}
+    SportCategory:
+      enum: [football, volleyball, basketball, tennis, badminton, other_sport]
+    ArticleSummary:
+      description: What users see. Never the full article body (copyright).
+      type: object
+      required: [article_id, title, source_name, source_url, collected_at]
+      properties:
+        article_id: { type: string }
+        title: { type: string }
+        excerpt: { type: [string, "null"], maxLength: 400 }
+        source_name: { type: string }
+        source_url: { type: string, format: uri }
+        published_at: { type: [string, "null"], format: date-time }
+        collected_at: { type: string, format: date-time }
+        language: { type: [string, "null"] }
+        sport_category:
+          oneOf:
+            - { $ref: "#/components/schemas/SportCategory" }
+            - { type: "null" }
+        teams: { type: array, items: { type: string } }
+        athletes: { type: array, items: { type: string } }
+        competition: { type: [string, "null"] }
+    ArticlePage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/ArticleSummary" }
+        next_cursor: { type: [string, "null"] }
+    Category:
+      type: object
+      required: [sport_category, article_count]
+      properties:
+        sport_category: { $ref: "#/components/schemas/SportCategory" }
+        article_count: { type: integer, minimum: 0 }
+        latest_published_at: { type: [string, "null"], format: date-time }
+    SourceStatus:
+      type: object
+      required: [source_id, name, kind, language, enabled]
+      properties:
+        source_id: { type: string }
+        name: { type: string }
+        kind: { enum: [rss, api, page] }
+        language: { type: [string, "null"] }
+        enabled: { type: boolean }
+        last_run_status: { type: [string, "null"] }
+        last_success_at: { type: [string, "null"], format: date-time }
+    ChatRequest:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string, minLength: 1, maxLength: 2000 }
+        conversation_id: { type: [string, "null"], format: uuid }
+        language:
+          description: Preferred answer language; detected from the message when absent.
+          type: [string, "null"]
+          pattern: "^[a-z]{2}$"
+    Citation:
+      type: object
+      required: [index, article_id, title, source_name, source_url]
+      properties:
+        index: { type: integer, minimum: 1, description: "Number used as [n] in the answer" }
+        article_id: { type: string }
+        title: { type: string }
+        source_name: { type: string }
+        source_url: { type: string, format: uri }
+        published_at: { type: [string, "null"], format: date-time }
+    ChatResponse:
+      type: object
+      required: [conversation_id, answer, language, citations, insufficient_evidence]
+      properties:
+        conversation_id: { type: string, format: uuid }
+        answer: { type: string }
+        language: { type: string }
+        citations:
+          type: array
+          items: { $ref: "#/components/schemas/Citation" }
+        insufficient_evidence:
+          type: boolean
+          description: True when the bot could not find enough evidence and says so.
+        conflicting_sources:
+          type: boolean
+          default: false
+        clarification_question:
+          type: [string, "null"]
+          description: Set when the question is ambiguous (e.g. which team or competition).
+    Message:
+      type: object
+      required: [role, content, created_at]
+      properties:
+        role: { enum: [user, assistant] }
+        content: { type: string }
+        citations:
+          type: array
+          items: { $ref: "#/components/schemas/Citation" }
+        created_at: { type: string, format: date-time }
+    Conversation:
+      type: object
+      required: [conversation_id, messages]
+      properties:
+        conversation_id: { type: string, format: uuid }
+        messages:
+          type: array
+          items: { $ref: "#/components/schemas/Message" }

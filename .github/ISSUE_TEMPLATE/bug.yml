@@ -1,0 +1,24 @@
+name: Bug
+description: Something does not work as documented
+labels: ["type:bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: Include the exact command and the output or log lines (no secrets).
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: OS (Windows+WSL2 / macOS / Linux), Docker version, branch and commit.
+    validations:
+      required: true

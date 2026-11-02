@@ -1,0 +1,48 @@
+name: Task
+description: A planned unit of work with acceptance criteria
+labels: ["type:task"]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What should be true when this is done, and why it matters.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Modules and files in scope; what is explicitly out of scope.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Checkable statements, each with the command that demonstrates it.
+      value: |
+        - [ ]
+    validations:
+      required: true
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Phase
+      options:
+        - "2 Core infrastructure"
+        - "3 Data engineering"
+        - "4 AI and ML"
+        - "5 Backend"
+        - "6 Frontend"
+        - "7 Testing and deployment"
+        - "8 Documentation"
+    validations:
+      required: true
+  - type: dropdown
+    id: owner
+    attributes:
+      label: Owner
+      options: ["TMK", "VNP", "LTN"]
+    validations:
+      required: true
