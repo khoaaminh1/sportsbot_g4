@@ -44,12 +44,12 @@
         "tuoitre.vn"
       ],
       "verified": true,
-      "notes": "Used by the prototype (PR #1). Live check 2026-11-02: 50 entries. Dates are US month-first with AM/PM and no offset (e.g. 11/2/2026 1:35:00 PM); parsed by collectors/dates.py with Asia/Ho_Chi_Minh assumed. Backfill: flat article URLs; walks /the-thao/trang-N.htm (page 2 seen 2026-11-03; later pages assumed to follow).",
+      "notes": "Used by the prototype (PR #1). Live check 2026-11-02: 50 entries. Dates are US month-first with AM/PM and no offset (e.g. 11/2/2026 1:35:00 PM); parsed by collectors/dates.py with Asia/Ho_Chi_Minh assumed. Backfill: flat article URLs. /the-thao/trang-N.htm returns the same items for every N (first backfill found only 42), so the listing walks the section timeline /timeline/1209/trang-N.htm instead (page 5 checked 2026-11-03: sports articles from earlier days).",
       "sitemaps": [],
       "sitemap_include": null,
       "listing": {
         "first_page": "https://tuoitre.vn/the-thao.htm",
-        "page_url": "https://tuoitre.vn/the-thao/trang-{page}.htm",
+        "page_url": "https://tuoitre.vn/timeline/1209/trang-{page}.htm",
         "start": 2,
         "max_pages": 150,
         "article_pattern": "^https://tuoitre\\.vn/[a-z0-9-]+-\\d{12,}\\.htm$"
@@ -421,6 +421,472 @@
       ],
       "verified": false,
       "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "guardian_tennis",
+      "name": "The Guardian Tennis",
+      "kind": "rss",
+      "url": "https://www.theguardian.com/sport/tennis/rss",
+      "language": "en",
+      "interval_minutes": 60,
+      "timezone": "Europe/London",
+      "domains": [
+        "theguardian.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (tennis); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "guardian_formulaone",
+      "name": "The Guardian Formula One",
+      "kind": "rss",
+      "url": "https://www.theguardian.com/sport/formulaone/rss",
+      "language": "en",
+      "interval_minutes": 60,
+      "timezone": "Europe/London",
+      "domains": [
+        "theguardian.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (F1); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "guardian_nba",
+      "name": "The Guardian NBA",
+      "kind": "rss",
+      "url": "https://www.theguardian.com/sport/nba/rss",
+      "language": "en",
+      "interval_minutes": 60,
+      "timezone": "Europe/London",
+      "domains": [
+        "theguardian.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (basketball); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "guardian_nfl",
+      "name": "The Guardian NFL",
+      "kind": "rss",
+      "url": "https://www.theguardian.com/sport/nfl/rss",
+      "language": "en",
+      "interval_minutes": 60,
+      "timezone": "Europe/London",
+      "domains": [
+        "theguardian.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (American football); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "guardian_cricket",
+      "name": "The Guardian Cricket",
+      "kind": "rss",
+      "url": "https://www.theguardian.com/sport/cricket/rss",
+      "language": "en",
+      "interval_minutes": 60,
+      "timezone": "Europe/London",
+      "domains": [
+        "theguardian.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (cricket); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "guardian_rugby_union",
+      "name": "The Guardian Rugby union",
+      "kind": "rss",
+      "url": "https://www.theguardian.com/sport/rugby-union/rss",
+      "language": "en",
+      "interval_minutes": 60,
+      "timezone": "Europe/London",
+      "domains": [
+        "theguardian.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (rugby); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "guardian_cycling",
+      "name": "The Guardian Cycling",
+      "kind": "rss",
+      "url": "https://www.theguardian.com/sport/cycling/rss",
+      "language": "en",
+      "interval_minutes": 60,
+      "timezone": "Europe/London",
+      "domains": [
+        "theguardian.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (cycling); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "guardian_golf",
+      "name": "The Guardian Golf",
+      "kind": "rss",
+      "url": "https://www.theguardian.com/sport/golf/rss",
+      "language": "en",
+      "interval_minutes": 60,
+      "timezone": "Europe/London",
+      "domains": [
+        "theguardian.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (golf); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "guardian_athletics",
+      "name": "The Guardian Athletics",
+      "kind": "rss",
+      "url": "https://www.theguardian.com/sport/athletics/rss",
+      "language": "en",
+      "interval_minutes": 60,
+      "timezone": "Europe/London",
+      "domains": [
+        "theguardian.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (athletics); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "guardian_boxing",
+      "name": "The Guardian Boxing",
+      "kind": "rss",
+      "url": "https://www.theguardian.com/sport/boxing/rss",
+      "language": "en",
+      "interval_minutes": 60,
+      "timezone": "Europe/London",
+      "domains": [
+        "theguardian.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (boxing); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "bbc_sport_formula1",
+      "name": "BBC Sport Formula 1",
+      "kind": "rss",
+      "url": "https://feeds.bbci.co.uk/sport/formula1/rss.xml",
+      "language": "en",
+      "interval_minutes": 60,
+      "timezone": "Europe/London",
+      "domains": [
+        "bbc.co.uk",
+        "bbc.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (F1); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. extract=false like the other BBC feeds (article pages are blocked from the team network).",
+      "sitemaps": [],
+      "sitemap_include": null,
+      "extract": false
+    },
+    {
+      "id": "bbc_sport_athletics",
+      "name": "BBC Sport Athletics",
+      "kind": "rss",
+      "url": "https://feeds.bbci.co.uk/sport/athletics/rss.xml",
+      "language": "en",
+      "interval_minutes": 60,
+      "timezone": "Europe/London",
+      "domains": [
+        "bbc.co.uk",
+        "bbc.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (athletics); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. extract=false like the other BBC feeds (article pages are blocked from the team network).",
+      "sitemaps": [],
+      "sitemap_include": null,
+      "extract": false
+    },
+    {
+      "id": "bbc_sport_cricket",
+      "name": "BBC Sport Cricket",
+      "kind": "rss",
+      "url": "https://feeds.bbci.co.uk/sport/cricket/rss.xml",
+      "language": "en",
+      "interval_minutes": 60,
+      "timezone": "Europe/London",
+      "domains": [
+        "bbc.co.uk",
+        "bbc.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (cricket); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. extract=false like the other BBC feeds (article pages are blocked from the team network).",
+      "sitemaps": [],
+      "sitemap_include": null,
+      "extract": false
+    },
+    {
+      "id": "bbc_sport_golf",
+      "name": "BBC Sport Golf",
+      "kind": "rss",
+      "url": "https://feeds.bbci.co.uk/sport/golf/rss.xml",
+      "language": "en",
+      "interval_minutes": 60,
+      "timezone": "Europe/London",
+      "domains": [
+        "bbc.co.uk",
+        "bbc.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (golf); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. extract=false like the other BBC feeds (article pages are blocked from the team network).",
+      "sitemaps": [],
+      "sitemap_include": null,
+      "extract": false
+    },
+    {
+      "id": "bbc_sport_rugby_union",
+      "name": "BBC Sport Rugby Union",
+      "kind": "rss",
+      "url": "https://feeds.bbci.co.uk/sport/rugby-union/rss.xml",
+      "language": "en",
+      "interval_minutes": 60,
+      "timezone": "Europe/London",
+      "domains": [
+        "bbc.co.uk",
+        "bbc.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (rugby); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. extract=false like the other BBC feeds (article pages are blocked from the team network).",
+      "sitemaps": [],
+      "sitemap_include": null,
+      "extract": false
+    },
+    {
+      "id": "bbc_sport_cycling",
+      "name": "BBC Sport Cycling",
+      "kind": "rss",
+      "url": "https://feeds.bbci.co.uk/sport/cycling/rss.xml",
+      "language": "en",
+      "interval_minutes": 60,
+      "timezone": "Europe/London",
+      "domains": [
+        "bbc.co.uk",
+        "bbc.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (cycling); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. extract=false like the other BBC feeds (article pages are blocked from the team network).",
+      "sitemaps": [],
+      "sitemap_include": null,
+      "extract": false
+    },
+    {
+      "id": "bbc_sport_boxing",
+      "name": "BBC Sport Boxing",
+      "kind": "rss",
+      "url": "https://feeds.bbci.co.uk/sport/boxing/rss.xml",
+      "language": "en",
+      "interval_minutes": 60,
+      "timezone": "Europe/London",
+      "domains": [
+        "bbc.co.uk",
+        "bbc.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (boxing); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. extract=false like the other BBC feeds (article pages are blocked from the team network).",
+      "sitemaps": [],
+      "sitemap_include": null,
+      "extract": false
+    },
+    {
+      "id": "bbc_sport_snooker",
+      "name": "BBC Sport Snooker",
+      "kind": "rss",
+      "url": "https://feeds.bbci.co.uk/sport/snooker/rss.xml",
+      "language": "en",
+      "interval_minutes": 60,
+      "timezone": "Europe/London",
+      "domains": [
+        "bbc.co.uk",
+        "bbc.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (snooker); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. extract=false like the other BBC feeds (article pages are blocked from the team network).",
+      "sitemaps": [],
+      "sitemap_include": null,
+      "extract": false
+    },
+    {
+      "id": "bbc_sport_swimming",
+      "name": "BBC Sport Swimming",
+      "kind": "rss",
+      "url": "https://feeds.bbci.co.uk/sport/swimming/rss.xml",
+      "language": "en",
+      "interval_minutes": 60,
+      "timezone": "Europe/London",
+      "domains": [
+        "bbc.co.uk",
+        "bbc.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (swimming); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok. extract=false like the other BBC feeds (article pages are blocked from the team network).",
+      "sitemaps": [],
+      "sitemap_include": null,
+      "extract": false
+    },
+    {
+      "id": "espn_nba",
+      "name": "ESPN NBA",
+      "kind": "rss",
+      "url": "https://www.espn.com/espn/rss/nba/news",
+      "language": "en",
+      "interval_minutes": 60,
+      "timezone": "America/New_York",
+      "domains": [
+        "espn.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-03 (basketball). Fetched from outside Vietnam on 2026-11-03: valid RSS, 18 items. Run `make sources-check` from Vietnam to confirm.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "espn_nfl",
+      "name": "ESPN NFL",
+      "kind": "rss",
+      "url": "https://www.espn.com/espn/rss/nfl/news",
+      "language": "en",
+      "interval_minutes": 60,
+      "timezone": "America/New_York",
+      "domains": [
+        "espn.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (American football); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "espn_mlb",
+      "name": "ESPN MLB",
+      "kind": "rss",
+      "url": "https://www.espn.com/espn/rss/mlb/news",
+      "language": "en",
+      "interval_minutes": 60,
+      "timezone": "America/New_York",
+      "domains": [
+        "espn.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (baseball); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "espn_nhl",
+      "name": "ESPN NHL",
+      "kind": "rss",
+      "url": "https://www.espn.com/espn/rss/nhl/news",
+      "language": "en",
+      "interval_minutes": 60,
+      "timezone": "America/New_York",
+      "domains": [
+        "espn.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (ice hockey); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "espn_golf",
+      "name": "ESPN Golf",
+      "kind": "rss",
+      "url": "https://www.espn.com/espn/rss/golf/news",
+      "language": "en",
+      "interval_minutes": 60,
+      "timezone": "America/New_York",
+      "domains": [
+        "espn.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (golf); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "espn_tennis",
+      "name": "ESPN Tennis",
+      "kind": "rss",
+      "url": "https://www.espn.com/espn/rss/tennis/news",
+      "language": "en",
+      "interval_minutes": 60,
+      "timezone": "America/New_York",
+      "domains": [
+        "espn.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (tennis); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "espn_rpm",
+      "name": "ESPN Racing",
+      "kind": "rss",
+      "url": "https://www.espn.com/espn/rss/rpm/news",
+      "language": "en",
+      "interval_minutes": 60,
+      "timezone": "America/New_York",
+      "domains": [
+        "espn.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (motorsport); URL not yet fetched from Vietnam. Run `make sources-check`; disable it if the status is not ok.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "thethaovanhoa_the_thao",
+      "name": "Thể thao & Văn hóa",
+      "kind": "rss",
+      "url": "https://thethaovanhoa.vn/rss/the-thao.rss",
+      "language": "vi",
+      "interval_minutes": 30,
+      "timezone": "Asia/Ho_Chi_Minh",
+      "domains": [
+        "thethaovanhoa.vn"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-03: listed on https://thethaovanhoa.vn/rss.htm as the general sports feed (all sports). Run `make sources-check` to confirm.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "vtv_the_thao",
+      "name": "VTV Thể thao",
+      "kind": "rss",
+      "url": "https://vtv.vn/the-thao.rss",
+      "language": "vi",
+      "interval_minutes": 30,
+      "timezone": "Asia/Ho_Chi_Minh",
+      "domains": [
+        "vtv.vn"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-03 for sport coverage beyond football (all sports, Vietnamese); URL guessed from the site's RSS pattern, not yet fetched. Run `make sources-check`; disable it if the status is not ok.",
       "sitemaps": [],
       "sitemap_include": null
     }
