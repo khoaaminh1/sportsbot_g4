@@ -87,6 +87,8 @@ Memory (estimate): `up-demo` about 3.5-4 GB; HDFS + Spark add 1.5-3.5 GB.
 
 ## Plan and team
 
+New team member? Start with [docs/TEAM_ONBOARDING.md](docs/TEAM_ONBOARDING.md) (install, run, get TMK's data, common problems).
+
 Full plan with daily gates and step-by-step tasks: [docs/plans/2026-11-02-plan-to-presentation.md](docs/plans/2026-11-02-plan-to-presentation.md).
 
 | Member | Code | AI assistant | Owns until 10 Nov |

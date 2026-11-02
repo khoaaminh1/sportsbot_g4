@@ -1,4 +1,4 @@
-.PHONY: help setup lint format test test-integration run up-core up-bigdata up up-collect collect-once sources-check bronze-ls articles-export chat chat-no-llm down ps logs hdfs-init hdfs-ls spark-smoke clean-volumes up-stream up-ai up-tools up-demo models discover-once backfill sources-sitemaps crawl-stats dead-letters logs-stream ask ask-no-llm llm-check export-labeling reindex replay-dead-letters monitor-once alert-test
+.PHONY: help setup lint format test test-integration run up-core up-bigdata up up-collect collect-once sources-check bronze-ls articles-export chat chat-no-llm down ps logs hdfs-init hdfs-ls spark-smoke clean-volumes up-stream up-ai up-tools up-demo models discover-once backfill sources-sitemaps crawl-stats dead-letters logs-stream ask ask-no-llm llm-check export-labeling reindex replay-dead-letters monitor-once alert-test db-export db-import bronze-export
 
 # The project virtualenv when it exists (no need to activate it), else python3.
 PYTHON ?= $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
@@ -119,6 +119,21 @@ monitor-once:  ## One health check now: snapshot + active alerts (also sent to D
 
 alert-test:  ## Send a test message to the configured Discord/Telegram channel
 	$(COMPOSE) $(STREAM) run --rm --no-deps monitor monitor --test-alert
+
+db-export:  ## Snapshot PostgreSQL (articles, sources, runs) to data/snapshots/*.sql.gz to share
+	mkdir -p data/snapshots
+	$(COMPOSE) $(STREAM) exec -T postgres sh -c 'pg_dump -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" --clean --if-exists --no-owner' | gzip > data/snapshots/sportsbot-$$(date +%Y%m%d-%H%M).sql.gz
+	@ls -lh data/snapshots | tail -n 3
+
+db-import:  ## Load a snapshot: make db-import FILE=data/snapshots/x.sql.gz (REPLACES local data), then make reindex
+	@test -n "$(FILE)" || (echo "usage: make db-import FILE=data/snapshots/<file>.sql.gz" && exit 2)
+	gunzip -c "$(FILE)" | $(COMPOSE) $(STREAM) exec -T postgres sh -c 'psql -q -v ON_ERROR_STOP=1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"'
+	@echo "Imported. Build the vectors with: make reindex"
+
+bronze-export:  ## Archive the extracted-article Bronze files (for Spark) to data/snapshots/bronze-*.tgz
+	mkdir -p data/snapshots
+	docker run --rm -v sportsbot_bronze_data:/bronze:ro -v "$$PWD/data/snapshots:/out" alpine tar czf /out/bronze-$$(date +%Y%m%d-%H%M).tgz -C /bronze .
+	@ls -lh data/snapshots | tail -n 3
 
 logs-stream:  ## Follow the streaming workers' logs
 	$(COMPOSE) $(STREAM) logs -f discover extractor consumer-operational consumer-semantic consumer-archive monitor
