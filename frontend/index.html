@@ -4,215 +4,210 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SportsBot · Tin thể thao có nguồn</title>
-<meta name="description" content="Hỏi về tin thể thao mới nhất. Câu trả lời chỉ dựa trên các bài báo SportsBot đã thu thập, kèm nguồn và giờ đăng.">
+<meta name="description" content="Hỏi về tin thể thao mới nhất: bóng đá, tennis, bóng rổ, bóng chuyền, cầu lông và nhiều môn khác. Câu trả lời chỉ dựa trên các bài báo đã thu thập, kèm nguồn và giờ đăng.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap" rel="stylesheet">
 <script src="config.js"></script>
 <style>
-  /* Palette: a floodlit pitch at night, rendered on chalk.
-     Pitch green carries the brand; floodlight amber means "live" and nothing else. */
+  /* Identity: a stadium after dark, for every sport rather than one pitch.
+     Navy is the night, ivory the floodlit text, trophy gold the single accent (live + actions).
+     One type family (Archivo); its width axis does the work: narrow and heavy for headlines and
+     numbers, normal width for reading. */
   :root {
-    --chalk: #F2F4EF;      /* page */
-    --touchline: #E6EAE2;  /* sidebar */
-    --sheet: #FBFCF9;      /* composer, cards */
-    --ink: #15211C;        /* text */
-    --ink-soft: #55625B;   /* secondary text */
-    --rule: #D3D9CF;       /* hairlines */
-    --pitch: #1D6B47;      /* brand, links, send */
-    --pitch-wash: #DCEAE1; /* user bubble, hover */
-    --flood: #D9A21B;      /* live signal */
-    --foul: #B3412E;       /* failed run */
-    --serif: "Newsreader", "Iowan Old Style", "Georgia", serif;
-    --sans: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
-    --radius-l: 22px;
-    --radius-m: 14px;
-    --radius-s: 9px;
-    --sidebar: 304px;
+    --night: #F1F3F6;      /* page */
+    --stand: #E6EAF0;      /* sidebar */
+    --surface: #FFFFFF;    /* composer, sources */
+    --ink: #13203A;        /* text */
+    --ink-soft: #5B677C;   /* secondary text */
+    --rule: #D3D9E3;       /* hairlines */
+    --gold: #8C6A22;       /* accent: live, actions, citations */
+    --gold-wash: #F1E8D3;  /* accent background */
+    --ask: #E2E7F0;        /* the user's question */
+    --foul: #B23B2B;       /* failed run */
+    --font: "Archivo", "Arial Narrow", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --sidebar: 312px;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --chalk: #101814; --touchline: #0C130F; --sheet: #17211C; --ink: #E4EAE4;
-      --ink-soft: #97A69D; --rule: #26332C; --pitch: #6CC596; --pitch-wash: #1C3427;
-      --flood: #F0BF45; --foul: #E07A63;
+      --night: #0F1A2B; --stand: #0B1422; --surface: #15233A; --ink: #ECE7DC;
+      --ink-soft: #97A3B6; --rule: #233350; --gold: #D6B169; --gold-wash: #2A2A26;
+      --ask: #1B2B45; --foul: #E58372;
     }
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; }
   body {
-    margin: 0; font-family: var(--sans); font-size: 15px; line-height: 1.55;
-    color: var(--ink); background: var(--chalk);
-    -webkit-font-smoothing: antialiased;
+    margin: 0; font-family: var(--font); font-size: 15px; line-height: 1.55;
+    color: var(--ink); background: var(--night); -webkit-font-smoothing: antialiased;
   }
-  a { color: var(--pitch); }
+  a { color: inherit; }
   button, input, textarea { font: inherit; color: inherit; }
-  :focus-visible { outline: 2px solid var(--pitch); outline-offset: 2px; border-radius: 6px; }
+  :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 4px; }
+  .narrow { font-stretch: 72%; }
 
   .app { display: grid; grid-template-columns: var(--sidebar) 1fr; height: 100vh; height: 100dvh; }
 
   /* ---------------------------------------------------------------- sidebar */
   .side {
-    background: var(--touchline); border-right: 1px solid var(--rule);
-    display: flex; flex-direction: column; min-height: 0; padding: 18px 14px 14px;
+    background: var(--stand); border-right: 1px solid var(--rule);
+    display: flex; flex-direction: column; min-height: 0; padding: 22px 20px 16px;
   }
-  .brand { display: flex; align-items: center; gap: 10px; padding: 2px 8px 18px; }
-  .brand svg { flex: none; }
-  .brand b { font-family: var(--serif); font-size: 23px; font-weight: 500; letter-spacing: -.01em; }
+  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
+  .brand svg { flex: none; color: var(--gold); }
+  .brand b { font-size: 24px; font-weight: 760; font-stretch: 78%; letter-spacing: .005em; }
   .new-chat {
-    display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 10px;
-    border: 0; border-radius: var(--radius-s); background: transparent; cursor: pointer;
-    font-weight: 500; text-align: left;
+    width: 100%; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 10px;
+    background: var(--surface); cursor: pointer; font-weight: 550; text-align: left;
+    display: flex; align-items: center; gap: 10px; transition: border-color .2s;
   }
-  .new-chat:hover { background: var(--pitch-wash); }
-  .new-chat span.plus {
-    display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
-    background: var(--pitch); color: var(--sheet); font-size: 17px; line-height: 1;
-  }
+  .new-chat:hover { border-color: var(--gold); }
+  .new-chat svg { color: var(--gold); flex: none; }
 
-  .live { margin-top: 22px; display: flex; flex-direction: column; min-height: 0; flex: 1; }
-  .live-head { display: flex; align-items: center; justify-content: space-between; padding: 0 8px 10px; }
-  .live-head h2 { margin: 0; font-size: 13px; font-weight: 600; }
+  .live { margin-top: 26px; display: flex; flex-direction: column; min-height: 0; flex: 1; }
+  .live-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+  .live-head h2 { margin: 0; font-size: 14px; font-weight: 650; }
   .status { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--ink-soft); }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-soft); position: relative; }
-  .dot.on { background: var(--flood); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-soft); position: relative; }
+  .dot.on { background: var(--gold); }
   .dot.on::after {
     content: ""; position: absolute; inset: -5px; border-radius: 50%;
-    border: 2px solid var(--flood); opacity: 0; animation: pulse 2.4s ease-out infinite;
+    border: 1.5px solid var(--gold); opacity: 0; animation: pulse 2.6s ease-out infinite;
   }
-  @keyframes pulse { 0% { transform: scale(.5); opacity: .7; } 100% { transform: scale(1.5); opacity: 0; } }
+  @keyframes pulse { 0% { transform: scale(.5); opacity: .8; } 100% { transform: scale(1.5); opacity: 0; } }
 
-  /* The one bold element: a scoreboard of the corpus, ticking as the crawler works. */
-  .board {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin: 0 4px 14px;
-    background: var(--rule); border: 1px solid var(--rule); border-radius: var(--radius-m); overflow: hidden;
+  /* The corpus as a scoreboard: one big total, three small figures under it. */
+  .total { display: flex; align-items: baseline; gap: 10px; }
+  .total .n {
+    font-size: 54px; line-height: 1; font-weight: 720; font-stretch: 62%;
+    font-variant-numeric: tabular-nums; letter-spacing: -.01em; transition: color .8s;
   }
-  .cell { background: var(--sheet); padding: 11px 12px 10px; }
-  .cell .n {
-    font-family: var(--serif); font-size: 27px; line-height: 1.05; font-variant-numeric: tabular-nums;
-    display: block; transition: color .6s;
-  }
-  .cell .n.bump { color: var(--flood); }
-  .cell .l { font-size: 12px; color: var(--ink-soft); }
+  .total .l { color: var(--ink-soft); font-size: 13px; }
+  .figures { display: grid; grid-template-columns: repeat(3, 1fr); margin: 12px 0 16px; border-top: 1px solid var(--rule); }
+  .figures div { padding: 9px 0 0; }
+  .figures div + div { padding-left: 12px; border-left: 1px solid var(--rule); }
+  .figures .n { display: block; font-size: 22px; line-height: 1.1; font-weight: 680; font-stretch: 68%; font-variant-numeric: tabular-nums; transition: color .8s; }
+  .figures .l { font-size: 12px; color: var(--ink-soft); }
+  .n.bump { color: var(--gold); }
 
-  .feed { list-style: none; margin: 0; padding: 0 2px 0 4px; overflow-y: auto; flex: 1; scrollbar-width: thin; }
-  .feed li {
-    display: grid; grid-template-columns: 14px 1fr; gap: 8px; padding: 9px 6px; border-radius: var(--radius-s);
-    font-size: 13px; line-height: 1.4;
-  }
-  .feed li + li { border-top: 1px solid var(--rule); border-radius: 0; }
-  .feed li.fresh { animation: arrive .7s cubic-bezier(.2,.8,.2,1); }
-  @keyframes arrive { from { opacity: 0; transform: translateY(-6px); background: var(--pitch-wash); } }
-  .feed .mark { width: 7px; height: 7px; border-radius: 2px; margin-top: 6px; background: var(--pitch); }
-  .feed .mark.run { background: var(--flood); border-radius: 50%; }
-  .feed .mark.fail { background: var(--foul); border-radius: 50%; }
-  .feed a { color: var(--ink); text-decoration: none; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .feed a:hover { color: var(--pitch); text-decoration: underline; }
+  .feed { list-style: none; margin: 0 -6px 0 0; padding: 0 6px 0 0; overflow-y: auto; flex: 1; scrollbar-width: thin; border-top: 1px solid var(--rule); }
+  .feed li { display: grid; grid-template-columns: 42px 1fr; gap: 10px; padding: 10px 0; font-size: 13.5px; line-height: 1.4; border-bottom: 1px solid var(--rule); }
+  .feed li.fresh { animation: arrive .8s cubic-bezier(.2,.8,.2,1); }
+  @keyframes arrive { from { opacity: 0; transform: translateY(-6px); } }
+  .feed time { font-stretch: 70%; font-weight: 650; font-variant-numeric: tabular-nums; color: var(--ink-soft); padding-top: 1px; }
+  .feed li.fresh time { color: var(--gold); }
+  .feed a { text-decoration: none; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .feed a:hover { text-decoration: underline; text-decoration-color: var(--gold); text-underline-offset: 3px; }
   .feed .sub { display: block; color: var(--ink-soft); font-size: 12px; margin-top: 2px; }
-  .feed .empty { color: var(--ink-soft); padding: 10px 8px; display: block; }
-  .side-foot { font-size: 12px; color: var(--ink-soft); padding: 12px 8px 0; border-top: 1px solid var(--rule); margin-top: 8px; }
+  .feed li.run span:first-child { color: var(--ink-soft); }
+  .feed li.fail { color: var(--foul); }
+  .feed .empty { color: var(--ink-soft); grid-column: 1 / -1; }
+  .side-foot { font-size: 12px; color: var(--ink-soft); padding-top: 12px; }
 
   /* ------------------------------------------------------------------ main */
   .main { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
   .topbar { display: none; }
   .scroll { flex: 1; overflow-y: auto; scroll-behavior: smooth; }
-  .column { width: min(760px, 100% - 40px); margin: 0 auto; }
+  .column { width: min(780px, 100% - 48px); margin: 0 auto; }
   .scroll > .column { min-height: 100%; display: flex; flex-direction: column; }
 
-  .hero { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 40px 0 120px; }
+  .hero { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 48px 0 96px; }
   .hero h1 {
-    font-family: var(--serif); font-weight: 400; font-size: clamp(34px, 4.6vw, 52px); line-height: 1.08;
-    letter-spacing: -.02em; margin: 0 0 10px; text-wrap: balance;
+    margin: 0 0 16px; font-weight: 780; font-stretch: 64%; letter-spacing: -.012em;
+    font-size: clamp(46px, 7.2vw, 96px); line-height: 1; padding-top: .08em;
+    animation: lift 1s cubic-bezier(.2,.8,.2,1) both;
   }
-  .hero p.lede { margin: 0 0 28px; color: var(--ink-soft); font-size: 16px; max-width: 58ch; }
-  .hero .reveal { animation: rise .9s cubic-bezier(.2,.8,.2,1) both; }
-  .hero .reveal:nth-child(2) { animation-delay: .08s; }
-  .hero .reveal:nth-child(3) { animation-delay: .16s; }
-  .hero .reveal:nth-child(4) { animation-delay: .24s; }
-  @keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+  @keyframes lift { from { opacity: 0; transform: translateY(18px); clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 -10% 0); } }
+  .hero p.lede { margin: 0 0 28px; color: var(--ink-soft); font-size: 16.5px; max-width: 56ch; }
 
   .composer {
-    background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius-l);
-    box-shadow: 0 1px 0 rgba(21,33,28,.04), 0 12px 32px -18px rgba(21,33,28,.35);
+    background: var(--surface); border: 1px solid var(--rule); border-radius: 16px;
     padding: 14px 14px 10px 18px; transition: border-color .2s, box-shadow .2s;
   }
-  .composer:focus-within { border-color: var(--pitch); box-shadow: 0 0 0 4px var(--pitch-wash), 0 12px 32px -18px rgba(21,33,28,.35); }
+  .composer:focus-within { border-color: var(--gold); box-shadow: 0 0 0 4px var(--gold-wash); }
   .composer textarea {
     width: 100%; border: 0; outline: 0; resize: none; background: transparent;
-    font-size: 16px; line-height: 1.5; max-height: 200px; min-height: 26px;
+    font-size: 16.5px; line-height: 1.5; max-height: 200px; min-height: 26px;
   }
   .composer textarea::placeholder { color: var(--ink-soft); }
   .composer-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 6px; }
   .hint { font-size: 12px; color: var(--ink-soft); }
   .send {
-    width: 36px; height: 36px; border: 0; border-radius: 11px; background: var(--pitch); color: var(--sheet);
-    display: grid; place-items: center; cursor: pointer; transition: transform .15s, opacity .2s;
+    width: 38px; height: 38px; border: 0; border-radius: 10px; background: var(--ink); color: var(--night);
+    display: grid; place-items: center; cursor: pointer; transition: background .2s, opacity .2s;
   }
-  .send:hover { transform: translateY(-1px); }
-  .send:disabled { opacity: .35; cursor: default; transform: none; }
+  .send:hover { background: var(--gold); }
+  .send:disabled { opacity: .3; cursor: default; background: var(--ink); }
 
-  .prompts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
-  .prompt {
-    text-align: left; border: 1px solid var(--rule); background: transparent; border-radius: var(--radius-m);
-    padding: 12px 14px; cursor: pointer; transition: background .2s, border-color .2s;
+  /* Sports: shows the range at a glance and starts a question about one of them. */
+  .sports { display: flex; flex-wrap: wrap; gap: 6px 4px; margin: 18px 0 30px; padding: 0; list-style: none; }
+  .sports button {
+    border: 1px solid var(--rule); background: transparent; border-radius: 999px; padding: 5px 13px;
+    font-size: 13.5px; cursor: pointer; transition: border-color .2s, background .2s;
   }
-  .prompt:hover { background: var(--sheet); border-color: var(--pitch); }
-  .prompt b { display: block; font-weight: 500; }
-  .prompt span { font-size: 13px; color: var(--ink-soft); }
+  .sports button:hover { border-color: var(--gold); background: var(--surface); }
+
+  .prompts { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--rule); }
+  .prompt {
+    width: 100%; display: grid; grid-template-columns: 120px 1fr; gap: 16px; align-items: baseline;
+    text-align: left; border: 0; border-bottom: 1px solid var(--rule); background: transparent;
+    padding: 13px 4px; cursor: pointer;
+  }
+  .prompt span { font-size: 13px; color: var(--ink-soft); font-stretch: 85%; }
+  .prompt b { font-weight: 520; font-size: 15.5px; }
+  .prompt:hover b { text-decoration: underline; text-decoration-color: var(--gold); text-underline-offset: 4px; }
 
   /* conversation */
-  .thread { padding: 28px 0 24px; display: none; }
+  .thread { padding: 36px 0 24px; display: none; }
   .chatting .hero { display: none; }
   .chatting .thread { display: block; }
-  .dock { padding: 0 0 18px; display: none; background: linear-gradient(to bottom, transparent, var(--chalk) 30%); }
+  .dock { padding: 0 0 18px; display: none; background: linear-gradient(to bottom, transparent, var(--night) 30%); }
   .chatting .dock { display: block; }
-  .turn { margin-bottom: 30px; }
+  .turn { margin-bottom: 44px; }
   .q {
-    margin-left: auto; width: fit-content; max-width: 85%; background: var(--pitch-wash);
-    padding: 10px 16px; border-radius: 18px 18px 4px 18px; white-space: pre-wrap;
+    font-size: clamp(24px, 3vw, 32px); line-height: 1.1; font-weight: 720; font-stretch: 70%;
+    margin: 0; white-space: pre-wrap; text-wrap: balance;
   }
-  .a { margin-top: 18px; }
-  .a .body { font-family: var(--serif); font-size: 18px; line-height: 1.65; max-width: 68ch; }
+  .a { margin-top: 14px; padding-left: 16px; border-left: 2px solid var(--gold); }
+  .a .body { font-size: 16.5px; line-height: 1.68; max-width: 66ch; }
   .a .body p { margin: 0 0 12px; }
-  .a .body ul { margin: 0 0 12px; padding-left: 22px; }
+  .a .body ul { margin: 0 0 12px; padding-left: 20px; }
   .a .body li { margin-bottom: 6px; }
   .cite {
-    display: inline-grid; place-items: center; min-width: 19px; height: 19px; padding: 0 5px; margin: 0 1px;
-    border-radius: 6px; background: var(--pitch-wash); color: var(--pitch); font-family: var(--sans);
-    font-size: 11px; font-weight: 600; text-decoration: none; vertical-align: 2px;
+    display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 4px; margin: 0 1px;
+    border-radius: 4px; background: var(--gold-wash); color: var(--gold);
+    font-size: 11px; font-weight: 700; text-decoration: none; vertical-align: 2px;
   }
-  .cite:hover { background: var(--pitch); color: var(--sheet); }
-  .notice { font-size: 13px; color: var(--ink-soft); border-left: 2px solid var(--flood); padding: 2px 0 2px 10px; margin: 6px 0 12px; }
+  .cite:hover { background: var(--gold); color: var(--night); }
+  .notice { font-size: 13.5px; color: var(--ink-soft); margin: 2px 0 12px; }
   .thinking { font-size: 14px; color: var(--ink-soft); display: inline-flex; gap: 10px; align-items: center; }
-  .thinking i {
-    width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--rule); border-top-color: var(--pitch);
-    animation: spin .8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .sources { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; margin-top: 14px; }
-  .src {
-    display: grid; grid-template-columns: 24px 1fr; gap: 10px; align-items: start; text-decoration: none; color: var(--ink);
-    border: 1px solid var(--rule); border-radius: var(--radius-s); padding: 10px 12px; background: var(--sheet);
-    transition: border-color .2s;
-  }
-  .src:hover { border-color: var(--pitch); }
-  .src .num { font-size: 12px; font-weight: 600; color: var(--pitch); padding-top: 1px; }
-  .src .t { font-size: 13px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .src .m { font-size: 12px; color: var(--ink-soft); margin-top: 3px; display: block; }
-  .meta { font-size: 12px; color: var(--ink-soft); margin-top: 10px; }
+  .thinking i { width: 26px; height: 2px; background: var(--rule); position: relative; overflow: hidden; }
+  .thinking i::after { content: ""; position: absolute; inset: 0; width: 40%; background: var(--gold); animation: run 1.1s ease-in-out infinite; }
+  @keyframes run { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+  /* Sources: numbered because the numbers are the [n] used in the answer. */
+  .sources { list-style: none; margin: 14px 0 0; padding: 0; max-width: 66ch; }
+  .sources li { border-top: 1px solid var(--rule); }
+  .src { display: grid; grid-template-columns: 26px 1fr; gap: 8px; padding: 9px 0; text-decoration: none; }
+  .src .num { font-weight: 700; color: var(--gold); font-stretch: 70%; font-size: 15px; }
+  .src .t { font-size: 14px; line-height: 1.35; }
+  .src:hover .t { text-decoration: underline; text-decoration-color: var(--gold); text-underline-offset: 3px; }
+  .src .m { font-size: 12px; color: var(--ink-soft); display: block; margin-top: 2px; }
+  .meta { font-size: 12px; color: var(--ink-soft); margin-top: 12px; }
 
   .scrim { display: none; }
   @media (max-width: 880px) {
     .app { grid-template-columns: 1fr; }
     .side {
-      position: fixed; inset: 0 auto 0 0; width: min(86vw, 330px); z-index: 20;
+      position: fixed; inset: 0 auto 0 0; width: min(86vw, 340px); z-index: 20;
       transform: translateX(-102%); transition: transform .3s cubic-bezier(.2,.8,.2,1);
     }
     .side.open { transform: none; }
-    .scrim.show { display: block; position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 10; }
-    .topbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--rule); }
-    .topbar button { border: 0; background: none; display: inline-flex; gap: 8px; align-items: center; font-weight: 500; cursor: pointer; padding: 6px; }
-    .prompts { grid-template-columns: 1fr; }
-    .hero { padding-bottom: 60px; }
+    .scrim.show { display: block; position: fixed; inset: 0; background: rgba(5,10,20,.45); z-index: 10; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--rule); }
+    .topbar button { border: 0; background: none; display: inline-flex; gap: 8px; align-items: center; font-weight: 550; cursor: pointer; padding: 6px; }
+    .topbar b { font-size: 21px; font-weight: 760; font-stretch: 78%; }
+    .prompt { grid-template-columns: 1fr; gap: 2px; }
+    .hero { padding: 32px 0 48px; }
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
@@ -221,48 +216,52 @@
 </head>
 <body>
 <div class="app" id="app">
-  <aside class="side" id="side" aria-label="Thu thập dữ liệu trực tiếp">
+  <aside class="side" id="side" aria-label="Tin đang được thu thập">
     <div class="brand">
-      <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
-        <rect x="1" y="1" width="28" height="28" rx="9" fill="var(--pitch)"/>
-        <path d="M15 1v28M1 15h28" stroke="var(--sheet)" stroke-width="1.2" opacity=".55"/>
-        <circle cx="15" cy="15" r="6" fill="none" stroke="var(--sheet)" stroke-width="1.6"/>
-        <circle cx="15" cy="15" r="1.6" fill="var(--flood)"/>
+      <!-- An athletics track seen from above: a mark for every sport, not one ball. -->
+      <svg width="34" height="22" viewBox="0 0 34 22" fill="none" stroke="currentColor" aria-hidden="true">
+        <rect x="1" y="1" width="32" height="20" rx="10" stroke-width="2"/>
+        <rect x="6" y="5.5" width="22" height="11" rx="5.5" stroke-width="1.4" opacity=".7"/>
       </svg>
       <b>SportsBot</b>
     </div>
-    <button class="new-chat" id="newChat" type="button"><span class="plus" aria-hidden="true">+</span>Cuộc trò chuyện mới</button>
+    <button class="new-chat" id="newChat" type="button">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M8 2.5v11M2.5 8h11"/></svg>
+      Cuộc trò chuyện mới
+    </button>
 
     <section class="live" aria-live="polite">
       <div class="live-head">
-        <h2>Đang thu thập</h2>
+        <h2>Tin đang về</h2>
         <span class="status"><i class="dot" id="dot"></i><span id="statusText">Đang kết nối</span></span>
       </div>
-      <div class="board">
-        <div class="cell"><span class="n" id="sArticles">0</span><span class="l">bài đã lưu</span></div>
-        <div class="cell"><span class="n" id="sHour">0</span><span class="l">trong 1 giờ qua</span></div>
-        <div class="cell"><span class="n" id="sSources">0</span><span class="l">nguồn đang chạy</span></div>
-        <div class="cell"><span class="n" id="sLangs">0</span><span class="l">ngôn ngữ</span></div>
+      <div class="total"><span class="n" id="sArticles">0</span><span class="l">bài đã lưu</span></div>
+      <div class="figures">
+        <div><span class="n" id="sHour">0</span><span class="l">trong 1 giờ</span></div>
+        <div><span class="n" id="sSources">0</span><span class="l">nguồn chạy</span></div>
+        <div><span class="n" id="sLangs">0</span><span class="l">ngôn ngữ</span></div>
       </div>
-      <ul class="feed" id="feed"><li><span></span><span class="empty">Hoạt động mới sẽ hiện ở đây.</span></li></ul>
+      <ul class="feed" id="feed"><li><span class="empty">Bài mới sẽ hiện ở đây khi được lưu.</span></li></ul>
     </section>
-    <div class="side-foot">Nguồn: báo điện tử Việt Nam và quốc tế qua RSS, tôn trọng robots.txt.</div>
+    <div class="side-foot">Báo Việt Nam và quốc tế, thu thập qua RSS và sitemap theo robots.txt.</div>
   </aside>
   <div class="scrim" id="scrim"></div>
 
   <main class="main" id="main">
     <div class="topbar">
-      <button id="openSide" type="button" aria-controls="side"><i class="dot on"></i>Đang thu thập</button>
-      <b style="font-family:var(--serif);font-size:20px;font-weight:500">SportsBot</b>
-      <button id="newChat2" type="button" aria-label="Cuộc trò chuyện mới">+</button>
+      <button id="openSide" type="button" aria-controls="side"><i class="dot on"></i>Tin đang về</button>
+      <b>SportsBot</b>
+      <button id="newChat2" type="button" aria-label="Cuộc trò chuyện mới">
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M8 2.5v11M2.5 8h11"/></svg>
+      </button>
     </div>
     <div class="scroll" id="scroll">
       <div class="column">
         <section class="hero" id="hero">
-          <h1 class="reveal" id="greet">Hôm nay sân cỏ có gì?</h1>
-          <p class="lede reveal">Hỏi về tin thể thao mới nhất. SportsBot chỉ trả lời từ những bài báo đã thu thập, và luôn ghi nguồn cùng giờ đăng.</p>
-          <form class="composer reveal" data-composer>
-            <textarea rows="1" maxlength="2000" placeholder="Hỏi về một trận đấu, đội bóng hay vận động viên…" aria-label="Câu hỏi"></textarea>
+          <h1>Hỏi gì về thể&nbsp;thao<br>hôm nay?</h1>
+          <p class="lede">Bóng đá, tennis, bóng rổ, bóng chuyền, cầu lông và nhiều môn khác. SportsBot chỉ trả lời từ những bài báo đã thu thập, kèm nguồn và giờ đăng của từng bài.</p>
+          <form class="composer" data-composer>
+            <textarea rows="1" maxlength="2000" placeholder="Hỏi về một trận đấu, vận động viên hay giải đấu…" aria-label="Câu hỏi"></textarea>
             <div class="composer-row">
               <span class="hint">Enter để gửi, Shift+Enter xuống dòng</span>
               <button class="send" type="submit" aria-label="Gửi câu hỏi" disabled>
@@ -270,12 +269,22 @@
               </button>
             </div>
           </form>
-          <div class="prompts reveal" id="prompts">
-            <button class="prompt" type="button" data-q="Arsenal thắng Liverpool như thế nào?"><b>Arsenal thắng Liverpool như thế nào?</b><span>Diễn biến trận đấu từ nhiều tờ báo</span></button>
-            <button class="prompt" type="button" data-q="Tin bóng đá Việt Nam mới nhất?"><b>Tin bóng đá Việt Nam mới nhất</b><span>V-League, đội tuyển, cúp châu Á</span></button>
-            <button class="prompt" type="button" data-q="V-League hiện tại đội nào dẫn đầu bảng xếp hạng?"><b>V-League: đội nào đang dẫn đầu?</b><span>Bảng xếp hạng theo bài mới nhất</span></button>
-            <button class="prompt" type="button" data-q="What did Luis Enrique say before the match?"><b>What did Luis Enrique say?</b><span>Hỏi bằng tiếng Anh, nguồn tiếng Tây Ban Nha</span></button>
-          </div>
+          <ul class="sports" id="sports" aria-label="Hỏi nhanh theo môn">
+            <li><button type="button">Bóng đá</button></li>
+            <li><button type="button">Tennis</button></li>
+            <li><button type="button">Bóng rổ</button></li>
+            <li><button type="button">Bóng chuyền</button></li>
+            <li><button type="button">Cầu lông</button></li>
+            <li><button type="button">Đua xe F1</button></li>
+            <li><button type="button">Điền kinh</button></li>
+            <li><button type="button">Bơi lội</button></li>
+          </ul>
+          <ul class="prompts" aria-label="Câu hỏi gợi ý">
+            <li><button class="prompt" type="button" data-q="Tin bóng đá Việt Nam mới nhất?"><span>Bóng đá</span><b>Tin mới nhất về bóng đá Việt Nam</b></button></li>
+            <li><button class="prompt" type="button" data-q="Zverev thi đấu thế nào ở giải gần nhất?"><span>Tennis</span><b>Zverev thi đấu thế nào ở giải gần nhất?</b></button></li>
+            <li><button class="prompt" type="button" data-q="Bóng chuyền nữ Việt Nam có tin gì mới?"><span>Bóng chuyền</span><b>Bóng chuyền nữ Việt Nam có tin gì mới?</b></button></li>
+            <li><button class="prompt" type="button" data-q="What did Luis Enrique say before the match?"><span>Hỏi tiếng Anh</span><b>What did Luis Enrique say before the match?</b></button></li>
+          </ul>
         </section>
         <section class="thread" id="thread" aria-live="polite"></section>
       </div>
@@ -283,7 +292,7 @@
     <div class="dock">
       <div class="column">
         <form class="composer" data-composer>
-          <textarea rows="1" maxlength="2000" placeholder="Hỏi tiếp…" aria-label="Câu hỏi"></textarea>
+          <textarea rows="1" maxlength="2000" placeholder="Hỏi tiếp, ví dụ: anh ấy đá cho đội nào?" aria-label="Câu hỏi"></textarea>
           <div class="composer-row">
             <span class="hint">Chỉ trả lời từ tin đã thu thập</span>
             <button class="send" type="submit" aria-label="Gửi câu hỏi" disabled>
@@ -326,12 +335,17 @@ function stamp(iso) {
   const hm = d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
   return `${hm}, ${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
 }
-function greet() {
-  const h = new Date().getHours();
-  const part = h < 11 ? "Chào buổi sáng" : h < 14 ? "Chào buổi trưa" : h < 18 ? "Chào buổi chiều" : "Chào buổi tối";
-  $("#greet").replaceChildren(`${part}.`, el("br"), "Hôm nay sân cỏ có gì?");
+// Wire-style time: hour:minute today, day/month otherwise.
+function clock(iso) {
+  if (!iso) return "–";
+  const d = new Date(iso), now = new Date();
+  return d.toDateString() === now.toDateString()
+    ? d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })
+    : `${d.getDate()}/${d.getMonth() + 1}`;
 }
-greet();
+// Backfill stores older articles too; the live feed shows only recent news.
+const FEED_MAX_AGE_MS = 72 * 3600 * 1000;
+const recent = (iso) => iso && Date.now() - new Date(iso) < FEED_MAX_AGE_MS;
 
 // ------------------------------------------------------------ live panel
 const shown = new Set();
@@ -352,12 +366,20 @@ function pushFeed(li, fresh) {
 }
 function addArticles(items, fresh) {
   for (const a of items) {
-    if (shown.has(a.article_id)) continue;
+    if (shown.has(a.article_id) || !recent(a.published_at)) continue;
     shown.add(a.article_id);
     const link = el("a", { href: a.source_url, target: "_blank", rel: "noopener", text: a.title, title: a.title });
     const sub = el("span", { class: "sub", text: `${a.source_name}, ${ago(a.published_at)}` });
-    pushFeed(el("li", {}, el("i", { class: "mark", "aria-hidden": "true" }), el("div", {}, link, sub)), fresh);
+    const when = el("time", { datetime: a.published_at, text: clock(a.published_at) });
+    pushFeed(el("li", {}, when, el("div", {}, link, sub)), fresh);
   }
+}
+// Seed the feed with the newest articles by publication time (the socket then adds new ones).
+async function seedFeed() {
+  try {
+    const r = await fetch(API + "/news/latest?limit=25");
+    if (r.ok) addArticles(((await r.json()).items || []).slice().reverse(), false);
+  } catch { /* the socket still fills the feed */ }
 }
 function addRuns(items, fresh) {
   for (const r of items) {
@@ -366,9 +388,8 @@ function addRuns(items, fresh) {
     const text = failed
       ? `${r.source_name}: lỗi khi đọc nguồn${r.http_status ? ` (HTTP ${r.http_status})` : ""}`
       : `${r.source_name}: ${r.items_new} bài mới được phát hiện`;
-    const sub = el("span", { class: "sub", text: ago(r.finished_at) });
-    pushFeed(el("li", {}, el("i", { class: `mark ${failed ? "fail" : "run"}`, "aria-hidden": "true" }),
-      el("div", {}, el("span", { text }), sub)), fresh);
+    const when = el("time", { datetime: r.finished_at, text: clock(r.finished_at) });
+    pushFeed(el("li", { class: failed ? "fail" : "run" }, when, el("div", {}, el("span", { text }))), fresh);
   }
 }
 function setLive(on, text) {
@@ -396,7 +417,7 @@ function connect() {
     retry = Math.min(retry * 2, 30000);
   };
 }
-connect();
+seedFeed().finally(connect);
 
 // ---------------------------------------------------------------- answer rendering
 // Text from the model is untrusted: escape first, then add the little markup we allow.
@@ -420,12 +441,12 @@ function renderAnswer(text, citations) {
   return out.join("");
 }
 function sourceCards(citations) {
-  const wrap = el("div", { class: "sources" });
+  const wrap = el("ul", { class: "sources", "aria-label": "Nguồn" });
   for (const c of citations) {
-    wrap.append(el("a", { class: "src", href: c.source_url, target: "_blank", rel: "noopener" },
+    wrap.append(el("li", {}, el("a", { class: "src", href: c.source_url, target: "_blank", rel: "noopener" },
       el("span", { class: "num", text: String(c.index) }),
       el("span", {}, el("span", { class: "t", text: c.title }),
-        el("span", { class: "m", text: `${c.source_name}, ${stamp(c.published_at)}` }))));
+        el("span", { class: "m", text: `${c.source_name}, đăng lúc ${stamp(c.published_at)}` })))));
   }
   return wrap;
 }
@@ -436,7 +457,7 @@ async function ask(question) {
   if (busy) return;
   busy = true; updateSend();
   app.classList.add("chatting");
-  const turn = el("div", { class: "turn" }, el("div", { class: "q", text: question }));
+  const turn = el("div", { class: "turn" }, el("h3", { class: "q", text: question }));
   const answer = el("div", { class: "a" });
   const body = el("div", { class: "body" });
   const thinking = el("div", { class: "thinking" }, el("i"), el("span", { text: "Đang tìm trong các bài đã thu thập…" }));
@@ -513,6 +534,13 @@ forms.forEach((f) => {
     $(".dock textarea").focus();
   });
 });
+document.querySelectorAll("#sports button").forEach((b) => b.addEventListener("click", () => {
+  const ta = $(".hero textarea");
+  const name = b.textContent;
+  ta.value = `Tin ${name.charAt(0).toLowerCase()}${name.slice(1)} mới nhất?`;
+  ta.dispatchEvent(new Event("input"));
+  ta.focus();
+}));
 document.querySelectorAll(".prompt").forEach((b) => b.addEventListener("click", () => ask(b.dataset.q)));
 function newChat() {
   conversationId = null; thread.replaceChildren(); app.classList.remove("chatting");
