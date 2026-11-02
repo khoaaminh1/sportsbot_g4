@@ -16,7 +16,7 @@ from datetime import UTC, datetime, timedelta
 from sportsbot_pipelines.collectors.http import PoliteClient
 from sportsbot_pipelines.collectors.registry import Source
 from sportsbot_pipelines.ingestion.bronze import BronzeWriter
-from sportsbot_pipelines.ingestion.run import collect_source
+from sportsbot_pipelines.ingestion.run import Publisher, collect_source
 from sportsbot_pipelines.ingestion.state import State
 
 logger = logging.getLogger(__name__)
@@ -34,6 +34,7 @@ def run_forever(
     *,
     tick_seconds: float = 30.0,
     max_items: int = 200,
+    publish: Publisher | None = None,
     stop: threading.Event | None = None,
     now: Callable[[], datetime] = lambda: datetime.now(UTC),
 ) -> None:
@@ -53,6 +54,6 @@ def run_forever(
             if stop.is_set():
                 break
             if due(source, state.last_run_at(source.id), now()):
-                collect_source(source, client, state, writer, max_items=max_items)
+                collect_source(source, client, state, writer, max_items=max_items, publish=publish)
         stop.wait(tick_seconds)
     logger.info("scheduler_stopped")

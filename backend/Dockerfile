@@ -9,9 +9,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 COPY backend/requirements.txt backend/requirements.txt
-RUN pip install -r backend/requirements.txt
+COPY agent/requirements.txt agent/requirements.txt
+RUN pip install -r backend/requirements.txt -r agent/requirements.txt
 
 COPY backend/src backend/src
+# The RAG code (agent/) and the demo page (frontend/, served at /app/).
+COPY agent/src agent/src
+COPY frontend frontend
+ENV PYTHONPATH=/app/agent/src
 
 # Run as a non-root user.
 RUN useradd --create-home --uid 10001 appuser

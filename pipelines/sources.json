@@ -1,0 +1,385 @@
+{
+  "_comment": [
+    "Source registry: what SportsBot collects. Loaded by sportsbot_pipelines.collectors.registry and mirrored into the `sources` table.",
+    "Rules: RSS and official APIs first; page extraction only where robots.txt and the terms allow it.",
+    "`verified` becomes true only after `make sources-check` fetched the feed; record the date in `notes`.",
+    "`domains`: article links outside these domains are dropped.",
+    "`sitemaps` + `sitemap_include` (regex on the URL) enable `make backfill`; find sitemap URLs with `make sources-sitemaps`.",
+    "Full text is for internal processing only; users see title, excerpt and link."
+  ],
+  "sources": [
+    {
+      "id": "vnexpress_the_thao",
+      "name": "VnExpress Thể thao",
+      "kind": "rss",
+      "url": "https://vnexpress.net/rss/the-thao.rss",
+      "language": "vi",
+      "interval_minutes": 30,
+      "timezone": "Asia/Ho_Chi_Minh",
+      "domains": [
+        "vnexpress.net"
+      ],
+      "verified": true,
+      "notes": "Used by the prototype (PR #1). Live check 2026-11-02 from Vietnam (TMK, macOS): 60 entries, all dated with offsets. From a GitHub runner in the US the feed returns HTTP 404, so collect from Vietnam.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "tuoitre_the_thao",
+      "name": "Tuổi Trẻ Thể thao",
+      "kind": "rss",
+      "url": "https://tuoitre.vn/rss/the-thao.rss",
+      "language": "vi",
+      "interval_minutes": 30,
+      "timezone": "Asia/Ho_Chi_Minh",
+      "domains": [
+        "tuoitre.vn"
+      ],
+      "verified": true,
+      "notes": "Used by the prototype (PR #1). Live check 2026-11-02: 50 entries. Dates are US month-first with AM/PM and no offset (e.g. 11/2/2026 1:35:00 PM); parsed by collectors/dates.py with Asia/Ho_Chi_Minh assumed.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "bbc_sport_football",
+      "name": "BBC Sport Football",
+      "kind": "rss",
+      "url": "https://feeds.bbci.co.uk/sport/football/rss.xml",
+      "language": "en",
+      "interval_minutes": 30,
+      "timezone": "Europe/London",
+      "domains": [
+        "bbc.co.uk",
+        "bbc.com"
+      ],
+      "verified": true,
+      "notes": "Live check 2026-11-02: 74 entries, 68 usable, all dated. Summaries only.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "bbc_sport_tennis",
+      "name": "BBC Sport Tennis",
+      "kind": "rss",
+      "url": "https://feeds.bbci.co.uk/sport/tennis/rss.xml",
+      "language": "en",
+      "interval_minutes": 60,
+      "timezone": "Europe/London",
+      "domains": [
+        "bbc.co.uk",
+        "bbc.com"
+      ],
+      "verified": true,
+      "notes": "Live check 2026-11-02: 55 entries, all usable and dated.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "bbc_sport_basketball",
+      "name": "BBC Sport Basketball",
+      "kind": "rss",
+      "url": "https://feeds.bbci.co.uk/sport/basketball/rss.xml",
+      "language": "en",
+      "interval_minutes": 60,
+      "timezone": "Europe/London",
+      "domains": [
+        "bbc.co.uk",
+        "bbc.com"
+      ],
+      "verified": true,
+      "notes": "Live check 2026-11-02: 17 entries, all usable and dated.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "guardian_football",
+      "name": "The Guardian Football",
+      "kind": "rss",
+      "url": "https://www.theguardian.com/football/rss",
+      "language": "en",
+      "interval_minutes": 60,
+      "timezone": "Europe/London",
+      "domains": [
+        "theguardian.com"
+      ],
+      "verified": true,
+      "notes": "Live check 2026-11-02: 59 entries, all usable and dated.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "marca_futbol",
+      "name": "MARCA Fútbol",
+      "kind": "rss",
+      "url": "https://e00-marca.uecdn.es/rss/futbol.xml",
+      "language": "es",
+      "interval_minutes": 60,
+      "timezone": "Europe/Madrid",
+      "domains": [
+        "marca.com"
+      ],
+      "verified": true,
+      "notes": "Live check 2026-11-02: 47 entries, all usable and dated.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "lequipe_actu",
+      "name": "L'Équipe Actualités",
+      "kind": "rss",
+      "url": "https://www.lequipe.fr/rss/actu_rss.xml",
+      "language": "fr",
+      "interval_minutes": 60,
+      "timezone": "Europe/Paris",
+      "enabled": false,
+      "domains": [
+        "lequipe.fr"
+      ],
+      "verified": false,
+      "notes": "Live check 2026-11-02: HTTP 403 (access refused). Disabled: we do not work around refusals. A French replacement source is still needed.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "thanhnien_the_thao",
+      "name": "Thanh Niên Thể thao",
+      "kind": "rss",
+      "url": "https://thanhnien.vn/rss/the-thao.rss",
+      "language": "vi",
+      "interval_minutes": 30,
+      "timezone": "Asia/Ho_Chi_Minh",
+      "domains": [
+        "thanhnien.vn"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "dantri_the_thao",
+      "name": "Dân trí Thể thao",
+      "kind": "rss",
+      "url": "https://dantri.com.vn/rss/the-thao.rss",
+      "language": "vi",
+      "interval_minutes": 30,
+      "timezone": "Asia/Ho_Chi_Minh",
+      "domains": [
+        "dantri.com.vn"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "vietnamnet_the_thao",
+      "name": "VietNamNet Thể thao",
+      "kind": "rss",
+      "url": "https://vietnamnet.vn/rss/the-thao.rss",
+      "language": "vi",
+      "interval_minutes": 30,
+      "timezone": "Asia/Ho_Chi_Minh",
+      "domains": [
+        "vietnamnet.vn"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "nld_the_thao",
+      "name": "Người Lao Động Thể thao",
+      "kind": "rss",
+      "url": "https://nld.com.vn/rss/the-thao.rss",
+      "language": "vi",
+      "interval_minutes": 30,
+      "timezone": "Asia/Ho_Chi_Minh",
+      "domains": [
+        "nld.com.vn"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "laodong_the_thao",
+      "name": "Lao Động Thể thao",
+      "kind": "rss",
+      "url": "https://laodong.vn/rss/the-thao.rss",
+      "language": "vi",
+      "interval_minutes": 30,
+      "timezone": "Asia/Ho_Chi_Minh",
+      "domains": [
+        "laodong.vn"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "baotintuc_the_thao",
+      "name": "Báo Tin tức (TTXVN) Thể thao",
+      "kind": "rss",
+      "url": "https://baotintuc.vn/the-thao.rss",
+      "language": "vi",
+      "interval_minutes": 30,
+      "timezone": "Asia/Ho_Chi_Minh",
+      "domains": [
+        "baotintuc.vn"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "znews_the_thao",
+      "name": "Znews Thể thao",
+      "kind": "rss",
+      "url": "https://znews.vn/the-thao.rss",
+      "language": "vi",
+      "interval_minutes": 30,
+      "timezone": "Asia/Ho_Chi_Minh",
+      "domains": [
+        "znews.vn"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "vov_the_thao",
+      "name": "VOV Thể thao",
+      "kind": "rss",
+      "url": "https://vov.vn/rss/the-thao.rss",
+      "language": "vi",
+      "interval_minutes": 30,
+      "timezone": "Asia/Ho_Chi_Minh",
+      "domains": [
+        "vov.vn"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "bbc_sport_all",
+      "name": "BBC Sport (all)",
+      "kind": "rss",
+      "url": "https://feeds.bbci.co.uk/sport/rss.xml",
+      "language": "en",
+      "interval_minutes": 30,
+      "timezone": "Europe/London",
+      "domains": [
+        "bbc.co.uk",
+        "bbc.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "guardian_sport",
+      "name": "The Guardian Sport",
+      "kind": "rss",
+      "url": "https://www.theguardian.com/sport/rss",
+      "language": "en",
+      "interval_minutes": 30,
+      "timezone": "Europe/London",
+      "domains": [
+        "theguardian.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "espn_soccer",
+      "name": "ESPN Soccer",
+      "kind": "rss",
+      "url": "https://www.espn.com/espn/rss/soccer/news",
+      "language": "en",
+      "interval_minutes": 30,
+      "timezone": "America/New_York",
+      "domains": [
+        "espn.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "skysports_football",
+      "name": "Sky Sports Football",
+      "kind": "rss",
+      "url": "https://www.skysports.com/rss/12040",
+      "language": "en",
+      "interval_minutes": 30,
+      "timezone": "Europe/London",
+      "domains": [
+        "skysports.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "as_futbol",
+      "name": "AS Fútbol",
+      "kind": "rss",
+      "url": "https://feeds.as.com/mrss-s/pages/as/site/as.com/section/futbol/portada/",
+      "language": "es",
+      "interval_minutes": 30,
+      "timezone": "Europe/Madrid",
+      "domains": [
+        "as.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "mundodeportivo_futbol",
+      "name": "Mundo Deportivo Fútbol",
+      "kind": "rss",
+      "url": "https://www.mundodeportivo.com/rss/futbol",
+      "language": "es",
+      "interval_minutes": 30,
+      "timezone": "Europe/Madrid",
+      "domains": [
+        "mundodeportivo.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "sitemaps": [],
+      "sitemap_include": null
+    },
+    {
+      "id": "france24_sport_fr",
+      "name": "France 24 Sport (FR)",
+      "kind": "rss",
+      "url": "https://www.france24.com/fr/sports/rss",
+      "language": "fr",
+      "interval_minutes": 30,
+      "timezone": "Europe/Paris",
+      "domains": [
+        "france24.com"
+      ],
+      "verified": false,
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "sitemaps": [],
+      "sitemap_include": null
+    }
+  ]
+}

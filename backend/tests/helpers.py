@@ -18,6 +18,7 @@ def make_settings(**overrides: object) -> Settings:
         "qdrant_url": "http://127.0.0.1:1",
         "hdfs_webhdfs_url": "",
         "health_timeout_seconds": 0.5,
+        "chat_enabled": False,
     }
     base.update(overrides)
     return Settings(_env_file=None, **base)
@@ -41,8 +42,19 @@ def failing(message: str = "boom"):
 def client_factory():
     clients: list[TestClient] = []
 
-    def build(checks: list[Check] | None = None, **settings: object) -> TestClient:
-        app = create_app(make_settings(**settings), checks=checks)
+    def build(
+        checks: list[Check] | None = None,
+        news_repo: object | None = None,
+        rag: object | None = None,
+        **settings: object,
+    ) -> TestClient:
+        app = create_app(
+            make_settings(**settings),
+            checks=checks,
+            news_repo=news_repo,  # type: ignore[arg-type]
+            rag=rag,
+            conversation_store=None,
+        )
         client = TestClient(app, raise_server_exceptions=False)
         clients.append(client)
         return client

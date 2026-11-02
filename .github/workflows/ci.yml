@@ -27,8 +27,9 @@ jobs:
             requirements-dev.txt
             backend/requirements.txt
             pipelines/requirements.txt
+            agent/requirements.txt
       - name: Install dependencies
-        run: pip install -r requirements-dev.txt -r backend/requirements.txt -r pipelines/requirements.txt
+        run: pip install -r requirements-dev.txt -r backend/requirements.txt -r pipelines/requirements.txt -r agent/requirements.txt
       - name: Validate source registry
         run: PYTHONPATH=pipelines/src python -m sportsbot_pipelines sources validate
       - name: Lint
@@ -55,8 +56,9 @@ jobs:
             requirements-dev.txt
             backend/requirements.txt
             pipelines/requirements.txt
+            agent/requirements.txt
       - name: Install test dependencies
-        run: pip install -r requirements-dev.txt -r backend/requirements.txt -r pipelines/requirements.txt
+        run: pip install -r requirements-dev.txt -r backend/requirements.txt -r pipelines/requirements.txt -r agent/requirements.txt
       - name: Prepare .env
         run: |
           cp .env.example .env
@@ -100,6 +102,32 @@ jobs:
           test "$LINES" -eq 3
           $COMPOSE exec -T postgres psql -U sportsbot -d sportsbot -c \
             "SELECT source_id, status, http_status, items_fetched, items_new, items_dropped FROM collection_runs ORDER BY run_id"
+      - name: Streaming pipeline end to end (RSS -> Kafka -> extractor -> PostgreSQL, synthetic)
+        env:
+          S: docker compose -f docker-compose.yml -f docker-compose.ci.yml --profile core --profile bigdata --profile stream --profile collect
+        run: |
+          $S up -d --wait kafka
+          $S run --rm kafka-init | tee topics.log
+          grep -q articles.extracted topics.log
+          FIX="-e SOURCES_FILE=/fixtures/sources_stream_fixture.yaml -e MIN_SECONDS_BETWEEN_REQUESTS_PER_HOST=0 -v ./pipelines/tests/fixtures:/fixtures:ro"
+          $S run --rm --build $FIX discover discover --once | tee discover.log
+          grep -q '"items_new": 2' discover.log
+          $S up -d --build extractor consumer-operational
+          N=0
+          for i in $(seq 1 45); do
+            N=$($S exec -T postgres psql -U sportsbot -d sportsbot -tAc "SELECT count(*) FROM articles WHERE source_id = 'fixture_stream'")
+            [ "$N" -ge 1 ] && break
+            sleep 2
+          done
+          echo "articles stored: $N"
+          test "$N" -eq 1
+          $S exec -T postgres psql -U sportsbot -d sportsbot -c "SELECT title, word_count, published_at, left(content, 80) FROM articles WHERE source_id = 'fixture_stream'"
+          $S exec -T kafka /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server kafka:9092 \
+            --topic articles.dead-letter --from-beginning --max-messages 1 --timeout-ms 30000 | tee dead.log
+          grep -q http_404 dead.log
+      - name: Streaming worker logs
+        if: always()
+        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml --profile core --profile bigdata --profile stream --profile collect logs --no-color --tail 60 extractor consumer-operational kafka || true
       - name: Live check of real sources (informational, does not fail CI)
         continue-on-error: true
         run: $COMPOSE run --rm --no-deps collector sources check
@@ -111,4 +139,4 @@ jobs:
         run: $COMPOSE logs --no-color --tail 200
       - name: Stop stack
         if: always()
-        run: $COMPOSE down -v
+        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml --profile core --profile bigdata --profile collect --profile stream down -v

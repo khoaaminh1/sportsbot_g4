@@ -77,3 +77,23 @@ def test_scheduler_due(source):
     assert due(source, None, now)
     assert not due(source, now - timedelta(minutes=10), now)
     assert due(source, now - timedelta(minutes=30), now)
+
+
+def test_publish_receives_only_new_records(tmp_path, site, source):
+    state, published = MemoryState(), []
+    with client_for(site) as client:
+        collect_source(source, client, state, LocalBronzeWriter(tmp_path), publish=published.extend)
+        state.headers.clear()
+        collect_source(source, client, state, LocalBronzeWriter(tmp_path), publish=published.extend)
+    assert len(published) == 3 and len({r.record_id for r in published}) == 3
+
+
+def test_failed_publish_marks_nothing_seen(tmp_path, site, source):
+    state = MemoryState()
+
+    def fail(records):
+        raise RuntimeError("kafka down")
+
+    with client_for(site) as client:
+        run = collect_source(source, client, state, LocalBronzeWriter(tmp_path), publish=fail)
+    assert run.status == "failed" and not state.seen

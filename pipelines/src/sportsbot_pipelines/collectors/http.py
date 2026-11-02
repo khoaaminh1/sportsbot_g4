@@ -111,6 +111,13 @@ class PoliteClient:
             self._robots[origin] = entry
         return entry.parser.can_fetch(self.user_agent, url)
 
+    def sitemaps_for(self, url: str) -> list[str]:
+        """`Sitemap:` lines of the site's robots.txt (empty when there are none)."""
+        self.robots_allowed(url)
+        parts = urlsplit(url)
+        entry = self._robots[f"{parts.scheme}://{parts.netloc}"]
+        return list(entry.parser.site_maps() or [])
+
     # ------------------------------------------------------------------- fetch ---
     def fetch(
         self, url: str, etag: str | None = None, last_modified: str | None = None

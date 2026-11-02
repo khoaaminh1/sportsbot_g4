@@ -13,7 +13,10 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 class PipelineSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    # env_ignore_empty: an empty value in .env (e.g. `SOURCES_FILE=`) means "use the default".
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8", extra="ignore", env_ignore_empty=True
+    )
 
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     log_format: Literal["json", "text"] = "json"
@@ -21,7 +24,7 @@ class PipelineSettings(BaseSettings):
     database_url: str = (
         "postgresql+psycopg://sportsbot:change-me-local-only@localhost:5432/sportsbot"
     )
-    sources_file: Path = REPO_ROOT / "pipelines" / "sources.yaml"
+    sources_file: Path = REPO_ROOT / "pipelines" / "sources.json"
     migrations_dir: Path = REPO_ROOT / "infra" / "postgres" / "migrations"
 
     # Where Bronze files go: "hdfs" (WebHDFS) in the stack, "local" for development and tests.
@@ -32,7 +35,7 @@ class PipelineSettings(BaseSettings):
     hdfs_user: str = "sportsbot"
 
     # Polite HTTP: identify ourselves, keep requests slow and small.
-    collector_user_agent: str = "SportsBotG4/0.3 (university Big Data project; RSS reader)"
+    collector_user_agent: str = "SportsBotG4/0.4 (university Big Data project; news reader)"
     collector_contact: str = ""
     http_timeout_seconds: float = Field(default=20.0, gt=0, le=120)
     http_max_bytes: int = Field(default=5_000_000, gt=0)
@@ -40,6 +43,18 @@ class PipelineSettings(BaseSettings):
     min_seconds_between_requests_per_host: float = Field(default=3.0, ge=0)
     max_items_per_fetch: int = Field(default=200, gt=0)
     scheduler_tick_seconds: float = Field(default=30.0, gt=0)
+
+    # Streaming pipeline (ADR 0005): Kafka topics, extractor and consumers.
+    kafka_bootstrap_servers: str = "localhost:9094"
+    extract_min_chars: int = Field(default=300, ge=0)
+    archive_batch_size: int = Field(default=100, gt=0)
+    chunk_max_chars: int = Field(default=1200, ge=200)
+    chunk_overlap_chars: int = Field(default=200, ge=0)
+
+    # Semantic layer: BGE-M3 embeddings (llama.cpp server) and Qdrant.
+    qdrant_url: str = "http://localhost:6333"
+    embedding_base_url: str = "http://localhost:8091"
+    embedding_model: str = "bge-m3"
 
     @field_validator("hdfs_webhdfs_url")
     @classmethod

@@ -1,0 +1,12 @@
+# SYNTHETIC registry for the CI streaming test: served by the fixture-feed container.
+sources:
+  - id: fixture_stream
+    name: Fixture stream (synthetic)
+    kind: rss
+    url: http://fixture-feed:8000/feed_stream.xml
+    language: vi
+    interval_minutes: 5
+    timezone: Asia/Ho_Chi_Minh
+    domains: [fixture-feed]
+    verified: false
+    notes: Synthetic test source served by the fixture-feed container in CI.

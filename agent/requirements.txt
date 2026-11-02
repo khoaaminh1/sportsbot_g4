@@ -1,0 +1,2 @@
+# Agent runtime dependencies (pinned). Only httpx: the prototype uses the standard library otherwise.
+httpx==0.28.1
