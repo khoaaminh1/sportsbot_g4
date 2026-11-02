@@ -53,3 +53,13 @@ Asked directly, without articles, the local `llama3` 8B answered fluent but **wr
 - **Short evidence:** RSS summaries are short; some questions get `INSUFFICIENT_EVIDENCE` even when the full article would answer.
 - **Citations are checked for form, not truth:** a cited sentence can still misstate its article. Faithfulness evaluation is a Phase 4 task.
 - **No conversation memory** and no time understanding ("today", "last week") yet.
+
+## Conversation memory (follow-up questions)
+Send the same `conversation_id` with every message of a conversation (the web UI does this).
+The backend loads the last 4 question/answer pairs from `messages` and the agent
+(`agent/src/sportsbot_agent/memory.py`) rewrites a follow-up such as "Anh ấy bao nhiêu tuổi?"
+into a standalone search query ("Wayne Rooney bao nhiêu tuổi") before retrieval. The rewrite
+costs one extra Gemini call, only when there is history. The answer prompt shows the earlier
+turns as context, never as a source: facts and citations still come only from retrieved
+articles. If the rewrite fails, the previous question is prepended to the new one instead.
+`meta.search_query` in the response shows the rewritten query (null when unchanged).

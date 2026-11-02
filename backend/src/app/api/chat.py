@@ -72,11 +72,19 @@ async def _answer(request: Request, body: ChatRequest) -> dict[str, Any]:
     question = " ".join(body.message.split())
     if not any(c.isalnum() for c in question):
         raise AppError("invalid_question", "The question must contain letters or numbers", 422)
+    from sportsbot_agent.memory import Turn
     from sportsbot_agent.rag import answer_to_dict
 
-    answer, meta = await run_in_threadpool(rag.ask, question)
-    response = to_chat_response(answer_to_dict(answer, meta), body.conversation_id or uuid.uuid4())
     store = request.app.state.conversation_store
+    history: list[Turn] = []
+    if store is not None and body.conversation_id is not None:
+        try:
+            pairs = await run_in_threadpool(store.history, str(body.conversation_id))
+            history = [Turn(q, a) for q, a in pairs]
+        except Exception:  # memory is best effort; answer the question on its own
+            logger.exception("conversation_history_failed")
+    answer, meta = await run_in_threadpool(rag.ask, question, history)
+    response = to_chat_response(answer_to_dict(answer, meta), body.conversation_id or uuid.uuid4())
     if store is not None:
         try:
             await run_in_threadpool(store.save, question, response)

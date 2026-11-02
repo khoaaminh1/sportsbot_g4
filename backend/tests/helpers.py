@@ -46,6 +46,7 @@ def client_factory():
         checks: list[Check] | None = None,
         news_repo: object | None = None,
         rag: object | None = None,
+        conversation_store: object | None = None,
         **settings: object,
     ) -> TestClient:
         app = create_app(
@@ -53,7 +54,7 @@ def client_factory():
             checks=checks,
             news_repo=news_repo,  # type: ignore[arg-type]
             rag=rag,
-            conversation_store=None,
+            conversation_store=conversation_store,
         )
         client = TestClient(app, raise_server_exceptions=False)
         clients.append(client)

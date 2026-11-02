@@ -81,9 +81,11 @@ class FakeRag:
     def __init__(self, mode: str = "generated") -> None:
         self.mode = mode
         self.questions: list[str] = []
+        self.histories: list[list] = []
 
-    def ask(self, question):
+    def ask(self, question, history=()):
         self.questions.append(question)
+        self.histories.append(list(history))
         article = Article(
             AID, "Tin 0", "x", "Fixture", "https://news.fixture.test/0", TS.isoformat(), "", "vi"
         )
@@ -134,6 +136,30 @@ def test_chat_returns_contract_response_with_citations(client_factory):
     assert body["citations"][0]["source_url"] == "https://news.fixture.test/0"
     assert body["insufficient_evidence"] is False and body["meta"]["llm"] == "gemini:x"
     assert rag.questions == ["Việt Nam thắng mấy bàn?"]
+
+
+class FakeStore:
+    def __init__(self) -> None:
+        self.saved: list[tuple[str, str]] = []
+        self.asked: list[str] = []
+
+    def history(self, conversation_id, turns=4):
+        self.asked.append(conversation_id)
+        return self.saved[-turns:]
+
+    def save(self, question, response):
+        self.saved.append((question, response["answer"]))
+
+
+def test_chat_passes_earlier_turns_of_the_same_conversation(client_factory):
+    rag, store = FakeRag(), FakeStore()
+    client = client_factory(checks=[], news_repo=FakeRepo(), rag=rag, conversation_store=store)
+    first = client.post("/chat", json={"message": "Rooney đá cho đội nào?"}).json()
+    cid = first["conversation_id"]
+    client.post("/chat", json={"message": "Anh ấy bao nhiêu tuổi?", "conversation_id": cid})
+    assert rag.histories[0] == []  # a new conversation has no memory
+    assert [t.question for t in rag.histories[1]] == ["Rooney đá cho đội nào?"]
+    assert store.asked == [cid]
 
 
 def test_chat_without_evidence_says_so(client_factory):
