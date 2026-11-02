@@ -104,7 +104,7 @@ jobs:
             "SELECT source_id, status, http_status, items_fetched, items_new, items_dropped FROM collection_runs ORDER BY run_id"
       - name: Streaming pipeline end to end (RSS -> Kafka -> extractor -> PostgreSQL, synthetic)
         env:
-          S: docker compose -f docker-compose.yml -f docker-compose.ci.yml --profile core --profile stream --profile collect
+          S: docker compose -f docker-compose.yml -f docker-compose.ci.yml --profile core --profile bigdata --profile stream --profile collect
         run: |
           $S up -d --wait kafka
           $S run --rm kafka-init | tee topics.log
@@ -127,7 +127,7 @@ jobs:
           grep -q http_404 dead.log
       - name: Streaming worker logs
         if: always()
-        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml --profile core --profile stream --profile collect logs --no-color --tail 60 extractor consumer-operational kafka || true
+        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml --profile core --profile bigdata --profile stream --profile collect logs --no-color --tail 60 extractor consumer-operational kafka || true
       - name: Live check of real sources (informational, does not fail CI)
         continue-on-error: true
         run: $COMPOSE run --rm --no-deps collector sources check

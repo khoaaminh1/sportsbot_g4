@@ -1,4 +1,4 @@
-.PHONY: help setup lint format test test-integration run up-core up-bigdata up up-collect collect-once sources-check bronze-ls articles-export chat chat-no-llm down ps logs hdfs-init hdfs-ls spark-smoke clean-volumes up-stream up-ai up-tools up-demo models discover-once backfill sources-sitemaps crawl-stats dead-letters logs-stream ask ask-no-llm
+.PHONY: help setup lint format test test-integration run up-core up-bigdata up up-collect collect-once sources-check bronze-ls articles-export chat chat-no-llm down ps logs hdfs-init hdfs-ls spark-smoke clean-volumes up-stream up-ai up-tools up-demo models discover-once backfill sources-sitemaps crawl-stats dead-letters logs-stream ask ask-no-llm llm-check export-labeling
 
 PYTHON ?= python
 
@@ -112,6 +112,12 @@ logs-stream:  ## Follow the streaming workers' logs
 
 ask:  ## Ask the hybrid RAG from the terminal: make ask Q="Kết quả Việt Nam - Thái Lan?"
 	PYTHONPATH=agent/src $(PYTHON) -m sportsbot_agent.ask "$(Q)"
+
+llm-check:  ## Which Gemini models (and Ollama) answer right now, one tiny request each
+	PYTHONPATH=agent/src $(PYTHON) -m sportsbot_agent.llm_check
+
+export-labeling:  ## Random article sample to label by hand: make export-labeling N=400 -> data/labeling/
+	$(COMPOSE) $(STREAM) run --rm --no-deps -v ./data/labeling:/app/data/labeling discover export-sample --n $(or $(N),400) --out /app/data/labeling/sample.csv
 
 ask-no-llm:  ## Retrieval only (no LLM): see which articles the RAG finds
 	PYTHONPATH=agent/src $(PYTHON) -m sportsbot_agent.ask --no-llm "$(Q)"

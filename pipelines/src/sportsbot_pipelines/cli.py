@@ -15,6 +15,7 @@ consume operational  articles.extracted -> PostgreSQL
 consume semantic     articles.extracted -> chunks -> BGE-M3 -> Qdrant
 consume archive      articles.extracted -> Bronze full-text files (HDFS)
 stats                corpus counts per source (PostgreSQL) and vectors (Qdrant)
+export-sample        random articles as CSV for hand labeling (sport category, golden set)
 """
 
 from __future__ import annotations
@@ -334,6 +335,54 @@ def cmd_stats(settings: PipelineSettings) -> int:
     return 0
 
 
+LABEL_COLUMNS = [
+    "article_id",
+    "source_id",
+    "language",
+    "published_at",
+    "title",
+    "excerpt",
+    "url",
+    "sport_label",
+    "labeler",
+    "notes",
+]
+
+
+def cmd_export_sample(settings: PipelineSettings, n: int, out: str, seed: float) -> int:
+    import csv
+    from pathlib import Path
+
+    from sqlalchemy import text
+
+    engine = create_engine(settings.database_url, pool_pre_ping=True)
+    with engine.begin() as conn:
+        conn.execute(text("SELECT setseed(:s)"), {"s": seed})
+        rows = (
+            conn.execute(
+                text(
+                    "SELECT article_id, source_id, language, published_at, title, "
+                    "left(regexp_replace(content, '\\s+', ' ', 'g'), 300) AS excerpt, "
+                    "source_url AS url FROM articles WHERE content IS NOT NULL "
+                    "ORDER BY random() LIMIT :n"
+                ),
+                {"n": n},
+            )
+            .mappings()
+            .all()
+        )
+    path = Path(out)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    # utf-8-sig: Excel and Google Sheets open Vietnamese text correctly.
+    with path.open("w", newline="", encoding="utf-8-sig") as handle:
+        writer = csv.DictWriter(handle, fieldnames=LABEL_COLUMNS)
+        writer.writeheader()
+        for r in rows:
+            writer.writerow({**dict(r), "sport_label": "", "labeler": "", "notes": ""})
+    print(json.dumps({"exported": len(rows), "file": str(path), "seed": seed}))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="sportsbot_pipelines")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -354,6 +403,10 @@ def main(argv: list[str] | None = None) -> int:
     con = sub.add_parser("consume")
     con.add_argument("which", choices=["operational", "semantic", "archive"])
     sub.add_parser("stats")
+    exp = sub.add_parser("export-sample")
+    exp.add_argument("--n", type=int, default=400)
+    exp.add_argument("--out", default="data/labeling/sample.csv")
+    exp.add_argument("--seed", type=float, default=0.42, help="same seed = same sample")
     args = parser.parse_args(argv)
 
     settings = get_settings()
@@ -377,6 +430,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_consume(settings, args.which)
     if args.command == "stats":
         return cmd_stats(settings)
+    if args.command == "export-sample":
+        return cmd_export_sample(settings, args.n, args.out, args.seed)
     if args.command == "collect":
         return cmd_collect(settings, args.source)
     return cmd_schedule(settings)
