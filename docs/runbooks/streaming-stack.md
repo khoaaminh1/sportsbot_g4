@@ -105,4 +105,8 @@ make bronze-ls               # source=extracted/... files written by consumer-ar
 | `llm-check`: a Gemini model "model not found" | The name changed; edit `GEMINI_MODELS` in `.env`. |
 | Many `http_403` dead letters for one site | The site blocks crawlers: disable the source in `sources.json`. |
 | `embedder` container exits immediately | Model file missing: `make models`; check `ls models/`. |
+| Embedder logs HTTP 500 `unordered_map::at` | Old GGUF without a newline token; fixed in code (line breaks are removed before embedding). Then `make reindex`. |
+| `consumer-semantic` logs `dependency_unavailable_gave_up` | The embedder or Qdrant was down for 10+ minutes. Start them, then `make reindex` (builds only missing vectors). |
+| Dead letters with `network_error` / `"retryable": true` | Temporary network problem or 429/5xx. `make replay-dead-letters` sends them through again. |
+| A site's article pages are blocked by the network (TLS reset, also with `curl`) | Set `"extract": false` for that source in `sources.json`: title + feed summary are stored instead (done for BBC on 2026-11-03). |
 | Kafka does not start after changing `CLUSTER_ID` | Remove its volume: `docker volume rm sportsbot_kafka_data`. |

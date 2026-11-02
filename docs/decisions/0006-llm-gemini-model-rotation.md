@@ -25,8 +25,13 @@
 - If no model answers, the bot shows excerpts of the retrieved articles with links (no
   invented text), and says the language model was unavailable.
 - Default order: `gemini-3.8-flash, gemini-3.6-flash, gemini-3.5-flash-lite,
-  gemini-3.1-flash-lite, gemini-2.5-flash-lite`. These names come from third-party pages;
-  `make llm-check` verifies which ones answer with our key before the demo.
+  gemini-3.1-flash-lite`. First `make llm-check` with TMK's key (2026-11-03): 3.5-flash-lite
+  answered; 3.8-flash HTTP 503 (overloaded, transient); 3.6-flash returned no text with a
+  5-token budget (thinking used it); 3.1-flash-lite timed out at 30 s; 2.5-flash-lite "model not
+  found" for a new project (removed).
+- Requests send `reasoning_effort` (`LLM_REASONING_EFFORT`, default `low`) so Gemini 3.x
+  thinking does not use the whole answer budget; a 400 about it retries without it. An empty
+  reply counts as a failure and the next model is tried.
 - One key per Google Cloud project. We do not create extra accounts or projects to multiply
   the free quota (against the provider's terms).
 - Grounding rules from ADR 0004 are unchanged: the model sees only retrieved stored articles,

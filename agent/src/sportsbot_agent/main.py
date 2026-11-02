@@ -65,7 +65,11 @@ def run(config: AgentConfig, questions: list[str] | None = None, no_llm: bool = 
     targets = build_targets(
         config.gemini_api_key, config.gemini_base_url, list(config.gemini_models)
     )
-    llm = None if no_llm or not targets else ChatRouter(targets)
+    llm = (
+        None
+        if no_llm or not targets
+        else ChatRouter(targets, reasoning_effort=config.llm_reasoning_effort)
+    )
     models = ", ".join(t.model for t in targets) if llm else "(none: excerpts only)"
     print(f"SportsBot prototype: {len(articles)} stored articles | models {models} | /exit to quit")
 

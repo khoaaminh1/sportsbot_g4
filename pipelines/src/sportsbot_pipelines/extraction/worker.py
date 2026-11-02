@@ -3,7 +3,11 @@
 Outcomes per message:
 - extracted       -> published to articles.extracted
 - duplicate       -> dropped (same canonical URL already stored, or same text under another URL)
-- dead letter     -> robots.txt disallows, HTTP error, no main text, text too short
+- dead letter     -> robots.txt disallows, HTTP error, no main text, text too short.
+                     Network failures and HTTP 429/5xx are marked `"retryable": true`
+                     (`make replay-dead-letters` sends them through again).
+- RSS-only source -> (`"extract": false` in sources.json) the feed's title and summary are
+                     stored without fetching the page.
 """
 
 from __future__ import annotations
@@ -20,6 +24,7 @@ from sportsbot_pipelines.collectors.dates import parse_date
 from sportsbot_pipelines.collectors.http import FetchError, PoliteClient, RobotsDisallowed
 from sportsbot_pipelines.extraction.extract import (
     ExtractedPage,
+    clean_text,
     content_hash,
     extract_page,
     word_count,
@@ -30,6 +35,18 @@ from sportsbot_pipelines.streaming.bus import Bus, dead_letter
 logger = logging.getLogger(__name__)
 
 EXTRACTOR_NAME = "trafilatura"
+RSS_SUMMARY_EXTRACTOR = "rss_summary"
+RSS_SUMMARY_MIN_CHARS = 40
+RETRYABLE_STATUS = {408, 425, 429, 500, 502, 503, 504}
+
+
+def html_to_text(value: str | None) -> str:
+    import html as _html
+    import re as _re
+
+    if not value:
+        return ""
+    return clean_text(_html.unescape(_re.sub(r"<[^>]+>", " ", value)))
 
 
 class DedupStore(Protocol):
@@ -132,16 +149,20 @@ def make_handler(
     timezones: dict[str, str] | None = None,
     extract: Callable[[bytes, str], ExtractedPage | None] = extract_page,
     stats: ExtractorStats | None = None,
+    rss_only: set[str] | None = None,
 ) -> Callable[[dict[str, Any]], None]:
     timezones = timezones or {}
+    rss_only = rss_only or set()
     stats = stats if stats is not None else ExtractorStats()
 
-    def reject(message: dict[str, Any], reason: str, error: str | None = None) -> None:
+    def reject(
+        message: dict[str, Any], reason: str, error: str | None = None, retryable: bool = False
+    ) -> None:
         stats.dead_lettered += 1
         bus.publish(
             topics.DEAD_LETTER,
             message.get("source_id", "unknown"),
-            dead_letter("extract", reason, message, error),
+            {**dead_letter("extract", reason, message, error), "retryable": retryable},
         )
         logger.info(
             "extract_rejected",
@@ -154,18 +175,34 @@ def make_handler(
         if dedup.article_exists(article_id):
             stats.duplicates += 1
             return
-        try:
-            fetched = client.fetch(url)
-        except RobotsDisallowed as exc:
-            return reject(message, "robots_disallowed", str(exc))
-        except FetchError as exc:
-            return reject(message, f"http_{exc.status or 'error'}", str(exc))
-        page = extract(fetched.content, url)
-        if page is None:
-            return reject(message, "no_main_text")
-        if len(page.text) < min_chars:
-            return reject(message, "too_short", f"{len(page.text)} chars")
+        if message["source_id"] in rss_only:
+            summary = html_to_text(message.get("summary_html"))
+            if len(summary) < RSS_SUMMARY_MIN_CHARS:
+                return reject(message, "summary_too_short", f"{len(summary)} chars")
+            page = ExtractedPage(message.get("title"), summary, None, None, None)
+            extractor_name = RSS_SUMMARY_EXTRACTOR
+        else:
+            try:
+                fetched = client.fetch(url)
+            except RobotsDisallowed as exc:
+                return reject(message, "robots_disallowed", str(exc))
+            except FetchError as exc:
+                if exc.status is None:  # connection reset, timeout, robots.txt unreachable
+                    return reject(message, "network_error", str(exc), retryable=True)
+                return reject(
+                    message,
+                    f"http_{exc.status}",
+                    str(exc),
+                    retryable=exc.status in RETRYABLE_STATUS,
+                )
+            page = extract(fetched.content, url)
+            if page is None:
+                return reject(message, "no_main_text")
+            if len(page.text) < min_chars:
+                return reject(message, "too_short", f"{len(page.text)} chars")
+            extractor_name = EXTRACTOR_NAME
         out = build_extracted(message, page, timezone=timezones.get(message["source_id"], "UTC"))
+        out["extractor"] = extractor_name
         if not out["title"]:
             return reject(message, "no_title")
         owner = dedup.claim_content(out["content_hash"], article_id)

@@ -1,4 +1,4 @@
-.PHONY: help setup lint format test test-integration run up-core up-bigdata up up-collect collect-once sources-check bronze-ls articles-export chat chat-no-llm down ps logs hdfs-init hdfs-ls spark-smoke clean-volumes up-stream up-ai up-tools up-demo models discover-once backfill sources-sitemaps crawl-stats dead-letters logs-stream ask ask-no-llm llm-check export-labeling
+.PHONY: help setup lint format test test-integration run up-core up-bigdata up up-collect collect-once sources-check bronze-ls articles-export chat chat-no-llm down ps logs hdfs-init hdfs-ls spark-smoke clean-volumes up-stream up-ai up-tools up-demo models discover-once backfill sources-sitemaps crawl-stats dead-letters logs-stream ask ask-no-llm llm-check export-labeling reindex replay-dead-letters
 
 PYTHON ?= python
 
@@ -106,6 +106,12 @@ dead-letters:  ## Show the last 20 dead-letter messages (why articles were rejec
 	$(COMPOSE) $(STREAM) exec -T kafka /opt/kafka/bin/kafka-console-consumer.sh \
 		--bootstrap-server kafka:9092 --topic articles.dead-letter --from-beginning \
 		--max-messages 20 --timeout-ms 5000 || true
+
+reindex:  ## Build missing vectors in Qdrant from PostgreSQL (ALL=1 to rebuild everything)
+	$(COMPOSE) $(STREAM) run --rm --no-deps consumer-semantic reindex $(if $(ALL),--all,)
+
+replay-dead-letters:  ## Retry dead-lettered articles (network errors, 429/5xx) [REASONS=a,b]
+	$(COMPOSE) $(STREAM) run --rm --no-deps discover replay $(if $(REASONS),--reasons $(REASONS),)
 
 logs-stream:  ## Follow the streaming workers' logs
 	$(COMPOSE) $(STREAM) logs -f discover extractor consumer-operational consumer-semantic consumer-archive

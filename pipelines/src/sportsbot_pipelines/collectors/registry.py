@@ -29,6 +29,9 @@ class Source(BaseModel):
     # path must match (e.g. "/the-thao/"), so only sports pages are queued.
     sitemaps: list[HttpUrl] = Field(default_factory=list)
     sitemap_include: str | None = None
+    # false: do not fetch article pages; store the feed's title + summary instead (for sites
+    # whose pages cannot be reached, e.g. blocked by the network). Answers can still cite them.
+    extract: bool = True
     notes: str = ""
 
     @field_validator("domains")

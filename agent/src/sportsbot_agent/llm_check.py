@@ -2,7 +2,7 @@
 
     make llm-check
 
-Sends one tiny request per model (a few tokens; free-tier quota cost is negligible) and prints
+Sends one small request per model (free-tier quota cost is negligible) and prints
 one line per model. Remove models that fail from GEMINI_MODELS in .env.
 """
 
@@ -26,7 +26,12 @@ def main() -> int:
         return 2
     working = 0
     for target in targets:
-        router = ChatRouter([target], max_tokens=5, timeout=30)
+        router = ChatRouter(
+            [target],
+            max_tokens=200,  # room for the thinking step of Gemini 3.x models
+            timeout=60,
+            reasoning_effort=config.llm_reasoning_effort,
+        )
         try:
             reply = router.chat([Message("user", "Reply with the single word: ok")])
             status = {"model": target.model, "ok": True, "reply": reply[:20]}

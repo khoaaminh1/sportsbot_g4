@@ -288,3 +288,51 @@ def test_qdrant_client_creates_collection_once_and_searches():
     [hit] = client.search([0.1, 0.2])
     assert hit.score == 0.9 and hit.payload == {"a": 1}
     assert point_id("abc", 0) == point_id("abc", 0) != point_id("abc", 1)
+
+
+def test_router_sends_reasoning_effort_and_skips_empty_replies():
+    sent: list[dict] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        sent.append(body)
+        if body["model"] == "a":  # thinking used the budget: message without content
+            return httpx.Response(
+                200,
+                json={"choices": [{"message": {"role": "assistant"}, "finish_reason": "length"}]},
+            )
+        if "reasoning_effort" in body:
+            return httpx.Response(400, text="Invalid value for reasoning_effort")
+        return ok("answer from b")
+
+    router = ChatRouter(
+        [
+            ChatTarget("gemini:a", "https://g", "a", "K"),
+            ChatTarget("gemini:b", "https://g", "b", "K"),
+        ],
+        transport=httpx.MockTransport(handler),
+        clock=lambda: 0.0,
+    )
+    assert router.chat([Message("user", "hi")]) == "answer from b"
+    assert sent[0]["reasoning_effort"] == "low"
+    assert "reasoning_effort" not in sent[-1]  # retried without it after the 400
+    assert router.status()[0]["failures"] == 1
+
+
+def test_clients_send_inputs_without_line_breaks():
+    # Regression (2026-11-03, TMK's PC): the BGE-M3 GGUF has no newline token, so llama.cpp
+    # answered HTTP 500 "unordered_map::at" for every chunk containing a line break.
+    bodies: list[dict] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        bodies.append(body)
+        if request.url.path == "/v1/rerank":
+            return httpx.Response(200, json={"results": [{"index": 0, "relevance_score": 1.0}]})
+        return httpx.Response(200, json={"data": [{"index": 0, "embedding": [1.0, 0.0]}]})
+
+    transport = httpx.MockTransport(handler)
+    EmbeddingClient("http://e", transport=transport).embed(["Tiêu đề\n\nĐoạn 1\nĐoạn  2"])
+    RerankClient("http://r", transport=transport).rerank("câu\nhỏi", ["a\n\nb"])
+    assert bodies[0]["input"] == ["Tiêu đề Đoạn 1 Đoạn 2"]
+    assert bodies[1]["query"] == "câu hỏi" and bodies[1]["documents"] == ["a b"]

@@ -53,9 +53,10 @@
         "bbc.com"
       ],
       "verified": true,
-      "notes": "Live check 2026-11-02: 74 entries, 68 usable, all dated. Summaries only.",
+      "notes": "Live check 2026-11-02: 74 entries, 68 usable, all dated. Summaries only. 2026-11-03: www.bbc.co.uk article pages are unreachable from the team network in Vietnam (TLS connection reset, also with curl outside Docker); feeds.bbci.co.uk works. extract=false: title + feed summary only.",
       "sitemaps": [],
-      "sitemap_include": null
+      "sitemap_include": null,
+      "extract": false
     },
     {
       "id": "bbc_sport_tennis",
@@ -70,9 +71,10 @@
         "bbc.com"
       ],
       "verified": true,
-      "notes": "Live check 2026-11-02: 55 entries, all usable and dated.",
+      "notes": "Live check 2026-11-02: 55 entries, all usable and dated. 2026-11-03: www.bbc.co.uk article pages are unreachable from the team network in Vietnam (TLS connection reset, also with curl outside Docker); feeds.bbci.co.uk works. extract=false: title + feed summary only.",
       "sitemaps": [],
-      "sitemap_include": null
+      "sitemap_include": null,
+      "extract": false
     },
     {
       "id": "bbc_sport_basketball",
@@ -87,9 +89,10 @@
         "bbc.com"
       ],
       "verified": true,
-      "notes": "Live check 2026-11-02: 17 entries, all usable and dated.",
+      "notes": "Live check 2026-11-02: 17 entries, all usable and dated. 2026-11-03: www.bbc.co.uk article pages are unreachable from the team network in Vietnam (TLS connection reset, also with curl outside Docker); feeds.bbci.co.uk works. extract=false: title + feed summary only.",
       "sitemaps": [],
-      "sitemap_include": null
+      "sitemap_include": null,
+      "extract": false
     },
     {
       "id": "guardian_football",
@@ -281,9 +284,10 @@
         "bbc.com"
       ],
       "verified": false,
-      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result.",
+      "notes": "Added 2026-11-02 to widen collection; not checked yet. Run `make sources-check` and set verified/enabled from the result. 2026-11-03: www.bbc.co.uk article pages are unreachable from the team network in Vietnam (TLS connection reset, also with curl outside Docker); feeds.bbci.co.uk works. extract=false: title + feed summary only.",
       "sitemaps": [],
-      "sitemap_include": null
+      "sitemap_include": null,
+      "extract": false
     },
     {
       "id": "guardian_sport",

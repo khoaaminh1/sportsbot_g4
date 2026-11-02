@@ -100,6 +100,16 @@ class QdrantClient:
             for p in data["result"]["points"]
         ]
 
+    def count_article(self, article_id: str) -> int:
+        body = {
+            "exact": True,
+            "filter": {"must": [{"key": "article_id", "match": {"value": article_id}}]},
+        }
+        data = self._check(
+            self._http.post(f"/collections/{self.collection}/points/count", json=body)
+        )
+        return int(data["result"]["count"])
+
     def count(self) -> int:
         data = self._check(
             self._http.post(f"/collections/{self.collection}/points/count", json={"exact": True})
