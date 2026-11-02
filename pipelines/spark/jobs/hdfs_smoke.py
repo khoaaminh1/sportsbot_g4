@@ -1,5 +1,6 @@
 """Spark-on-HDFS smoke test (Phase 2): proves the cluster can write and read Parquet on HDFS.
 
+Must stay compatible with Python 3.10 (the Spark image's Python).
 Run with `make spark-smoke` (spark-submit on the Spark master, executors on the worker).
 
 The data is SYNTHETIC: 10,000 generated rows that exercise the pipeline mechanics only.
@@ -11,7 +12,7 @@ from __future__ import annotations
 import json
 import sys
 import time
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
@@ -22,7 +23,8 @@ SPORTS = ["football", "volleyball", "basketball", "tennis", "badminton"]
 
 
 def main() -> int:
-    run_id = datetime.now(tz=UTC).strftime("%Y%m%dT%H%M%SZ")
+    # timezone.utc, not datetime.UTC: the Spark image runs Python 3.10.
+    run_id = datetime.now(tz=timezone.utc).strftime("%Y%m%dT%H%M%SZ")  # noqa: UP017
     path = f"{HDFS_ROOT}/run={run_id}"
     spark = SparkSession.builder.appName("sportsbot-hdfs-smoke").getOrCreate()
     started = time.perf_counter()
