@@ -81,11 +81,11 @@ Demo page: http://localhost:8000/app/ · API docs: http://localhost:8000/docs ·
 
 ## 5. Use TMK's data instead of crawling yourself
 
-Default: TMK puts the snapshot files in the team's Google Drive folder. What each file is and
+Default: the private Kaggle dataset (below); fallback: the team's Google Drive folder. What each file is and
 how to load it (PostgreSQL, HDFS for Spark, pandas): **[docs/DATA.md](DATA.md)**.
 VNP: also read **[docs/handoff/VNP.md](handoff/VNP.md)**.
 
-### Optional later: a private Kaggle dataset (versioned)
+### Default: the private Kaggle dataset (versioned)
 One-time, each member: Kaggle account → Settings → API → **Create New Token**; put it in your
 `.env` as `KAGGLE_API_TOKEN=...` (or save the legacy `kaggle.json` in `~/.kaggle/`, `chmod 600`).
 Everyone sets the same `KAGGLE_DATASET=<owner>/sportsbot-corpus` (TMK tells you the value).

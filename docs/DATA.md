@@ -12,7 +12,19 @@ Only TMK's home PC crawls (24/7, Vietnam IP). Everyone else works from snapshots
 exports. Do not run the crawler on another machine for long: it would hit the same sites twice
 and build a different, smaller corpus.
 
-## The snapshot files (TMK sends them through the team's Google Drive folder)
+## How the team receives snapshots
+
+**Private Kaggle dataset (default).** TMK runs `make kaggle-export && make kaggle-push` (a new
+version each time). You run `make kaggle-pull`: files land in `data/kaggle/`. One-time setup per
+person: Kaggle → Settings → API → Create New Token → put it in your `.env` as
+`KAGGLE_API_TOKEN=...`, and set `KAGGLE_DATASET=<TMK's Kaggle username>/sportsbot-corpus`
+(TMK adds you as a collaborator; the dataset must stay private).
+An AI assistant can run `make kaggle-pull` itself once the token is in `.env`; it must never
+ask you to paste the token into a chat.
+
+**Fallback: the team's Google Drive folder** (shared with team members only), same files.
+
+## The snapshot files
 
 | File | Made by | Use it for |
 |---|---|---|
@@ -21,7 +33,7 @@ and build a different, smaller corpus.
 | `articles.jsonl.gz` + `export-summary.json` | `make kaggle-export` | Quick analysis with pandas or Spark local mode |
 | `sample.csv` | `make export-labeling N=400` | Hand labels (LTN) |
 
-Put received files in `data/snapshots/` (create it) inside your clone. The time in the file
+Files from `make kaggle-pull` are in `data/kaggle/`; put files received over Drive in `data/snapshots/`. The time in the file
 name is the snapshot time (local time of TMK's PC); cite it in every report.
 
 ## How to load each file

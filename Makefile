@@ -147,6 +147,7 @@ kaggle-export:  ## Corpus for the private Kaggle dataset: data/kaggle/{articles.
 	mkdir -p data/kaggle
 	$(COMPOSE) $(STREAM) run --rm --no-deps --user "$$(id -u):$$(id -g)" -v ./data/kaggle:/app/data/kaggle discover export-corpus --out /app/data/kaggle/articles.jsonl.gz
 	$(COMPOSE) $(STREAM) exec -T postgres sh -c 'pg_dump -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" --clean --if-exists --no-owner' | gzip > data/kaggle/sportsbot.sql.gz
+	docker run --rm --user "$$(id -u):$$(id -g)" -v sportsbot_bronze_data:/bronze:ro -v "$$PWD/data/kaggle:/out" alpine tar czf /out/bronze.tgz -C /bronze .
 	@ls -lh data/kaggle
 
 kaggle-push:  ## Upload data/kaggle as a new version of the PRIVATE dataset KAGGLE_DATASET

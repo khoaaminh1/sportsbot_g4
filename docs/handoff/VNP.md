@@ -15,10 +15,10 @@ For VNP and VNP's AI assistant. Read this file, then `AGENTS.md`, `docs/DATA.md`
 ## Set up (once)
 Follow `docs/TEAM_ONBOARDING.md` sections 3-4 (WSL2 + Docker on Windows, or macOS), then:
 ```bash
-mkdir -p data/snapshots        # put TMK's files here (Google Drive)
+make kaggle-pull               # needs KAGGLE_API_TOKEN + KAGGLE_DATASET in .env (docs/DATA.md)
 make up-bigdata                # HDFS NameNode + 2 DataNodes + Spark master + worker
 make spark-smoke               # must print "ok": true
-make bronze-load FILE=data/snapshots/bronze-<date>.tgz
+make bronze-load FILE=data/kaggle/bronze.tgz
 make hdfs-ls                   # /sportsbot/bronze/source=extracted/... present
 ```
 You do not need the chatbot stack for tasks 6 and 9. For task 7's improved model you need
