@@ -91,6 +91,41 @@ def test_shingle_size_must_be_positive():
         textnorm.word_shingles("a b c", n=0)
 
 
+# ------------------------------------------------------------- strip_leading_title ----
+def test_strip_leading_title_removes_a_repeated_title():
+    title = "Al Nassr đại thắng khi vắng Ronaldo"
+    text = "Al Nassr đại thắng khi vắng Ronaldo Uzbekistan Không có Ronaldo, Al Nassr vẫn thắng."
+    assert textnorm.strip_leading_title(text, title) == (
+        "Uzbekistan Không có Ronaldo, Al Nassr vẫn thắng."
+    )
+
+
+def test_strip_leading_title_ignores_case_spacing_and_unicode_form():
+    title = unicodedata.normalize("NFD", "Việt Nam  thắng")
+    text = "VIỆT NAM THẮNG\n\nTrận đấu diễn ra tối qua."
+    assert textnorm.strip_leading_title(text, title) == "Trận đấu diễn ra tối qua."
+
+
+def test_strip_leading_title_keeps_text_that_does_not_start_with_the_title():
+    text = "Trận đấu diễn ra tối qua. Việt Nam thắng."
+    assert textnorm.strip_leading_title(text, "Việt Nam thắng") == text
+
+
+def test_strip_leading_title_needs_a_word_boundary():
+    # "Messi ghi" is a prefix of "Messi ghiền ..." by characters, not by words.
+    assert textnorm.strip_leading_title("Messi ghiền cà phê", "Messi ghi") == "Messi ghiền cà phê"
+
+
+@pytest.mark.parametrize("title", [None, "", "   "])
+def test_strip_leading_title_without_title_returns_normalised_text(title):
+    assert textnorm.strip_leading_title("  Trận  đấu ", title) == "Trận đấu"
+
+
+def test_strip_leading_title_never_empties_a_text_equal_to_its_title():
+    # Text identical to the title (a feed summary) keeps its words for shingling.
+    assert textnorm.strip_leading_title("Việt Nam thắng", "Việt Nam thắng") == "Việt Nam thắng"
+
+
 # ----------------------------------------------------------------------- jaccard ----
 def test_jaccard_identical_and_disjoint_sets():
     assert textnorm.jaccard(["a", "b"], ["b", "a"]) == 1.0

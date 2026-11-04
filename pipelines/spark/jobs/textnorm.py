@@ -55,6 +55,27 @@ def word_shingles(value: str | None, n: int = SHINGLE_SIZE) -> list[str]:
     return sorted({" ".join(words[i : i + n]) for i in range(len(words) - n + 1)})
 
 
+def strip_leading_title(text: str | None, title: str | None) -> str:
+    """Normalised text without a copy of the title at its start, compared word by word.
+
+    Some extractors (VnExpress pages) repeat the title as the first words of the text; that copy
+    would add the title's shingles twice. Words are compared lower-cased after NFC, so case,
+    spacing and punctuation do not matter, and a partial last word never matches. When the text
+    is only the title, it is returned unchanged so it still has words to shingle.
+    """
+    clean = normalize_text(text)
+    title_words = tokens(title)
+    if not title_words:
+        return clean
+    matches = list(_WORD.finditer(clean))
+    if len(matches) <= len(title_words):
+        return clean
+    head = [m.group(0).lower() for m in matches[: len(title_words)]]
+    if head != title_words:
+        return clean
+    return clean[matches[len(title_words) - 1].end() :].strip()
+
+
 def jaccard(a: Iterable[str], b: Iterable[str]) -> float:
     """|A ∩ B| / |A ∪ B| of two shingle collections; two empty collections give 0.0."""
     set_a, set_b = set(a), set(b)
