@@ -56,6 +56,13 @@ pipeline diagram (2026-11-02).
 Daily at 21:00: each member posts in the group chat what is done (with the command output or a
 screenshot), what is next, what blocks them. TMK merges at most once a day after CI is green.
 
+## Status on 2026-11-04
+
+Done: task 1 (stack running 24/7, restarts after reboot), task 2 (45 of 48 feeds checked from
+Vietnam, sitemaps and section pages configured; done by TMK), task 3 (backfill from 2026-09-01:
+about 12,000 articles). Not started: tasks 4-10. Current progress board: the Status section of
+`README.md`. Work split with deadlines per person: `docs/TASKS.md` (LTN is the tester).
+
 ## Day-by-day gates
 
 | Day | Gate (evidence) |
@@ -107,7 +114,7 @@ screenshot), what is next, what blocks them. TMK merges at most once a day after
 **Files:** `evaluation/golden_questions.csv` (rules in `evaluation/README.md`)
 
 - [ ] Step 1: Write 50 questions (35 answerable, 15 not; ≥ 15 in English; ≥ 10 typed without diacritics).
-- [ ] Step 2: For each answerable question, find the answering articles on http://localhost:8000/app/ or with `make ask-no-llm Q="..."`; copy their ids into `expected_article_ids`.
+- [ ] Step 2: For each answerable question, find the answering articles on http://localhost:8000/app/ or with `make ask-no-llm Q="..."`; copy their links into `expected_urls`.
 - [ ] Step 3: Commit on a branch, open a pull request.
 
 ### Task 5 (LTN): Hand labels for the classifier test set — Wed 4 to Fri 6
@@ -116,7 +123,7 @@ screenshot), what is next, what blocks them. TMK merges at most once a day after
 
 - [ ] Step 1: TMK runs `make export-labeling N=400` and sends the CSV.
 - [ ] Step 2: Open in Google Sheets. Fill `sport_label` with exactly one of: `football, volleyball, basketball, tennis, badminton, other_sport`; `labeler` = `LTN`. Unsure → `notes`.
-- [ ] Step 3: Gate Thu 5: 200 rows; gate Fri 6: 400 rows. Download as CSV (UTF-8), commit.
+- [ ] Step 3: Gate Thu 5: 200 rows; gate Fri 6: 400 rows. Download as CSV (UTF-8); commit only `article_id,sport_label,labeler,notes` (no titles or excerpts: publishers' text stays out of the public repo).
 
 ### Task 6 (VNP): Spark Silver/Gold on the archive — Tue 3 to Thu 5
 
