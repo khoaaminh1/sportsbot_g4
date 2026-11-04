@@ -1,35 +1,39 @@
 # Contributing
 
-## Workflow
-1. Take an issue assigned to you (or open one). Every change starts from an issue with acceptance criteria.
-2. `git pull`, then create a branch from the integration branch (`develop` once it exists, `main` until then):
-   `feature/<issue>-<slug>` (e.g. `feature/12-rss-collector`), `fix/<issue>-<slug>` or `docs/<issue>-<slug>`.
-3. Implement within the issue's scope. Run `make lint test` (and `make test-integration` if you touched the stack).
-4. Open a Pull Request with the template. Link the issue with `Refs #<n>`, or `Closes #<n>` in the PR that finishes it.
-5. Wait for CI to pass. Merge only on a green check (squash merge).
-6. Ask another member to review. Review is **required** for: contracts (`docs/contracts/`), database migrations, Spark jobs, `docker-compose.yml`, and evaluation runs or results. For other PRs it is recommended.
+Who does what and by when: [docs/TASKS.md](docs/TASKS.md). Rules for people and AI assistants:
+[AGENTS.md](AGENTS.md).
 
-## Branches
-- `main`: protected; receives a tagged merge at each phase gate (`v0.2-infra`, `v0.3-data`, ...).
-- `develop`: integration branch for feature PRs (to be created when Phase 2 is merged).
-- Feature branches are short-lived; keep PRs small (one issue, ideally under ~400 changed lines).
+## Workflow
+1. Pick your item in `docs/TASKS.md` (or an issue). `git checkout main && git pull`.
+2. Branch from `main`: `feature/<slug>`, `fix/<slug>` or `docs/<slug>` (e.g. `feature/vnp-silver-job`).
+3. Work inside your module (module map in `AGENTS.md`). Run `make lint test`
+   (and `make test-integration` if you touched the database or the stack).
+4. Open a pull request with the template: what changed, the exact commands you ran and what they
+   printed. Link the TASKS item or issue.
+5. Both CI checks (`lint-test`, `stack`) must be green. TMK reviews and merges. Nobody pushes to
+   `main` or ticks "bypass rules".
+6. If the PR changes the state of a component or task, update the Status section of `README.md`
+   and tick the item in `docs/TASKS.md` in the same PR.
+
+Credit: commits count for the person whose GitHub account e-mail is in `git config user.email`.
+Without the command line, edit or upload files on GitHub and choose "Create a new branch ... and
+start a pull request".
 
 ## Commit messages
 [Conventional Commits](https://www.conventionalcommits.org/), English, imperative:
 ```
-feat: add VnExpress RSS collector
-fix: keep original published_at string when parsing fails
-docs: record ADR 0003 embedding model
+feat: add Spark Silver job with MinHashLSH near-duplicate clusters
+fix: count only enabled sources as active
+docs: add test report for round 2
 ```
 
 ## Rules
-- Never commit secrets, `.env`, data files, model weights, indexes or notebook outputs.
+- Never commit secrets, `.env`, data files (articles, Parquet, CSV with article text), model
+  weights, indexes or notebook outputs. See `docs/DATA.md`.
 - Never fabricate data, benchmarks or results. Label synthetic and public historical data by origin.
-- New dependency: add it to the module's `requirements.txt` (pinned) and mention it in the PR.
-- If AI tools produced code, you are still the author: read the whole diff, run the tests, and be able to explain every line.
+- New dependency: add it pinned to the module's `requirements.txt` and mention it in the PR.
+- Code written with AI tools is still yours: read the whole diff, run the tests, be able to explain it.
 
 ## Reviewing
-Read the diff, not only the description. Check: scope matches the issue, acceptance criteria met, tests cover new behaviour, contracts/docs updated, no secrets or data files, logs and errors follow the shared conventions.
-
-## Local setup
-See the Quick start in `README.md` and `docs/runbooks/stack.md`.
+Read the diff, not only the description. Check: scope, tests for new behaviour, run reports for
+numbers, docs and contracts updated, no secrets or data files, files only in the author's module.

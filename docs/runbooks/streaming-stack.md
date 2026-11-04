@@ -11,8 +11,7 @@ Silicon; `make crawl-stats` shows whether vectors keep up with new articles.
 ## 0. One-time setup
 
 ```bash
-git fetch origin
-git checkout feature/stream-rag-skeleton
+git checkout main && git pull
 cp .env.example .env            # then edit .env: GEMINI_API_KEY=..., COLLECTOR_CONTACT=team email
 make setup                      # Python tools for tests and `make ask`
 make test                       # expect: all passed, some skipped

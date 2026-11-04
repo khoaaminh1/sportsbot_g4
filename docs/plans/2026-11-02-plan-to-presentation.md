@@ -83,7 +83,7 @@ about 12,000 articles). Not started: tasks 4-10. Current progress board: the Sta
 
 **Files:** `.env` (local only), `pipelines/sources.json`
 
-- [ ] Step 1: `git checkout feature/stream-rag-skeleton && cp .env.example .env`; set `GEMINI_API_KEY`, `COLLECTOR_CONTACT`.
+- [ ] Step 1: (done 2026-11-03 on `main`) `cp .env.example .env`; set `GEMINI_API_KEY`, `COLLECTOR_CONTACT`.
 - [ ] Step 2: `make setup && make test` → expect `passed`, `0 failed`.
 - [ ] Step 3: `make models && make up-demo && make ps` → every service running or healthy.
 - [ ] Step 4: `make llm-check` → at least 2 Gemini targets `"ok": true`. Remove failing names from `GEMINI_MODELS`.

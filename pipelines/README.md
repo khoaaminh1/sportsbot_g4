@@ -1,44 +1,41 @@
 # pipelines
 
-Data collection and processing: collectors, Bronze ingestion into HDFS, and (next) the Spark Silver/Gold jobs. Owners: VNP, LTN. Design: [ADR 0003](../docs/decisions/0003-collection-and-bronze.md).
+Collection and processing: discovery, backfill, extraction, Kafka consumers, monitoring, and the
+Spark jobs. Owners: TMK (streaming), VNP (Spark). Design: [ADR 0005](../docs/decisions/0005-streaming-pipeline-kafka.md);
+operation: [docs/runbooks/streaming-stack.md](../docs/runbooks/streaming-stack.md).
 
-## Status
+## Status (2026-11-04)
 | Part | Status |
 |---|---|
-| Source registry (`sources.json`), 7 enabled RSS sources in vi / en / es | Implemented |
-| Polite collector (robots.txt, per-host delay, conditional GET, retries, size cap) | Implemented |
-| Bronze in HDFS (append-only gzip JSON Lines), state and runs in PostgreSQL | Implemented |
-| Scheduler (`collector` container) | Implemented |
-| Spark Silver (clean, validate, language ID, dedup) and Gold (classifier, entities, analytics) | Planned (Phase 3b) |
-| API and page collectors | Planned |
+| Source registry `sources.json`: 48 feeds, 45 enabled (vi, en, es, fr), sitemaps and section pages | Running |
+| Discovery (RSS every 30-60 min), backfill (sitemaps, paginated sections) → Kafka `articles.discovered` | Running |
+| Extractor: polite fetch (robots.txt, 3 s per host), trafilatura, exact dedup, dead letters, replay | Running |
+| Consumers: operational (PostgreSQL), semantic (chunks → BGE-M3 → Qdrant), archive (Bronze) | Running |
+| Monitor: failing / stale sources, stalls, Discord or Telegram alerts, circuit breaker | Running |
+| Exports: corpus JSONL, PostgreSQL dump, Bronze archive, labeling sample (Kaggle) | Running |
+| Spark Silver (clean, exact + near-duplicate clusters) and Gold (statistics) | To do: VNP, `docs/TASKS.md` V1-V2 |
+| Legacy RSS collector into HDFS (`collect` profile, Phase 3a) | Kept; replaced by the streaming pipeline |
 
 ## Layout
 ```
 src/sportsbot_pipelines/
-  collectors/   registry.py, http.py (polite client), rss.py (feed -> Bronze records), urls.py, dates.py
-  ingestion/    bronze.py (WebHDFS / local writers), state.py, run.py, scheduler.py, migrate.py
-  cli.py        python -m sportsbot_pipelines {migrate, sources validate|check, collect, schedule}
-spark/jobs/     hdfs_smoke.py (Phase 2); Silver/Gold jobs come here
+  collectors/   registry.py, http.py (polite client), rss.py, urls.py, dates.py
+  discovery/    publish.py, sitemap.py, listing.py (section pages), backfill.py
+  extraction/   extract.py (trafilatura, content hash), worker.py (Kafka handler)
+  consumers/    operational.py, semantic.py, archive.py, chunking.py
+  streaming/    topics.py, bus.py (Kafka / in-memory), replay.py
+  monitoring/   rules.py, notify.py, monitor.py
+  ingestion/    bronze.py, state.py, run.py, scheduler.py, migrate.py
+  cli.py        python -m sportsbot_pipelines --help
+spark/jobs/     hdfs_smoke.py; Silver/Gold jobs go here (VNP)
 sources.json    the source registry
 tests/          unit tests, integration tests (real PostgreSQL), SYNTHETIC fixtures
 ```
 
-## Commands
-```bash
-make sources-check     # fetch robots.txt + each feed once, print a table (no writes)
-make up-collect        # PostgreSQL + HDFS + the collector scheduler
-make collect-once      # one pass over all enabled sources into HDFS Bronze
-make bronze-ls         # list Bronze files in HDFS
-```
-Without Docker (writes Bronze to `data/bronze/`, needs a PostgreSQL from `make up-core`):
-```bash
-PYTHONPATH=pipelines/src python -m sportsbot_pipelines collect
-```
-
-## Bronze record (schema version 2)
-`record_id` (sha256 of canonical URL), `source_id`, `source_name`, `source_kind`, `language_hint`, `feed_url`, `url`, `canonical_url`, `title`, `summary_html` (raw), `published_raw` (as given), `published_at` (UTC or null), `published_tz_assumed`, `updated_raw`, `authors`, `tags`, `collected_at` (UTC), `run_id`, `http_status`, `collector_version`, `schema_version`.
-
 ## Adding a source
-1. Add an entry to `sources.json` with its timezone and allowed `domains`.
-2. Run `make sources-check`; set `verified: true` and write the date and result in `notes` only if it returned items.
-3. Check the site's terms of use; note anything relevant in `notes`. If a site refuses access (403, robots.txt), disable it: never work around a refusal.
+1. Add an entry to `sources.json` with its timezone, allowed `domains`, and optional `sitemaps` +
+   `sitemap_include` or `listing` for backfill.
+2. Run `make sources-check` from Vietnam; set `verified: true` and write the date and result in
+   `notes` only if the status is `ok`.
+3. If a site refuses access (403, robots.txt, network block), disable it or use `extract: false`
+   (feed summary only): never work around a refusal.
