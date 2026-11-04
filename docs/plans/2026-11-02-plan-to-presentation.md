@@ -56,6 +56,13 @@ pipeline diagram (2026-11-02).
 Daily at 21:00: each member posts in the group chat what is done (with the command output or a
 screenshot), what is next, what blocks them. TMK merges at most once a day after CI is green.
 
+## Status on 2026-11-04
+
+Done: task 1 (stack running 24/7, restarts after reboot), task 2 (45 of 48 feeds checked from
+Vietnam, sitemaps and section pages configured; done by TMK), task 3 (backfill from 2026-09-01:
+about 12,000 articles). Not started: tasks 4-10. Current progress board: the Status section of
+`README.md`.
+
 ## Day-by-day gates
 
 | Day | Gate (evidence) |

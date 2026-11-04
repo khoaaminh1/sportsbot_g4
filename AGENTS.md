@@ -52,3 +52,4 @@ Run `make lint test` before every commit; CI runs the same.
 
 ## Definition of done
 Acceptance criteria met, `make lint test` passes, CI green, docs/contracts updated, the PR links its issue and says how it was tested, and the author has read the full diff.
+If the PR changes the state of a component or a plan task, it also updates the Status section of `README.md` (the team's progress board) with the date.

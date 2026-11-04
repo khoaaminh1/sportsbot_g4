@@ -48,23 +48,69 @@ Design decisions are recorded as ADRs: [streaming with Kafka](docs/decisions/000
 
 ## Status
 
-Presentation: **Tuesday 10 November 2026**. The system runs 24/7 on the team lead's PC (Windows 11, WSL2, Docker Desktop, i5-14400F, 32 GB).
+Presentation: **Tuesday 10 November 2026** (code freeze Monday 9 November, 12:00).
+The system runs 24/7 on the team lead's PC (Windows 11, WSL2, Docker Desktop, i5-14400F, 32 GB)
+and restarts by itself after a reboot.
+
+**Last updated: 2026-11-04.** This section is the team's progress board: update it in the same
+pull request that changes the state of a component.
+
+### Corpus (from `make crawl-stats` and the web app)
+
+| Date (ICT) | Articles | Vector chunks | Notes |
+|---|---|---|---|
+| 2026-11-03 01:41 | 963 | 2,966 | RSS only, 20 sources |
+| 2026-11-03 23:32 | 11,838 | 34,875 | after sitemap + section backfill from 2026-09-01 and 28 multi-sport feeds |
+| 2026-11-04 08:37 | 12,116 | n/a | overnight RSS only: about 30 new articles per hour |
+
+45 of 48 feeds enabled (checked with `make sources-check` on 2026-11-03), 4 languages.
+The private Kaggle dataset `minhkhoa132/sportsbot-corpus` holds snapshots; `export-summary.json`
+in each version gives its article count and time.
+
+### Data layers (medallion)
+
+| Layer | What it is | Where | State | Owner |
+|---|---|---|---|---|
+| Operational | Clean articles for search and the chatbot | PostgreSQL + Qdrant | **Done**, live | TMK |
+| **Bronze** | Raw, append-only archive: every extracted article as JSON Lines (plus raw RSS records) | Docker volume `bronze_data` on the crawler PC; `bronze.tgz` in Kaggle; loaded into HDFS with `make bronze-load` | **Done**, live | TMK |
+| **Silver** | Cleaned, de-duplicated articles: exact duplicates removed, near-duplicates grouped into story clusters (MinHashLSH), Parquet | HDFS `/sportsbot/silver/` | **To do**: no job yet (task 6) | VNP |
+| **Gold** | Statistics for the report: articles per source/day/language, duplicate rate, cluster sizes, freshness lag | HDFS `/sportsbot/gold/` | **To do**: no job yet (task 6) | VNP |
+
+Bronze is written by the streaming pipeline itself (`consumer-archive`), so it is complete.
+Silver and Gold are batch Spark jobs that read Bronze; they are planned work, not missing
+pieces of the pipeline. The HDFS + Spark cluster they run on (NameNode, 2 DataNodes, Spark
+master + worker) is ready and checked by `make spark-smoke`. Specification with fixed rules:
+[docs/handoff/VNP.md](docs/handoff/VNP.md), task 6.
+
+### Components
 
 | Component | State |
 |---|---|
 | Kafka pipeline: discovery, extractor, 3 consumers, dead letters, replay | Running |
-| Backfill from sitemaps and paginated sports sections | Running |
+| Backfill from sitemaps and paginated sports sections | Running (manual command) |
 | PostgreSQL full-text search (accent-insensitive) and Qdrant vectors (BGE-M3) | Running |
 | Hybrid RAG with reranker and cited answers | Running |
-| Conversation memory for follow-up questions | Merged and unit-tested; first live check pending |
+| Conversation memory for follow-up questions | Merged and unit-tested; not yet checked live |
 | FastAPI (`/chat`, `/chat/stream`, `/news/latest`, `/ws/news`, ...) and web app | Running |
-| Monitoring with Discord / Telegram alerts, circuit breaker per source | Running |
-| Private Kaggle dataset for sharing the corpus inside the team | Running |
-| HDFS + Spark stack (NameNode, 2 DataNodes, Spark 3.5) | Ready; Silver/Gold jobs in progress |
-| Spark near-duplicate detection, sport classifier, scaling runs | In progress (VNP) |
-| Golden questions, hand labels, retrieval evaluation | In progress (LTN, TMK) |
+| Monitoring, Discord / Telegram alerts, circuit breaker per source, restart after reboot | Running |
+| Private Kaggle dataset and `make team-data` for teammates | Running |
+| HDFS + Spark stack | Ready (`make up-bigdata`, `make spark-smoke`) |
 
-Measured on 2026-11-03: 1,240 articles stored, 4 languages, 20 sources active before the 28 multi-sport feeds were added. Corpus figures in reports always come from `make crawl-stats` with the date.
+### What is left before the presentation
+
+| Plan task | Work | Owner | State |
+|---|---|---|---|
+| 6 | Spark Silver + Gold jobs, run reports | VNP | Not started |
+| 7 | Sport classifier: TF-IDF + logistic regression baseline vs BGE-M3 + logistic regression | VNP | Not started |
+| 9 | Scaling runs: Silver job at 3 sizes, `local[*]` vs cluster | VNP | Not started |
+| 4 | 50 golden questions (`evaluation/golden_questions.csv`) | LTN | Not started (header only) |
+| 5 | 400 hand labels for the classifier test set | LTN | Not started (sample file exported) |
+| 8 | Retrieval and answer evaluation on the golden questions | TMK | Waits for task 4 |
+| 10 | Slides, demo script, rehearsals, backup video | All | Not started |
+| - | Answer latency (about 20-50 s per answer) | TMK | Open |
+
+Tasks 1-3 (stack running, sources checked, backfill) are done. Full plan:
+[docs/plans/2026-11-02-plan-to-presentation.md](docs/plans/2026-11-02-plan-to-presentation.md).
 
 ## Quick start
 

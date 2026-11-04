@@ -12,6 +12,47 @@ For VNP and VNP's AI assistant. Read this file, then `AGENTS.md`, `docs/DATA.md`
 3. **Task 9 – Scaling runs**: the Silver job at increasing input sizes, `local[*]` vs the
    2-worker standalone cluster, with the measured table.
 
+## State on 2026-11-04 (read this first)
+
+- **Bronze is done; Silver and Gold do not exist yet.** That is expected: they are your task 6.
+  Bronze is written continuously by the streaming pipeline (`consumer-archive`); Silver and Gold
+  are batch Spark jobs that read it. No file under `pipelines/spark/jobs/` other than
+  `hdfs_smoke.py` exists, and `ml/` has only a README.
+- Where Bronze lives: on TMK's crawler PC in the Docker volume `bronze_data` (local backend, not
+  HDFS, because the crawler PC does not run the HDFS profile). You get it as `bronze.tgz` from the
+  private Kaggle dataset and load it into **your** HDFS with `make bronze-load`. Ask TMK for a fresh
+  `make kaggle-push` before a run you will report, and write the Kaggle version and
+  `export-summary.json` time in the run report (`snapshot_file`).
+- Size: about 12,000 articles on 2026-11-04 (vi, en, es, fr), most of them from a backfill of
+  September-November 2026, then about 30 new articles per hour.
+- Archive layout: `source=extracted/ingest_date=YYYY-MM-DD/ingest_hour=HH/*.jsonl.gz` holds the
+  articles (read only this). Folders `source=<feed id>/` hold raw RSS records (titles and summaries)
+  from discovery; ignore them for Silver.
+- Known properties to handle in Silver (decide and write the rule **before** the first reported
+  run):
+  - Some extracted texts start with the title repeated (VnExpress: "Al Nassr đại thắng khi vắng
+    Ronaldo Uzbekistan Không có ..."); harmless for exact duplicates, may raise near-duplicate
+    similarity slightly.
+  - BBC rows (`extractor = rss_summary`) contain only the feed summary (short texts): exclude
+    them from near-duplicate detection or report them separately.
+  - `published_at` can be missing; never use it as the event time.
+- Weak labels for task 7: many Vietnamese sites use flat URLs without a section path
+  (VnExpress, Tuổi Trẻ, VietNamNet), so URL paths alone label few articles. Since 2026-11-03 most
+  international feeds are **per sport**, so `source_id` gives reliable weak labels:
+
+  | `source_id` contains | Weak label |
+  |---|---|
+  | `football`, `soccer`, `futbol` | football (NFL feeds are American football: other_sport) |
+  | `tennis` | tennis |
+  | `nba`, `basketball` | basketball |
+  | `formula1`, `formulaone`, `rpm`, `cricket`, `rugby`, `golf`, `cycling`, `athletics`, `boxing`, `snooker`, `swimming`, `nfl`, `mlb`, `nhl` | other_sport |
+  | general feeds (`*_the_thao`, `bbc_sport_all`, `guardian_sport`, `france24_sport_fr`) | no weak label (use URL path rules where they exist, e.g. Dân Trí `/the-thao/bong-da/`) |
+
+  The API's categories are `football, volleyball, basketball, tennis, badminton, other_sport`
+  (`docs/contracts/api.openapi.yaml`); volleyball and badminton have no dedicated feed, so they come
+  only from Vietnamese URL paths or keywords. Write the final mapping in the model card, and keep
+  LTN's hand labels as the only test set.
+
 ## Set up (once)
 Follow `docs/TEAM_ONBOARDING.md` sections 3-4 (WSL2 + Docker on Windows, or macOS), then:
 ```bash
