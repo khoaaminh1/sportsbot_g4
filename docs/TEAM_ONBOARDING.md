@@ -10,8 +10,8 @@ problems we already hit.
 
 | You are | Do sections | Then |
 |---|---|---|
-| **LTN** (no AI assistant) | 1, 2, 3, 4 | Your tasks in the plan: 2 sources, 4 golden questions, 5 labels, 10 slides |
-| **VNP** (Claude) | 1, 2, 3, 4 | [handoff/VNP.md](handoff/VNP.md): Spark tasks 6, 7, 9 |
+| **LTN** (tester, no AI assistant) | 1, 2, 3, 4 | [TASKS.md](TASKS.md), LTN section: test rounds, golden questions, labels |
+| **VNP** (Claude) | 1, 2, 3, 4 | [TASKS.md](TASKS.md) VNP section and [handoff/VNP.md](handoff/VNP.md): Spark tasks 6, 7, 9 |
 | **TMK** (crawler PC) | section 6 | Publish a new Kaggle version every evening |
 
 ## 1. Install the tools (once, about 30-45 minutes)
