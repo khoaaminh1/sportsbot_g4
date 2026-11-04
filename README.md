@@ -104,7 +104,8 @@ master + worker) is ready and checked by `make spark-smoke`. Specification with 
 | 7 | Sport classifier: TF-IDF + logistic regression baseline vs BGE-M3 + logistic regression | VNP | Not started |
 | 9 | Scaling runs: Silver job at 3 sizes, `local[*]` vs cluster | VNP | Not started |
 | 4 | 50 golden questions (`evaluation/golden_questions.csv`) | LTN | Not started (header only) |
-| 5 | 400 hand labels for the classifier test set | LTN | Not started (sample file exported) |
+| 5 | 400 hand labels for the classifier test set | LTN | Not started (fresh sample pending) |
+| - | Test rounds 1-3 with reports (`docs/reports/test-report-*.md`) | LTN | Not started |
 | 8 | Retrieval and answer evaluation on the golden questions | TMK | Waits for task 4 |
 | 10 | Slides, demo script, rehearsals, backup video | All | Not started |
 | - | Answer latency (about 20-50 s per answer) | TMK | Open |
@@ -148,9 +149,9 @@ make crawl-stats              # articles per source, vectors
 |---|---|---|
 | Trần Minh Khoa (TMK) | Lead | Pipeline and crawler PC, RAG, API and web app, data sharing, merges, demo |
 | Võ Ngọc Phú (VNP) | Data engineering and ML | Spark Silver/Gold, near-duplicates, sport classifier, scaling experiment |
-| Lê Tấn Nguyên (LTN) | Data quality and evaluation | Source checks, hand labels, golden questions, slides, UI testing |
+| Lê Tấn Nguyên (LTN) | Tester and evaluation data | Test rounds with reports and bug issues, golden questions, hand labels, slides draft |
 
-Plan with daily gates: [docs/plans/2026-11-02-plan-to-presentation.md](docs/plans/2026-11-02-plan-to-presentation.md).
+**Work split with deadlines, checklists and how contributions are credited: [docs/TASKS.md](docs/TASKS.md).** Plan with daily gates: [docs/plans/2026-11-02-plan-to-presentation.md](docs/plans/2026-11-02-plan-to-presentation.md).
 
 ## Repository
 
@@ -185,6 +186,7 @@ Plan with daily gates: [docs/plans/2026-11-02-plan-to-presentation.md](docs/plan
 
 | Read this | When |
 |---|---|
+| [Work split](docs/TASKS.md) | Who delivers what, by when; checklists; test cases |
 | [Team onboarding](docs/TEAM_ONBOARDING.md) | First time on a machine: install, Kaggle data, run, common problems |
 | [Data guide](docs/DATA.md) | What the snapshot files contain and how to load them |
 | [Streaming stack runbook](docs/runbooks/streaming-stack.md) | Operating the crawler, backfill, monitoring, troubleshooting |

@@ -1,6 +1,6 @@
 # Evaluation
 
-Owners: LTN (questions), TMK (scripts and metrics). Status: question template ready; scripts are plan task 8.
+Owners: LTN (questions, tester), TMK (scripts and metrics). Schedule: `docs/TASKS.md`. Status: question template ready; scripts are plan task 8.
 
 `golden_questions.csv`: questions written by hand against the **collected** corpus.
 
@@ -9,7 +9,7 @@ Owners: LTN (questions), TMK (scripts and metrics). Status: question template re
 | `question_id` | `q001`, `q002`, ... |
 | `language` | `vi` or `en` |
 | `question` | as a real user would type it (some without diacritics: "doi tuyen viet nam") |
-| `expected_article_ids` | article ids (from the demo page link or `make export-labeling`) that answer it, separated by `;` |
+| `expected_urls` | links of the articles that answer it (copy them from the sources under an answer, or from the left panel of the web app), separated by `;`; the evaluation script converts them to article ids |
 | `answerable` | `yes`, or `no` for questions the corpus cannot answer (the bot must say so) |
 | `question_type` | `latest`, `result`, `schedule`, `player`, `team`, `other` |
 | `author` | `LTN`, `VNP`, `TMK` |

@@ -1,6 +1,6 @@
 # Handoff: VNP (Big Data layer and classifier)
 
-For VNP and VNP's AI assistant. Read this file, then `AGENTS.md`, `docs/DATA.md`,
+For VNP and VNP's AI assistant. Deadlines and checklists: `docs/TASKS.md` (VNP section). Read this file, then `AGENTS.md`, `docs/DATA.md`,
 `docs/TEAM_ONBOARDING.md` and tasks 6, 7, 9 of
 `docs/plans/2026-11-02-plan-to-presentation.md`.
 
@@ -120,8 +120,8 @@ re-running the same command on the same snapshot.
 ```
 You are helping VNP on the SportsBot project (university Big Data course, presentation
 10 November 2026). Explain to me in Vietnamese; write code, comments, commits in English.
-Read first: docs/handoff/VNP.md, AGENTS.md, docs/DATA.md, docs/TEAM_ONBOARDING.md.
-Task now: Task 6 in docs/handoff/VNP.md (Spark Silver/Gold). Follow its fixed rules exactly.
+Read first: docs/TASKS.md, docs/handoff/VNP.md, AGENTS.md, docs/DATA.md, docs/TEAM_ONBOARDING.md.
+Task now: V1 in docs/TASKS.md = Task 6 in docs/handoff/VNP.md (Spark Silver/Gold). Follow its fixed rules exactly.
 Work test-first for the pure-Python helpers. Keep Spark code compatible with Python 3.10.
 Do not touch files outside pipelines/spark/, pipelines/tests/, docs/reports/runs/ without
 asking me. Never commit data files. Before claiming anything works, run the command and show
