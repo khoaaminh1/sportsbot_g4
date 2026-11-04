@@ -1,61 +1,48 @@
-# Runbook: terminal chat prototype (BM25, answers only from stored articles)
+# Runbook: the chatbot (RAG), its settings, and the legacy prototype
 
-The prototype answers sports questions **only from articles SportsBot has collected**, and lists the articles it used with their links and publication times. If no stored article matches, it says so and does not call the model. Code: `agent/src/sportsbot_agent/`. Decisions: [ADR 0004](../decisions/0004-local-llm-ollama.md) (grounding rules), [ADR 0006](../decisions/0006-llm-gemini-model-rotation.md) (Gemini models). The full RAG is `make ask` ([streaming-stack runbook](streaming-stack.md)).
+The chatbot answers sports questions **only from articles SportsBot has collected** and lists the
+articles it used with their links and publication times. If no stored article matches, it says so
+and does not call the model. Code: `agent/src/sportsbot_agent/`. Decisions:
+[ADR 0006](../decisions/0006-llm-gemini-model-rotation.md) (Gemini models),
+[ADR 0007](../decisions/0007-bge-m3-and-reranker-gguf.md) (embedding and reranker).
+The grounding rules first written in [ADR 0004](../decisions/0004-local-llm-ollama.md) still apply.
 
-## How it works
-1. Load stored articles (Bronze records exported from HDFS) from `data/articles/`.
-2. Keyword search (BM25, accent-insensitive: `doi tuyen` matches `đội tuyển`; aliases such as `VN` → `viet nam`).
-3. No match → "No matching article…" (the model is **not** called).
-4. Match → the top 5 articles go to the model with strict rules: use only these articles, cite every fact as `[n]`, no URLs, no invented scores or names, answer `INSUFFICIENT_EVIDENCE` if the articles do not answer.
-5. The answer is checked: at least one citation, all citation numbers valid, no URLs. Otherwise the program shows the article excerpts instead.
-6. Print the answer and the cited sources: title, source, publication time (UTC), link.
+## How an answer is made
+1. **Follow-up?** If the conversation has earlier turns, the question is rewritten into a
+   standalone search query (see "Conversation memory").
+2. **Keyword search** in PostgreSQL over unaccented title and text ("doi tuyen" finds "đội tuyển").
+3. **Vector search** in Qdrant over 1,200-character chunks embedded with BGE-M3.
+4. **Fusion** with Reciprocal Rank Fusion, then **bge-reranker-v2-m3** keeps the best
+   `RERANK_TOP` candidates above `RERANK_MIN_SCORE`. Nothing left → "no evidence", no model call.
+5. The top `RETRIEVAL_TOP_K` articles go to Gemini with strict rules: use only these articles,
+   cite every fact as `[n]`, no URLs, no invented scores or names, answer `INSUFFICIENT_EVIDENCE`
+   if they do not answer.
+6. The answer is checked (at least one valid citation, no URLs); otherwise the article excerpts
+   are shown instead. Sources are returned with title, outlet, publication time and link.
 
-| Module | Role |
-|---|---|
-| `config.py` | Settings from environment variables (below) |
-| `clients/llm_router.py` | Free Gemini models tried in turn (OpenAI-compatible API) |
-| `store.py` | Loads stored articles (JSON Lines, plain or gzip) |
-| `retrieval.py` | Accent-insensitive BM25 keyword search |
-| `answer.py` | Grounded answer, citation check, fallbacks |
-| `main.py` | Terminal program (interactive or one question) |
+## Run
+- Web app: `make up-demo` (crawler PC) or `make team-data` / `make up-team` (teammates), then
+  http://localhost:8000/app/.
+- Terminal: `make ask Q="Tin tennis mới nhất?"`; without the model: `make ask-no-llm Q="..."`.
+- Which Gemini models answer with your key: `make llm-check`.
 
-## Run the prototype
-Put `GEMINI_API_KEY` in `.env` (without it, the prototype shows excerpts only). From the
-repository root, with the virtual environment active:
-
-```bash
-make setup                 # once
-make up-collect            # PostgreSQL + HDFS + collector (or skip if already collecting)
-make collect-once          # collect now instead of waiting for the scheduler
-make articles-export       # copy stored articles from HDFS to data/articles/
-make chat                  # interactive chat; type /exit to quit
-```
-
-One question: `PYTHONPATH=agent/src python -m sportsbot_agent.main "Tin mới nhất về đội tuyển Việt Nam?"`.
-Without the model (matching excerpts only): `make chat-no-llm`.
-
-## Settings
+## Settings (`.env`, defaults from `.env.example`)
 | Variable | Default | Meaning |
 |---|---|---|
-| `GEMINI_API_KEY` | empty | Free key from https://aistudio.google.com/apikey |
-| `GEMINI_MODELS` | see `.env.example` | Models tried in order |
-| `LLM_TIMEOUT_SECONDS` | `60` | Wait limit per answer |
-| `LLM_MAX_TOKENS` | `600` | Answer length limit |
-| `ARTICLES_DIR` | `data/articles` | Folder with stored articles |
+| `GEMINI_API_KEY` | empty | Free key from https://aistudio.google.com/apikey; without it the bot shows excerpts |
+| `GEMINI_MODELS` | `gemini-3.8-flash,gemini-3.6-flash,gemini-3.5-flash-lite,gemini-3.1-flash-lite` | Tried in order; a model that hits its quota rests |
+| `LLM_REASONING_EFFORT` | `low` | Thinking budget sent to Gemini (retried without it if refused) |
+| `LLM_COOLDOWN_SECONDS` | `65` | Rest after a per-minute quota error (daily quota: until Pacific midnight) |
+| `LLM_TIMEOUT_SECONDS` | `30` | Wait limit per model |
+| `LLM_MAX_TOKENS` | `1500` | Answer length limit |
+| `LLM_TEMPERATURE` | `0.1` | Low: factual answers |
+| `RETRIEVAL_CANDIDATES` | `30` | Candidates from each search before fusion |
+| `RERANK_TOP` | `12` | Candidates kept after reranking |
+| `RERANK_MIN_SCORE` | `-2.0` | Reranker score below which a candidate is dropped |
 | `RETRIEVAL_TOP_K` | `5` | Articles given to the model |
 
-## Why grounding (measured 2026-11-02 with the earlier local model)
-Asked directly, without articles, the local `llama3` 8B answered fluent but **wrong** facts about the Vietnam national team (a World Cup goal that never happened; a midfielder called a goalkeeper). This is why every model only sees stored articles and must cite them.
-
-## Known limitations
-- **Stopgap data path:** articles are exported from HDFS Bronze to a local file; Phase 3b/5 replace this with Gold tables in PostgreSQL and real indexes.
-- **Keyword search only:** no semantic or cross-language search yet (a Vietnamese question finds Vietnamese articles, not English ones). Phase 4 adds multilingual vectors (hybrid retrieval).
-- **Short evidence:** RSS summaries are short; some questions get `INSUFFICIENT_EVIDENCE` even when the full article would answer.
-- **Citations are checked for form, not truth:** a cited sentence can still misstate its article. Faithfulness evaluation is a Phase 4 task.
-- **No conversation memory** and no time understanding ("today", "last week") yet.
-
 ## Conversation memory (follow-up questions)
-Send the same `conversation_id` with every message of a conversation (the web UI does this).
+Send the same `conversation_id` with every message of a conversation (the web app does this).
 The backend loads the last 4 question/answer pairs from `messages` and the agent
 (`agent/src/sportsbot_agent/memory.py`) rewrites a follow-up such as "Anh ấy bao nhiêu tuổi?"
 into a standalone search query ("Wayne Rooney bao nhiêu tuổi") before retrieval. The rewrite
@@ -63,3 +50,22 @@ costs one extra Gemini call, only when there is history. The answer prompt shows
 turns as context, never as a source: facts and citations still come only from retrieved
 articles. If the rewrite fails, the previous question is prepended to the new one instead.
 `meta.search_query` in the response shows the rewritten query (null when unchanged).
+
+## Known limitations (2026-11-04)
+- **Latency:** about 20-50 s per answer on the crawler PC (CPU embedding and reranking plus
+  Gemini); being measured (TMK, `docs/TASKS.md`).
+- **No time understanding yet:** "hôm nay", "tuần này", "mới nhất" are not turned into date filters.
+- **Opinion and aggregate questions** ("4 trận hay nhất năm 2026") usually find no evidence: the
+  corpus holds news reports, not rankings.
+- **Citations are checked for form, not truth:** a cited sentence can still misstate its article;
+  faithfulness is part of the evaluation (plan task 8).
+- **BBC articles** contain only the feed summary (pages blocked from the crawler's network).
+
+## Legacy: the terminal prototype (BM25 over exported files)
+The first prototype (PR #1, Phase 3a) is kept for reference: `make chat` / `make chat-no-llm`
+search Bronze records exported to `data/articles/` with accent-insensitive BM25
+(`retrieval.py`, `store.py`, `main.py`) and use the same grounding rules and Gemini router.
+It needs the legacy collector (`make up-collect`, `make collect-once`, `make articles-export`).
+Measured 2026-11-02 with the earlier local model: asked directly without articles, `llama3` 8B
+gave fluent but **wrong** facts about the Vietnam national team, which is why every model only
+sees stored articles and must cite them.

@@ -194,6 +194,7 @@ make crawl-stats              # articles per source, vectors
 | [VNP handoff](docs/handoff/VNP.md) | Spark and classifier tasks, with rules for VNP's AI assistant |
 | [API contract](docs/contracts/api.openapi.yaml) | Endpoints; interactive docs at http://localhost:8000/docs |
 | [AGENTS.md](AGENTS.md), [CONTRIBUTING.md](CONTRIBUTING.md) | Rules for people and AI assistants working in the repository |
+| [Decisions (ADRs)](docs/decisions/), [Phase 1 assessment](docs/plan/phase-1-assessment.md), [Phase 2 report](docs/reports/phase-2.md) | History: why the design is what it is (ADR 0004 is superseded by 0006) |
 
 Contributions go through pull requests to the protected `main` branch; CI runs `make lint test` and a streaming end-to-end check.
 
