@@ -5,8 +5,8 @@ them, removes exact duplicates, groups near-duplicates into story clusters with 
 writes Parquet plus the rejected rows. Prints one `SILVER_REPORT {json}` line on stdout (Spark
 logs go to stderr) and stores the same JSON next to the output on HDFS.
 
-Must stay compatible with Python 3.10 (the Spark image's Python). Needs numpy in the Spark image
-for pyspark.ml (checked at start). Run (cluster):
+Must stay compatible with Python 3.10 (the Spark image's Python). Uses Spark SQL built-ins only:
+the Spark image has no numpy, so pyspark.ml (and its MinHashLSH) is not used. Run (cluster):
 
     docker compose --profile bigdata exec -T spark-master /opt/spark/bin/spark-submit \
         --master spark://spark-master:7077 \
@@ -34,10 +34,13 @@ Clean   title and text: Unicode NFC, whitespace collapsed, stripped (textnorm.no
         All original columns are kept. Added: ingest_date (UTC date of extracted_at),
         story_cluster_id, and `language` falls back to language_hint, then "und" (ISO 639
         "undetermined"), because it is a partition column.
-Near    MinHashLSH (numHashTables = 5, fixed seed) on word 3-shingles of the lower-cased,
-dups    accent-preserving text (textnorm.word_shingles), hashed into 2^20 binary features.
-        A pair is the same story when the exact Jaccard similarity of the two shingle sets is
-        >= 0.8 (LSH only proposes candidates; every pair is verified on the shingle arrays).
+Near    MinHash LSH with 5 hash tables on word 3-shingles of the lower-cased, accent-preserving
+dups    text (textnorm.word_shingles). MinHash value of table t = min over shingles of
+        xxhash64(t, shingle); a candidate pair shares the value of at least one table (OR of
+        5 tables, the scheme of Spark's MinHashLSH, written with Spark SQL functions because
+        the Spark image has no numpy). A pair is the same story when the exact Jaccard
+        similarity of the two shingle sets is >= 0.8 (LSH only proposes candidates; every pair
+        is verified on the shingle arrays).
         Before shingling, a copy of the title at the start of the text is removed
         (textnorm.strip_leading_title: VnExpress repeats the title in the text).
         Excluded from near-duplicate detection, counted in the report: rows with
@@ -58,7 +61,7 @@ import sys
 import time
 from datetime import datetime, timezone
 
-from pyspark.sql import DataFrame, SparkSession, Window
+from pyspark.sql import Column, DataFrame, SparkSession, Window
 from pyspark.sql import functions as F
 from pyspark.sql import types as T
 
@@ -74,8 +77,6 @@ DEFAULT_REJECTED = f"{HDFS}/silver/_rejected"
 DEFAULT_REPORTS = f"{HDFS}/silver/_reports"
 
 RSS_SUMMARY_EXTRACTOR = "rss_summary"
-HASHING_FEATURES = 1 << 20
-MINHASH_SEED = 20261105
 MAX_COMPONENT_ITERATIONS = 50
 CORRUPT = "_corrupt_record"
 
@@ -189,10 +190,27 @@ def with_reason(df: DataFrame) -> DataFrame:
     return df.withColumn("reason", reason).drop("is_valid", "hash_rank", "survives", "id_rank")
 
 
-def near_duplicate_pairs(kept: DataFrame) -> tuple[DataFrame, dict]:
-    """Verified near-duplicate pairs (id_a < id_b, jaccard >= threshold) and their counts."""
-    from pyspark.ml.feature import HashingTF, MinHashLSH  # needs numpy in the Spark image
+def _min_hash(shingles: str, table: int) -> Column:
+    """Minimum of xxhash64(table, s) over the shingles s: the MinHash value for one table.
 
+    F.transform reads the lambda's parameter count (1 = element, 2 = element and index), so the
+    table number is bound in this closure, not as a second lambda parameter.
+    """
+    return F.array_min(F.transform(shingles, lambda s: F.xxhash64(F.lit(table), s)))
+
+
+def near_duplicate_pairs(kept: DataFrame) -> tuple[DataFrame, dict]:
+    """Verified near-duplicate pairs (id_a < id_b, jaccard >= threshold) and their counts.
+
+    MinHash LSH with Spark SQL built-ins only (no pyspark.ml, so no numpy):
+    1. MinHash: for hash table t (0..4), h_t(s) = xxhash64(t, s) for every shingle s; the row's
+       value for table t is the minimum over its shingles. For two sets A and B,
+       P[min h_t(A) == min h_t(B)] = Jaccard(A, B).
+    2. LSH: two rows are a candidate pair when they share the value of at least one table
+       (5 tables, one hash each, combined with OR, as in Spark's MinHashLSH). A pair with
+       Jaccard s is proposed with probability 1 - (1 - s)^5.
+    3. Every candidate pair is verified with the exact Jaccard of the two shingle arrays.
+    """
     shingle = F.udf(
         lambda text, title: textnorm.word_shingles(textnorm.strip_leading_title(text, title)),
         T.ArrayType(T.StringType()),
@@ -207,36 +225,34 @@ def near_duplicate_pairs(kept: DataFrame) -> tuple[DataFrame, dict]:
         "near_dup_compared_rows": candidates.count(),
     }
 
-    tf = HashingTF(
-        inputCol="shingles", outputCol="features", numFeatures=HASHING_FEATURES, binary=True
+    # One (table, min-hash) row per article and table: 5 rows per article.
+    signature = F.array(
+        *[
+            F.struct(F.lit(t).alias("table"), _min_hash("shingles", t).alias("minhash"))
+            for t in range(textnorm.MINHASH_NUM_HASH_TABLES)
+        ]
     )
-    features = tf.transform(candidates)
-    lsh = MinHashLSH(
-        inputCol="features",
-        outputCol="hashes",
-        numHashTables=textnorm.MINHASH_NUM_HASH_TABLES,
-        seed=MINHASH_SEED,
+    buckets = candidates.select("article_id", F.explode(signature).alias("b")).select(
+        "article_id", "b.table", "b.minhash"
     )
-    model = lsh.fit(features)
-    # The join keeps pairs whose distance on the hashed features is below the threshold. A small
-    # margin above 1 - 0.8 keeps pairs exactly at 0.8 and pairs nudged by hash collisions; the
-    # exact check below decides.
-    proposed = (
-        model.approxSimilarityJoin(
-            features,
-            features,
-            1.0 - textnorm.NEAR_DUPLICATE_JACCARD + 0.05,
-            distCol="hashed_distance",
-        )
-        .select(
-            F.col("datasetA.article_id").alias("id_a"),
-            F.col("datasetB.article_id").alias("id_b"),
-            F.col("datasetA.shingles").alias("sh_a"),
-            F.col("datasetB.shingles").alias("sh_b"),
-        )
-        .where(F.col("id_a") < F.col("id_b"))  # each unordered pair once, no self-pairs
-        .cache()
+    # Self-join on the bucket key: articles with the same min-hash in the same table.
+    # Each unordered pair once (id_a < id_b), even when it shares several tables.
+    pair_ids = (
+        buckets.alias("a")
+        .join(buckets.alias("b"), ["table", "minhash"])
+        .where(F.col("a.article_id") < F.col("b.article_id"))
+        .select(F.col("a.article_id").alias("id_a"), F.col("b.article_id").alias("id_b"))
+        .distinct()
     )
+    shingles_a = candidates.select(
+        F.col("article_id").alias("id_a"), F.col("shingles").alias("sh_a")
+    )
+    shingles_b = candidates.select(
+        F.col("article_id").alias("id_b"), F.col("shingles").alias("sh_b")
+    )
+    proposed = pair_ids.join(shingles_a, "id_a").join(shingles_b, "id_b").cache()
+
+    # Shingle arrays are already unique, so these sizes are set sizes.
     exact = F.size(F.array_intersect("sh_a", "sh_b")) / F.size(F.array_union("sh_a", "sh_b"))
     pairs = (
         proposed.withColumn("jaccard", exact)
@@ -292,12 +308,6 @@ def story_clusters(pairs: DataFrame) -> tuple[DataFrame, int]:
 
 
 def main(argv: list[str]) -> int:
-    try:
-        import numpy  # noqa: F401  (pyspark.ml imports it)
-    except ImportError:
-        print("numpy is missing in the Spark image; pyspark.ml needs it", file=sys.stderr)
-        return 2
-
     args = parse_args(argv)
     # timezone.utc, not datetime.UTC: the Spark image runs Python 3.10.
     started = datetime.now(tz=timezone.utc)  # noqa: UP017
@@ -373,8 +383,9 @@ def main(argv: list[str]) -> int:
             "shingle_size": textnorm.SHINGLE_SIZE,
             "jaccard_threshold": textnorm.NEAR_DUPLICATE_JACCARD,
             "minhash_num_hash_tables": textnorm.MINHASH_NUM_HASH_TABLES,
-            "minhash_seed": MINHASH_SEED,
-            "hashing_features": HASHING_FEATURES,
+            "minhash_hash": "xxhash64(table_index, shingle)",
+            "lsh": "1 MinHash per table, candidate if any table matches",
+            "excluded_extractor": RSS_SUMMARY_EXTRACTOR,
         },
         "duration_seconds": round(time.perf_counter() - clock, 2),
     }
