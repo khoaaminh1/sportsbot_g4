@@ -243,6 +243,7 @@ def near_duplicate_pairs(kept: DataFrame) -> tuple[DataFrame, dict]:
         .where(F.col("a.article_id") < F.col("b.article_id"))
         .select(F.col("a.article_id").alias("id_a"), F.col("b.article_id").alias("id_b"))
         .distinct()
+        .cache()  # ids only: small even with many candidates
     )
     shingles_a = candidates.select(
         F.col("article_id").alias("id_a"), F.col("shingles").alias("sh_a")
@@ -250,7 +251,9 @@ def near_duplicate_pairs(kept: DataFrame) -> tuple[DataFrame, dict]:
     shingles_b = candidates.select(
         F.col("article_id").alias("id_b"), F.col("shingles").alias("sh_b")
     )
-    proposed = pair_ids.join(shingles_a, "id_a").join(shingles_b, "id_b").cache()
+    # Not cached: pairs with their shingle arrays can be large; each row is checked and dropped
+    # as it streams through the join.
+    proposed = pair_ids.join(shingles_a, "id_a").join(shingles_b, "id_b")
 
     # Shingle arrays are already unique, so these sizes are set sizes.
     exact = F.size(F.array_intersect("sh_a", "sh_b")) / F.size(F.array_union("sh_a", "sh_b"))
@@ -260,9 +263,9 @@ def near_duplicate_pairs(kept: DataFrame) -> tuple[DataFrame, dict]:
         .select("id_a", "id_b", "jaccard")
         .cache()
     )
-    counts["lsh_candidate_pairs"] = proposed.count()
+    counts["lsh_candidate_pairs"] = pair_ids.count()
     counts["near_duplicate_pairs"] = pairs.count()
-    proposed.unpersist()
+    pair_ids.unpersist()
     candidates.unpersist()
     return pairs, counts
 
