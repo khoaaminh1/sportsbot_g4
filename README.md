@@ -52,7 +52,7 @@ Presentation: **Tuesday 10 November 2026** (code freeze Monday 9 November, 12:00
 The system runs 24/7 on the team lead's PC (Windows 11, WSL2, Docker Desktop, i5-14400F, 32 GB)
 and restarts by itself after a reboot.
 
-**Last updated: 2026-11-04.** This section is the team's progress board: update it in the same
+**Last updated: 2026-11-05.** This section is the team's progress board: update it in the same
 pull request that changes the state of a component.
 
 ### Corpus (from `make crawl-stats` and the web app)
@@ -73,8 +73,8 @@ in each version gives its article count and time.
 |---|---|---|---|---|
 | Operational | Clean articles for search and the chatbot | PostgreSQL + Qdrant | **Done**, live | TMK |
 | **Bronze** | Raw, append-only archive: every extracted article as JSON Lines (plus raw RSS records) | Docker volume `bronze_data` on the crawler PC; `bronze.tgz` in Kaggle; loaded into HDFS with `make bronze-load` | **Done**, live | TMK |
-| **Silver** | Cleaned, de-duplicated articles: exact duplicates removed, near-duplicates grouped into story clusters (MinHashLSH), Parquet | HDFS `/sportsbot/silver/` | **To do**: no job yet (task 6) | VNP |
-| **Gold** | Statistics for the report: articles per source/day/language, duplicate rate, cluster sizes, freshness lag | HDFS `/sportsbot/gold/` | **To do**: no job yet (task 6) | VNP |
+| **Silver** | Cleaned, de-duplicated articles: exact duplicates removed, near-duplicates grouped into story clusters (MinHashLSH), Parquet | HDFS `/sportsbot/silver/` | **Done** 2026-11-05, run `20261105T150259Z` on the Kaggle snapshot exported 2026-11-03T08:53Z: 11,573 Bronze rows in, 11,573 Silver rows out, 0 rejected, 0 exact duplicates, 1,368 near-duplicate pairs in 28 story clusters (118 articles; clusters not yet checked by hand). MinHash LSH written in Spark SQL (the Spark image has no numpy). [Run report](docs/reports/runs/silver-20261105T150259Z.json) | VNP |
+| **Gold** | Statistics for the report: articles per source/day/language, duplicate rate, cluster sizes, freshness lag | HDFS `/sportsbot/gold/` | **In progress**: job on branch `feature/vnp-gold-job`, not yet run on this snapshot (task 6, V2) | VNP |
 
 Bronze is written by the streaming pipeline itself (`consumer-archive`), so it is complete.
 Silver and Gold are batch Spark jobs that read Bronze; they are planned work, not missing
@@ -100,7 +100,7 @@ master + worker) is ready and checked by `make spark-smoke`. Specification with 
 
 | Plan task | Work | Owner | State |
 |---|---|---|---|
-| 6 | Spark Silver + Gold jobs, run reports | VNP | Not started |
+| 6 | Spark Silver + Gold jobs, run reports | VNP | Silver done 2026-11-05 (PR in review); Gold in progress |
 | 7 | Sport classifier: TF-IDF + logistic regression baseline vs BGE-M3 + logistic regression | VNP | Not started |
 | 9 | Scaling runs: Silver job at 3 sizes, `local[*]` vs cluster | VNP | Not started |
 | 4 | 50 golden questions (`evaluation/golden_questions.csv`) | LTN | Not started (header only) |
