@@ -25,7 +25,12 @@ duplicates     per source_id and one row "_all":
                near_duplicate_rate   near_dup_articles / silver_articles
                excluded_rss_summary  articles not compared for near duplicates (extractor
                                      rss_summary, see silver_articles.py)
-cluster_sizes  number of story clusters and articles per cluster size (1 = no near duplicate).
+               near_dup_cross_source_articles  near_dup_articles whose cluster has articles
+                                     from >= 2 sources (the same story from several outlets)
+cluster_sizes  number of story clusters and articles per cluster size (1 = no near duplicate)
+               and cross_source (true when the cluster holds articles from >= 2 source_id);
+               a multi-article cluster within one source is usually a re-post or extraction
+               boilerplate, a cross-source one is the same story from several outlets.
 freshness      lag = extracted_at - published_at in hours, per discovered_via (rss, sitemap,
                listing) and "_all". RSS lag measures how fast the pipeline picks up news;
                sitemap/listing lag mostly measures how old the backfilled articles were.
@@ -100,13 +105,16 @@ def daily_counts(articles: DataFrame) -> DataFrame:
 
 
 def cluster_sizes(articles: DataFrame) -> tuple[DataFrame, DataFrame]:
-    """(article_id -> cluster_size) and the size distribution."""
-    sizes = articles.groupBy("story_cluster_id").agg(F.count("*").alias("cluster_size"))
+    """(article_id -> cluster_size, cross_source) and the size distribution."""
+    sizes = articles.groupBy("story_cluster_id").agg(
+        F.count("*").alias("cluster_size"),
+        (F.countDistinct("source_id") >= 2).alias("cross_source"),
+    )
     per_article = articles.select("article_id", "story_cluster_id").join(sizes, "story_cluster_id")
-    distribution = sizes.groupBy("cluster_size").agg(
+    distribution = sizes.groupBy("cluster_size", "cross_source").agg(
         F.count("*").alias("clusters"), F.sum("cluster_size").alias("articles")
     )
-    return per_article.select("article_id", "cluster_size"), distribution
+    return per_article.select("article_id", "cluster_size", "cross_source"), distribution
 
 
 def duplicates(articles: DataFrame, rejected: DataFrame, per_article: DataFrame) -> DataFrame:
@@ -115,6 +123,7 @@ def duplicates(articles: DataFrame, rejected: DataFrame, per_article: DataFrame)
         "source_id",
         F.lit(1).alias("silver"),
         (F.col("cluster_size") >= 2).cast("int").alias("near_dup"),
+        ((F.col("cluster_size") >= 2) & F.col("cross_source")).cast("int").alias("cross_near_dup"),
         (F.coalesce(F.col("extractor"), F.lit("")) == RSS_SUMMARY_EXTRACTOR)
         .cast("int")
         .alias("rss_summary"),
@@ -124,6 +133,7 @@ def duplicates(articles: DataFrame, rejected: DataFrame, per_article: DataFrame)
         F.coalesce(F.col("source_id"), F.lit("unknown")).alias("source_id"),
         F.lit(0).alias("silver"),
         F.lit(0).alias("near_dup"),
+        F.lit(0).alias("cross_near_dup"),
         F.lit(0).alias("rss_summary"),
         F.lit(1).alias("exact"),
     )
@@ -135,6 +145,7 @@ def duplicates(articles: DataFrame, rejected: DataFrame, per_article: DataFrame)
             F.sum("silver").alias("silver_articles"),
             F.sum("exact").alias("exact_duplicates"),
             F.sum("near_dup").alias("near_dup_articles"),
+            F.sum("cross_near_dup").alias("near_dup_cross_source_articles"),
             F.sum("rss_summary").alias("excluded_rss_summary"),
         )
         .withColumn("all_rows", F.col("silver_articles") + F.col("exact_duplicates"))
@@ -242,6 +253,13 @@ def main(argv: list[str]) -> int:
         or 0,
         "duplicates_all": overall.asDict() if overall else None,
         "cluster_sizes": rows_as_dicts(gold["cluster_sizes"], "cluster_size"),
+        "multi_article_clusters": rows_as_dicts(
+            gold["cluster_sizes"]
+            .where(F.col("cluster_size") >= 2)
+            .groupBy("cross_source")
+            .agg(F.sum("clusters").alias("clusters"), F.sum("articles").alias("articles")),
+            "cross_source",
+        ),
         "freshness": rows_as_dicts(gold["freshness"], "discovered_via"),
         "checks": checks,
         "checks_ok": all(checks.values()),
