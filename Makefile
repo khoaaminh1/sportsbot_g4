@@ -1,4 +1,4 @@
-.PHONY: help setup lint format test test-integration run up-core up-bigdata up up-collect collect-once sources-check bronze-ls articles-export chat chat-no-llm down ps logs hdfs-init hdfs-ls spark-smoke clean-volumes up-stream up-ai up-tools up-demo models discover-once backfill sources-sitemaps crawl-stats dead-letters logs-stream ask ask-no-llm llm-check export-labeling reindex replay-dead-letters monitor-once alert-test db-export db-import bronze-export kaggle-export kaggle-push kaggle-pull bronze-load up-team team-data
+.PHONY: help setup lint format test test-integration run up-core up-bigdata up up-collect collect-once sources-check bronze-ls articles-export chat chat-no-llm down ps logs hdfs-init hdfs-ls spark-smoke clean-volumes up-stream up-ai up-tools up-demo models discover-once backfill sources-sitemaps crawl-stats dead-letters logs-stream ask ask-no-llm llm-check export-labeling reindex replay-dead-letters monitor-once alert-test db-export db-import bronze-export kaggle-export kaggle-push kaggle-pull bronze-load up-team team-data public-up public-url public-down
 
 # The project virtualenv when it exists (no need to activate it), else python3.
 PYTHON ?= $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
@@ -9,7 +9,7 @@ include .env
 export
 endif
 COMPOSE ?= docker compose
-ALL_PROFILES = --profile core --profile bigdata --profile collect --profile stream --profile ai --profile tools
+ALL_PROFILES = --profile core --profile bigdata --profile collect --profile stream --profile ai --profile tools --profile public
 STREAM = --profile core --profile stream
 SINCE ?= 2026-10-01
 MAX ?= 5000
@@ -93,6 +93,21 @@ team-data:  ## Teammates, one command: Kaggle download, start without crawler, i
 	$(MAKE) db-import FILE=data/kaggle/sportsbot.sql.gz
 	$(MAKE) reindex
 	@echo "Ready: http://localhost:8000/app/ (no crawling on this machine)"
+
+public-up:  ## Public link to the web app (Cloudflare Quick Tunnel); needs CHAT_ACCESS_CODE in .env
+	@test -n "$(CHAT_ACCESS_CODE)" || (echo "Set CHAT_ACCESS_CODE=<code> in .env first: visitors need it to ask questions." && exit 2)
+	$(COMPOSE) --profile core up -d --wait backend
+	$(COMPOSE) --profile core --profile public up -d tunnel
+	@$(MAKE) --no-print-directory public-url
+
+public-url:  ## Print the current public link (it changes every time the tunnel restarts)
+	@for i in $$(seq 1 30); do \
+	  url=$$($(COMPOSE) --profile core --profile public logs tunnel 2>/dev/null | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' | tail -1); \
+	  if [ -n "$$url" ]; then echo "Public web app: $$url/app/"; exit 0; fi; sleep 2; \
+	done; echo "No link yet; run make public-url again in a minute (docker compose --profile public logs tunnel shows why)"; exit 1
+
+public-down:  ## Close the public link (the local app keeps running)
+	$(COMPOSE) --profile core --profile public stop tunnel
 
 up-tools:  ## Kafka UI on http://localhost:8085
 	$(COMPOSE) $(STREAM) --profile tools up -d kafka-ui

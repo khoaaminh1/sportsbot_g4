@@ -19,9 +19,16 @@ Owners: TMK (code), LTN (testing). It calls only the documented backend API.
 ## Run
 Served by the backend: `make up-core` (or `make up-demo`), then http://localhost:8000/app/.
 
+## Public link (free)
+`make public-up` (needs `CHAT_ACCESS_CODE` in `.env`) opens a Cloudflare Quick Tunnel to the
+backend, which serves this page: share `https://<random>.trycloudflare.com/app/`. Visitors type the
+access code before their first question (kept in their browser). On `trycloudflare.com` the page
+uses `POST /chat` instead of SSE (Quick Tunnels do not carry SSE); `window.SPORTSBOT_STREAM = false`
+in `config.js` forces the same elsewhere. Details: `docs/runbooks/public-access.md`.
+
 ## Host the page elsewhere (e.g. Vercel)
-1. Make the API reachable from the internet (planned: Cloudflare Tunnel + rate limits). Do not
-   expose the API publicly before the rate limits exist: strangers could use up the Gemini quota.
+1. Make the API reachable from the internet (`make public-up`, with the access code and rate
+   limits in `.env`). Not needed for the course: the tunnel link already serves the page.
 2. Set the API address in `config.js`: `window.SPORTSBOT_API = "https://<your-api-host>";`
 3. Allow the page's origin on the backend: `CORS_ORIGINS=https://<project>.vercel.app` in `.env`.
 4. Vercel: New Project → import the GitHub repo → Root Directory `frontend` → Framework preset

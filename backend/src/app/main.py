@@ -20,6 +20,7 @@ from app import __version__
 from app.api import chat, health, news
 from app.core.config import Settings, get_settings
 from app.core.errors import register_error_handlers
+from app.core.guard import ChatGuard, ConnectionLimiter
 from app.core.logging import configure_logging
 from app.core.middleware import RequestContextMiddleware
 from app.db.session import make_engine, make_session_factory
@@ -84,6 +85,13 @@ def create_app(
     app.state.news_repo = news_repo or PostgresNewsRepository(engine)
     app.state.news_poll_seconds = settings.news_poll_seconds
     app.state.rag = _build_rag(settings, engine) if rag is _DEFAULT else rag
+    app.state.chat_guard = ChatGuard(
+        access_code=settings.chat_access_code,
+        rate_limit=settings.chat_rate_limit,
+        window_seconds=settings.chat_rate_window_seconds,
+        max_concurrent=settings.chat_max_concurrent,
+    )
+    app.state.ws_limiter = ConnectionLimiter(settings.ws_max_connections)
     app.state.conversation_store = (
         ConversationStore(engine) if conversation_store is _DEFAULT else conversation_store
     )
@@ -92,7 +100,7 @@ def create_app(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
         allow_methods=["GET", "POST"],
-        allow_headers=["*"],
+        allow_headers=["Content-Type", "X-Access-Code", "X-Request-ID"],
         expose_headers=["X-Request-ID"],
     )
     app.add_middleware(RequestContextMiddleware)

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Vietnam SportsBot API
-  version: 0.3.0
+  version: 0.4.0
   description: |
     Contract between the backend and its clients (frontend, evaluation, CLI).
     Frozen 2026-11-02 (Phase 2). Change only through an approved issue.
@@ -17,6 +17,11 @@ info:
     the WebSocket `GET /ws/news` pushes `{"type": "articles", "items": [ArticleSummary]}`
     on connect (latest 20) and whenever new articles are stored. The demo page is served
     at `/app/`.
+
+    0.4.0 (2026-11-05, public link): /chat and /chat/stream accept the header `X-Access-Code`
+    (required when the server sets CHAT_ACCESS_CODE: 401 `access_code_required` otherwise)
+    and may answer 429 `rate_limited` (details.retry_after_seconds) or 503 `busy`. The
+    WebSocket closes with code 1013 when too many feeds are open.
 servers:
   - url: http://localhost:8000
 paths:
@@ -55,6 +60,12 @@ paths:
       summary: Ask a question; answer grounded in retrieved articles with citations
       operationId: chat
       tags: [chat]
+      parameters:
+        - name: X-Access-Code
+          in: header
+          required: false
+          description: Access code, when the server requires one (public link)
+          schema: { type: string }
       requestBody:
         required: true
         content:
@@ -71,6 +82,21 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "401":
+          description: Access code missing or wrong (only when the server requires one)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "429":
+          description: Too many questions from this client; details.retry_after_seconds
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "503":
+          description: Chat not configured, or busy answering other questions
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
   /chat/stream:
     post:
       x-status: implemented
@@ -82,6 +108,12 @@ paths:
         before the first `delta` is sent.
       operationId: chatStream
       tags: [chat]
+      parameters:
+        - name: X-Access-Code
+          in: header
+          required: false
+          description: Access code, when the server requires one (public link)
+          schema: { type: string }
       requestBody:
         required: true
         content:
@@ -93,8 +125,18 @@ paths:
           content:
             text/event-stream:
               schema: { type: string }
+        "401":
+          description: Access code missing or wrong (only when the server requires one)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "429":
+          description: Too many questions from this client; details.retry_after_seconds
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
         "503":
-          description: Chat is not configured
+          description: Chat not configured, or busy answering other questions
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }

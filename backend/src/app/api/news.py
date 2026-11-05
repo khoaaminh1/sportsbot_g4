@@ -67,6 +67,18 @@ async def news_feed(websocket: WebSocket) -> None:
     - {"type": "stats", ...counters}                    on connect, then every few polls
     Polling indexed columns every `poll_seconds` is simple and survives database restarts.
     """
+    app = websocket.app
+    limiter = app.state.ws_limiter
+    if not limiter.try_open():
+        await websocket.close(code=1013)  # try again later: too many open feeds
+        return
+    try:
+        await _feed(websocket)
+    finally:
+        limiter.close()
+
+
+async def _feed(websocket: WebSocket) -> None:
     await websocket.accept()
     app = websocket.app
     repo = app.state.news_repo
