@@ -53,6 +53,32 @@ For VNP and VNP's AI assistant. Deadlines and checklists: `docs/TASKS.md` (VNP s
   only from Vietnamese URL paths or keywords. Write the final mapping in the model card, and keep
   LTN's hand labels as the only test set.
 
+## Results (VNP, 2026-11-05)
+
+Snapshot: Kaggle `minhkhoa132/sportsbot-corpus`, `export-summary.json` exported_at
+2026-11-03T08:53:39Z, 11,620 articles; 11,573 rows in Bronze `source=extracted` (Bronze is
+written in batches of 100, so the newest articles of an export may be missing). Cluster:
+`spark://spark-master:7077`, 1 worker with 2 cores, 2 HDFS DataNodes (single machine,
+pseudo-distributed).
+
+**V1 Silver** (PR #28, run report `docs/reports/runs/silver-20261105T150259Z.json`)
+- 11,573 rows in, 11,573 out, 0 rejected, 0 exact duplicates; 673.8 s in the job.
+- MinHash LSH written in Spark SQL (the Spark image has no numpy for `pyspark.ml`): 1,215,007
+  candidate pairs (1.98 % of all pairs), 1,368 pairs with Jaccard >= 0.8, 28 story clusters with
+  118 articles.
+- Hand check: 5 clusters (10 articles) are the same story from two outlets; one VietNamNet
+  cluster of 52 articles has the site's navigation menu as text (extractor issue for TMK, as are
+  titles with `&amp;apos;`). The Silver rules were not changed after seeing this.
+- Two trial runs on the older snapshot (1,873 rows) gave identical counts: the job is
+  deterministic.
+
+**V2 Gold** (run report `docs/reports/runs/gold-20261105T154732Z.json`)
+- Four tables under `gold/stats/`; consistency checks (table sums = 11,573 Silver rows) pass;
+  20.57 s in the job.
+- Near-duplicate rate 1.02 %; cross-source clusters 5 (10 articles), same-source 23 (108).
+- Median lag `extracted_at - published_at`: RSS 50.51 h, sitemap 1,024.67 h, section pages
+  1,279.89 h (backfill age, not pipeline speed). No article without `published_at`.
+
 ## Set up (once)
 Follow `docs/TEAM_ONBOARDING.md` sections 3-4 (WSL2 + Docker on Windows, or macOS), then:
 ```bash
