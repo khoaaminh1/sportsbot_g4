@@ -47,15 +47,15 @@ Read first: [handoff/VNP.md](handoff/VNP.md) (fixed rules, data state, weak labe
 
 ### V1. Spark Silver (plan task 6) — due **Thu 5, 23:59**
 Branch `feature/vnp-silver-job`.
-- [ ] `make kaggle-pull`, `make up-bigdata`, `make spark-smoke` prints `"ok": true`.
-- [ ] `make bronze-load FILE=data/kaggle/bronze.tgz`, `make hdfs-ls` shows `source=extracted`.
-- [ ] Write the cleaning rules you add (title repeated at the start of text, BBC summary rows) in
+- [x] `make kaggle-pull`, `make up-bigdata`, `make spark-smoke` prints `"ok": true`.
+- [x] `make bronze-load FILE=data/kaggle/bronze.tgz`, `make hdfs-ls` shows `source=extracted`.
+- [x] Write the cleaning rules you add (title repeated at the start of text, BBC summary rows) in
       the job's docstring **before** the first reported run.
-- [ ] `pipelines/spark/jobs/textnorm.py` + `pipelines/tests/unit/test_textnorm.py` (tests first).
-- [ ] `pipelines/spark/jobs/silver_articles.py`: clean, exact duplicates by `content_hash`,
+- [x] `pipelines/spark/jobs/textnorm.py` + `pipelines/tests/unit/test_textnorm.py` (tests first).
+- [x] `pipelines/spark/jobs/silver_articles.py`: clean, exact duplicates by `content_hash`,
       MinHashLSH (5 tables) on word 3-shingles, Jaccard ≥ 0.8, `story_cluster_id`, rejected rows.
-- [ ] Run with `--master spark://spark-master:7077`; commit `docs/reports/runs/silver-<run_id>.json`.
-- [ ] Pull request: command used, run report, `make lint test` output.
+- [x] Run with `--master spark://spark-master:7077`; commit `docs/reports/runs/silver-<run_id>.json`.
+- [x] Pull request: command used, run report, `make lint test` output.
 
 **Done when** Silver Parquet is on HDFS, the run report is in the PR, tests pass, and rerunning the
 same command on the same snapshot gives the same counts.
@@ -177,7 +177,7 @@ Summary: <n> pass, <n> fail. Blocking for the demo: <list or "none">.
 | Item | Owner | Due | State |
 |---|---|---|---|
 | Tasks 1-3: crawler running, sources checked, backfill | TMK | Wed 4 | Done |
-| V1 Silver | VNP | Thu 5 | Not started |
+| V1 Silver | VNP | Thu 5 | Run done 2026-11-05 (`silver-20261105T150259Z`), PR in review |
 | V2 Gold | VNP | Fri 6 | Not started |
 | V3 Classifier | VNP | Sat 7 | Not started |
 | V4 Scaling | VNP | Sun 8 | Not started |
