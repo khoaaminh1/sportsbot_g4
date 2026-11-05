@@ -1,6 +1,8 @@
 # Runbook: local Docker stack
 
-How to start, check, and troubleshoot the development stack (ADR 0002). Windows users: run every command inside WSL2 (Ubuntu 24.04) with Docker Desktop's WSL integration enabled.
+How to start, check, and troubleshoot the development stack (ADR 0002): profiles, HDFS and Spark.
+The crawler and chatbot now run on the streaming pipeline: see [streaming-stack.md](streaming-stack.md).
+The "Collector (Phase 3)" section below describes the legacy RSS collector, kept for reference. Windows users: run every command inside WSL2 (Ubuntu 24.04) with Docker Desktop's WSL integration enabled.
 
 ## Prerequisites
 - Docker with Compose v2.24 or newer (`docker compose version`), because `env_file` uses `required: false`.
@@ -41,7 +43,7 @@ Measured idle in CI (GitHub-hosted runner, 2026-11-02, details in `docs/reports/
 - **Spark job cannot reach HDFS:** paths must use `hdfs://namenode:8020/...`; the job runs inside the Compose network, not on the host.
 - **Changed `.env` but nothing happened:** recreate the service, e.g. `docker compose up -d backend`.
 
-## Collector (Phase 3)
+## Collector (Phase 3, legacy)
 ```bash
 make sources-check              # which feeds answer right now (robots.txt, HTTP status, items, dates)
 make up-collect                 # PostgreSQL + HDFS + collector scheduler (runs until make down)
