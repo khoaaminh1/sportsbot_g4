@@ -52,7 +52,7 @@ Presentation: **Tuesday 10 November 2026** (code freeze Monday 9 November, 12:00
 The system runs 24/7 on the team lead's PC (Windows 11, WSL2, Docker Desktop, i5-14400F, 32 GB)
 and restarts by itself after a reboot.
 
-**Last updated: 2026-11-04.** This section is the team's progress board: update it in the same
+**Last updated: 2026-11-05.** This section is the team's progress board: update it in the same
 pull request that changes the state of a component.
 
 ### Corpus (from `make crawl-stats` and the web app)
@@ -94,6 +94,7 @@ master + worker) is ready and checked by `make spark-smoke`. Specification with 
 | FastAPI (`/chat`, `/chat/stream`, `/news/latest`, `/ws/news`, ...) and web app | Running |
 | Monitoring, Discord / Telegram alerts, circuit breaker per source, restart after reboot | Running |
 | Private Kaggle dataset and `make team-data` for teammates | Running |
+| Public link (`make public-up`: Quick Tunnel, access code, rate limits) | Merged and unit-tested; first live run pending |
 | HDFS + Spark stack | Ready (`make up-bigdata`, `make spark-smoke`) |
 
 ### What is left before the presentation
@@ -190,6 +191,7 @@ make crawl-stats              # articles per source, vectors
 | [Team onboarding](docs/TEAM_ONBOARDING.md) | First time on a machine: install, Kaggle data, run, common problems |
 | [Data guide](docs/DATA.md) | What the snapshot files contain and how to load them |
 | [Streaming stack runbook](docs/runbooks/streaming-stack.md) | Operating the crawler, backfill, monitoring, troubleshooting |
+| [Public link runbook](docs/runbooks/public-access.md) | Share the web app with a free link (Cloudflare Quick Tunnel), access code, rate limits |
 | [Chat runbook](docs/runbooks/chat-prototype.md) | RAG settings, Gemini rotation, conversation memory |
 | [VNP handoff](docs/handoff/VNP.md) | Spark and classifier tasks, with rules for VNP's AI assistant |
 | [API contract](docs/contracts/api.openapi.yaml) | Endpoints; interactive docs at http://localhost:8000/docs |

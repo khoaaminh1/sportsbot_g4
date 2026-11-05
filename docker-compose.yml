@@ -401,6 +401,20 @@ services:
       timeout: 3s
       retries: 30
 
+  # -------------------------------------------------------------- public ----
+  # Cloudflare Quick Tunnel: a random https://<name>.trycloudflare.com address for the backend
+  # (web app at /app/). No account, no open router port. No SSE (the web app falls back to
+  # POST /chat) and no uptime guarantee. Started by make public-up, which requires
+  # CHAT_ACCESS_CODE. docs/runbooks/public-access.md
+  tunnel:
+    image: ${CLOUDFLARED_IMAGE:-cloudflare/cloudflared:latest}
+    profiles: [public]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+
   # --------------------------------------------------------------- tools ----
   kafka-ui:
     image: provectuslabs/kafka-ui:v0.7.2

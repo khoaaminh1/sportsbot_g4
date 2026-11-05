@@ -22,6 +22,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from app.core.errors import AppError
+from app.core.guard import ACCESS_HEADER, client_key
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +68,22 @@ def to_chat_response(result: dict[str, Any], conversation_id: uuid.UUID) -> dict
     }
 
 
+def _admit(request: Request) -> None:
+    """Access code, per-client rate limit and a busy check, before any work is done."""
+    guard = request.app.state.chat_guard
+    guard.check_code(request.headers.get(ACCESS_HEADER))
+    if guard.max_concurrent > 0 and guard.active >= guard.max_concurrent:
+        raise AppError("busy", "The chatbot is answering other questions; try again shortly", 503)
+    peer = request.client.host if request.client else None
+    guard.check_rate(client_key(request.headers, peer))
+
+
 async def _answer(request: Request, body: ChatRequest) -> dict[str, Any]:
+    with request.app.state.chat_guard.slot():
+        return await _answer_now(request, body)
+
+
+async def _answer_now(request: Request, body: ChatRequest) -> dict[str, Any]:
     rag = _rag(request)
     question = " ".join(body.message.split())
     if not any(c.isalnum() for c in question):
@@ -95,6 +111,8 @@ async def _answer(request: Request, body: ChatRequest) -> dict[str, Any]:
 
 @router.post("/chat", summary="Ask a question; answer grounded in stored articles with citations")
 async def chat(request: Request, body: ChatRequest) -> dict[str, Any]:
+    _rag(request)
+    _admit(request)
     return await _answer(request, body)
 
 
@@ -105,6 +123,7 @@ def _sse(event: str, data: Any) -> str:
 @router.post("/chat/stream", summary="Same as /chat, as Server-Sent Events")
 async def chat_stream(request: Request, body: ChatRequest) -> StreamingResponse:
     _rag(request)  # fail fast with a JSON error when chat is not configured
+    _admit(request)  # access code / rate limit / busy: a JSON error, not a stream
 
     async def events() -> AsyncIterator[str]:
         yield _sse("status", {"stage": "retrieving"})

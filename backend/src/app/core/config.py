@@ -40,6 +40,13 @@ class Settings(BaseSettings):
     # How often the /ws/news WebSocket looks for newly stored articles.
     news_poll_seconds: float = Field(default=5.0, gt=0, le=300)
 
+    # Protection for a public URL (core/guard.py, docs/runbooks/public-access.md).
+    chat_access_code: str = ""  # empty: no code needed
+    chat_rate_limit: int = Field(default=20, ge=0)  # questions per window per client; 0 = off
+    chat_rate_window_seconds: float = Field(default=600.0, gt=0)
+    chat_max_concurrent: int = Field(default=3, ge=0)  # answers at the same time; 0 = off
+    ws_max_connections: int = Field(default=100, ge=0)  # open /ws/news connections; 0 = off
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def _split_origins(cls, value: object) -> object:

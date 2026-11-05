@@ -193,6 +193,17 @@
   .src:hover .t { text-decoration: underline; text-decoration-color: var(--gold); text-underline-offset: 3px; }
   .src .m { font-size: 12px; color: var(--ink-soft); display: block; margin-top: 2px; }
   .meta { font-size: 12px; color: var(--ink-soft); margin-top: 12px; }
+  .code-form { display: flex; gap: 8px; margin-top: 4px; max-width: 360px; }
+  .code-form input {
+    flex: 1; padding: 8px 12px; border: 1px solid var(--rule); border-radius: 10px;
+    background: var(--surface);
+  }
+  .code-form input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-wash); }
+  .code-form button {
+    border: 0; border-radius: 10px; padding: 8px 14px; background: var(--ink); color: var(--night);
+    font-weight: 600; cursor: pointer;
+  }
+  .code-form button:hover { background: var(--gold); }
 
   .scrim { display: none; }
   @media (max-width: 880px) {
@@ -311,6 +322,17 @@ const API = (window.SPORTSBOT_API || location.origin).replace(/\/$/, "");
 const $ = (s, el = document) => el.querySelector(s);
 const app = $("#app"), thread = $("#thread"), scroller = $("#scroll"), feed = $("#feed");
 let conversationId = null, busy = false;
+// Server-Sent Events for the answer, except behind Cloudflare Quick Tunnels (no SSE support) or
+// when config.js sets window.SPORTSBOT_STREAM = false: then one JSON response from /chat.
+const USE_STREAM = window.SPORTSBOT_STREAM !== false && !location.hostname.endsWith(".trycloudflare.com");
+// Access code for a public link (backend CHAT_ACCESS_CODE). Remembered in this browser only.
+const CODE_KEY = "sportsbot_access_code";
+let accessCode = "";
+try { accessCode = localStorage.getItem(CODE_KEY) || ""; } catch { /* storage unavailable */ }
+function saveCode(code) {
+  accessCode = code;
+  try { localStorage.setItem(CODE_KEY, code); } catch { /* keep it for this page only */ }
+}
 
 // ---------------------------------------------------------------- helpers
 function el(tag, props = {}, ...kids) {
@@ -467,14 +489,39 @@ async function ask(question) {
   scrollDown();
 
   let text = "";
+  const finish = (data) => {
+    conversationId = data.conversation_id;
+    if (data.notice) answer.insertBefore(el("div", { class: "notice", text: data.notice }), body);
+    const parts = [];
+    if (data.meta && data.meta.llm) parts.push(`Trả lời bởi ${data.meta.llm.replace(/^gemini:/, "Gemini ")}`);
+    if (data.meta && data.meta.seconds) parts.push(`${data.meta.seconds} giây`);
+    if (data.mode === "excerpts") parts.push("hiển thị trích đoạn");
+    if (parts.length) answer.append(el("div", { class: "meta", text: parts.join(", ") }));
+  };
   try {
-    const resp = await fetch(API + "/chat/stream", {
-      method: "POST", headers: { "Content-Type": "application/json" },
+    const resp = await fetch(API + (USE_STREAM ? "/chat/stream" : "/chat"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(accessCode ? { "X-Access-Code": accessCode } : {}) },
       body: JSON.stringify({ message: question, conversation_id: conversationId }),
     });
     if (!resp.ok) {
-      const err = await resp.json().catch(() => ({}));
-      throw new Error((err.error && err.error.message) || `Máy chủ trả lỗi ${resp.status}`);
+      const err = (await resp.json().catch(() => ({}))).error || {};
+      if (err.code === "access_code_required") { thinking.remove(); askForCode(turn, question); return; }
+      if (err.code === "rate_limited") {
+        const wait = (err.details && err.details.retry_after_seconds) || 60;
+        throw new Error(`bạn đã hỏi nhiều câu liên tiếp, hãy thử lại sau khoảng ${Math.ceil(wait / 60)} phút`);
+      }
+      if (err.code === "busy") throw new Error("chatbot đang trả lời câu hỏi khác, hãy gửi lại sau ít giây");
+      throw new Error(err.message || `máy chủ trả lỗi ${resp.status}`);
+    }
+    if (!USE_STREAM) {
+      // One JSON answer (used behind Quick Tunnels, which do not carry Server-Sent Events).
+      const data = await resp.json();
+      thinking.remove();
+      body.innerHTML = renderAnswer(data.answer, data.citations);
+      if (data.citations.length) answer.append(sourceCards(data.citations));
+      finish(data);
+      return;
     }
     const reader = resp.body.getReader();
     const dec = new TextDecoder();
@@ -493,24 +540,35 @@ async function ask(question) {
         else if (ev === "citations") {
           body.innerHTML = renderAnswer(text, data);
           if (data.length) answer.append(sourceCards(data));
-        } else if (ev === "done") {
-          conversationId = data.conversation_id;
-          if (data.notice) answer.insertBefore(el("div", { class: "notice", text: data.notice }), body);
-          const parts = [];
-          if (data.meta && data.meta.llm) parts.push(`Trả lời bởi ${data.meta.llm.replace(/^gemini:/, "Gemini ")}`);
-          if (data.meta && data.meta.seconds) parts.push(`${data.meta.seconds} giây`);
-          if (data.mode === "excerpts") parts.push("hiển thị trích đoạn");
-          if (parts.length) answer.append(el("div", { class: "meta", text: parts.join(", ") }));
-        } else if (ev === "error") throw new Error(data.message);
+        } else if (ev === "done") finish(data);
+        else if (ev === "error") throw new Error(data.message);
         scrollDown();
       }
     }
   } catch (e) {
     thinking.remove();
-    answer.append(el("div", { class: "notice", text: `Không nhận được câu trả lời: ${e.message}. Thử lại sau ít phút.` }));
+    answer.append(el("div", { class: "notice", text: `Không nhận được câu trả lời: ${e.message}.` }));
   } finally {
     busy = false; updateSend(); scrollDown();
   }
+}
+
+// The server asks for an access code: a small form in place of the answer, then retry.
+function askForCode(turn, question) {
+  const input = el("input", { type: "password", autocomplete: "off", "aria-label": "Mã truy cập", placeholder: "Mã truy cập" });
+  const form = el("form", { class: "code-form" }, input, el("button", { type: "submit", text: "Mở khóa" }));
+  const wrong = accessCode ? "Mã chưa đúng. " : "";
+  turn.querySelector(".a").append(
+    el("div", { class: "notice", text: `${wrong}Trang này cần mã truy cập để đặt câu hỏi. Mã do nhóm SportsBot cung cấp.` }), form);
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const code = input.value.trim();
+    if (!code) return;
+    saveCode(code);
+    turn.remove();
+    ask(question);
+  });
+  input.focus();
 }
 
 // ---------------------------------------------------------------- composer wiring
