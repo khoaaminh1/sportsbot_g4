@@ -62,10 +62,10 @@ same command on the same snapshot gives the same counts.
 
 ### V2. Spark Gold (plan task 6) — due **Fri 6, 12:00**
 Branch `feature/vnp-gold-job`.
-- [ ] `pipelines/spark/jobs/gold_stats.py`: articles per source × day × language, exact and near
+- [x] `pipelines/spark/jobs/gold_stats.py`: articles per source × day × language, exact and near
       duplicate rates, cluster size distribution, freshness lag percentiles.
-- [ ] Run on the cluster; commit `docs/reports/runs/gold-<run_id>.json`.
-- [ ] Add one table of Gold numbers to the README Status section (with the run id).
+- [x] Run on the cluster; commit `docs/reports/runs/gold-<run_id>.json`.
+- [x] Add one table of Gold numbers to the README Status section (with the run id).
 
 ### V3. Sport classifier (plan task 7) — due **Sat 7, 18:00**
 Branch `feature/vnp-classifier`.
@@ -178,7 +178,7 @@ Summary: <n> pass, <n> fail. Blocking for the demo: <list or "none">.
 |---|---|---|---|
 | Tasks 1-3: crawler running, sources checked, backfill | TMK | Wed 4 | Done |
 | V1 Silver | VNP | Thu 5 | Run done 2026-11-05 (`silver-20261105T150259Z`), PR in review |
-| V2 Gold | VNP | Fri 6 | Not started |
+| V2 Gold | VNP | Fri 6 | Run done 2026-11-05 (`gold-20261105T154732Z`), PR in review |
 | V3 Classifier | VNP | Sat 7 | Not started |
 | V4 Scaling | VNP | Sun 8 | Not started |
 | L1 Test round 1 | LTN | Thu 5 | Not started |
