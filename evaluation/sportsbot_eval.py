@@ -3,7 +3,8 @@
 Three steps, all run on the machine with the stack (PostgreSQL, Qdrant, embedder, reranker):
 
 1. `make eval-pool`: for every answerable question without `expected_urls`, retrieve the top 10
-   articles and write `data/evaluation/pool.csv`. A person marks `relevant` = 1 for the articles
+   articles (no reranker threshold, 30 reranked candidates) and write `data/evaluation/pool.csv`
+   with the reranker score. A person marks `relevant` = 1 for the articles
    that really answer the question (pooling, the usual way to build relevance judgements).
 2. `make eval-apply`: copy the marked links into `evaluation/golden_questions.csv`.
 3. `make eval`: retrieval metrics (hit@1, hit@5, recall@5, MRR@10) on answerable questions;
@@ -47,11 +48,13 @@ POOL_COLUMNS = [
     "question",
     "rank",
     "relevant",
+    "score",
     "title",
     "source",
     "published_at",
     "url",
 ]
+POOL_RERANK_TOP = 30  # candidates reranked for judging (the live setting is lower, for speed)
 ANSWERED = {"generated", "excerpts"}
 REFUSED = {"no_evidence", "insufficient"}
 
@@ -189,6 +192,10 @@ def cmd_pool(k: int) -> int:
         print("Every answerable question already has expected_urls.")
         return 0
     _, rag = _rag(use_llm=False)
+    # Judge a wide pool that does not depend on the live cut-offs: no reranker score threshold
+    # and more reranked candidates. The threshold is then chosen with `make eval` on judgements.
+    rag.retriever.min_rerank_score = float("-inf")
+    rag.retriever.rerank_top = max(rag.retriever.rerank_top, POOL_RERANK_TOP)
     POOL.parent.mkdir(parents=True, exist_ok=True)
     try:
         with POOL.open("w", encoding="utf-8", newline="") as f:
@@ -204,6 +211,7 @@ def cmd_pool(k: int) -> int:
                             "question": row["question"] if rank == 1 else "",
                             "rank": rank,
                             "relevant": "",
+                            "score": round(hit.score, 3),
                             "title": a.title,
                             "source": a.source_name,
                             "published_at": a.published_at or "",
