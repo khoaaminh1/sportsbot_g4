@@ -1,7 +1,8 @@
 # Evaluation
 
 Owners: TMK (questions, judgements, metrics); LTN tests the app (`docs/TASKS.md`). Status 2026-11-06:
-50 questions drafted, relevance judgements pending, scripts ready (`sportsbot_eval.py`).
+50 questions, judgements for 19 answerable ones, first run `eval-20261106T154709Z` (results in the
+README Status section).
 
 `golden_questions.csv`: questions written by hand against the **collected** corpus.
 

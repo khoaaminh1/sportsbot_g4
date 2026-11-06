@@ -184,10 +184,10 @@ Summary: <n> pass, <n> fail. Blocking for the demo: <list or "none">.
 | V3 Classifier | VNP | Sat 7 | Not started |
 | V4 Scaling | VNP | Sun 8 | Not started |
 | L1 Test round 1 | LTN | Thu 5 | Not started |
-| L2 Golden questions | TMK (from LTN) | Sat 7 | 50 drafted; judgements pending |
+| L2 Golden questions | TMK (from LTN) | Sat 7 | Done 2026-11-06 (PR #34) |
 | L3 Hand labels | TMK (from LTN) | Sat 7 | Not started |
 | L4 Test round 2 | LTN | Sat 7 | Not started |
 | L5 Test round 3 | LTN | Mon 9 | Not started |
-| Task 8 evaluation | TMK | Sat 7 | Scripts ready (`make eval`); waits for judgements |
+| Task 8 evaluation | TMK | Sat 7 | First run done 2026-11-06 (README Status) |
 | Latency | TMK | Thu 5 | Open |
 | Slides, rehearsals, video | All | Mon 9 | Not started |
