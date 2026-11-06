@@ -8,7 +8,7 @@ when you finish a step, tick it here **and** update that board in the same pull 
 |---|---|---|
 | **TMK** (Trần Minh Khoa) | Lead, pipeline, RAG, demo | Crawler PC, data snapshots, retrieval evaluation, latency, merges, demo |
 | **VNP** (Võ Ngọc Phú) | Big Data engineer | Spark Silver + Gold, sport classifier, scaling experiment |
-| **LTN** (Lê Tấn Nguyên) | Tester and evaluation data | Test rounds with reports and bug issues, golden questions, hand labels |
+| **LTN** (Lê Tấn Nguyên) | Tester | Test rounds with reports (Markdown via GitHub web) and bug issues |
 
 ## How work is credited (GitHub contributors)
 
@@ -100,7 +100,9 @@ Testing the onboarding guide is itself a test: a teammate must be able to run th
       command, the output, Windows/macOS). No screenshots of `.env` or tokens.
 - [ ] Result: `make team-data` finishes and http://localhost:8000/app/ answers a question.
 
-### L2. Golden questions (plan task 4) — 25 by **Thu 5**, 50 by **Fri 6**
+### L2. Golden questions (plan task 4) — **moved to TMK** on 2026-11-06
+50 questions drafted in `evaluation/golden_questions.csv`; TMK judges relevance with
+`make eval-pool` / `make eval-apply` (`evaluation/README.md`). The steps below are kept for reference.
 File: `evaluation/golden_questions.csv` (rules in `evaluation/README.md`).
 - [ ] 50 questions: 35 answerable, 15 not answerable; at least 15 in English; at least 10 typed
       without diacritics; several sports, not only football.
@@ -108,7 +110,7 @@ File: `evaluation/golden_questions.csv` (rules in `evaluation/README.md`).
       article's link into `expected_urls` (several links separated by `;`).
 - [ ] Commit through a pull request (GitHub web upload is fine).
 
-### L3. Hand labels (plan task 5) — 200 by **Thu 5**, 400 by **Fri 6**
+### L3. Hand labels (plan task 5) — **moved to TMK** on 2026-11-06 (at least 200 labels)
 - [ ] TMK sends a fresh `sample.csv` (400 articles from the multi-sport corpus).
 - [ ] In Google Sheets fill `sport_label` with exactly one of
       `football, volleyball, basketball, tennis, badminton, other_sport`; `labeler` = `LTN`;
@@ -182,10 +184,10 @@ Summary: <n> pass, <n> fail. Blocking for the demo: <list or "none">.
 | V3 Classifier | VNP | Sat 7 | Not started |
 | V4 Scaling | VNP | Sun 8 | Not started |
 | L1 Test round 1 | LTN | Thu 5 | Not started |
-| L2 Golden questions | LTN | Fri 6 | Not started |
-| L3 Hand labels | LTN | Fri 6 | Not started (fresh sample pending) |
+| L2 Golden questions | TMK (from LTN) | Sat 7 | 50 drafted; judgements pending |
+| L3 Hand labels | TMK (from LTN) | Sat 7 | Not started |
 | L4 Test round 2 | LTN | Sat 7 | Not started |
 | L5 Test round 3 | LTN | Mon 9 | Not started |
-| Task 8 evaluation | TMK | Sat 7 | Waits for L2 |
+| Task 8 evaluation | TMK | Sat 7 | Scripts ready (`make eval`); waits for judgements |
 | Latency | TMK | Thu 5 | Open |
 | Slides, rehearsals, video | All | Mon 9 | Not started |
