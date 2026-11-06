@@ -26,7 +26,7 @@ people you invite. To revoke it, change `CHAT_ACCESS_CODE` and run `make public-
 ## Open, check, close
 
 ```bash
-make public-up       # recreates the backend with the code, starts the tunnel, prints the link
+make public-up       # rebuilds the backend, checks it asks for the code, starts the tunnel, prints the link
 make public-url      # print the link again (it changes every time the tunnel restarts)
 make public-down     # close the link; the local app at http://localhost:8000/app/ keeps running
 ```
@@ -53,6 +53,7 @@ question, type the access code when asked.
 | Symptom | Fix |
 |---|---|
 | `make public-up`: "Set CHAT_ACCESS_CODE" | Add `CHAT_ACCESS_CODE=<code>` to `.env` |
+| `make public-up`: "Backend did not ask for the access code" | The running backend is old or the code is not loaded: check `.env`, then `make public-up` again; the link is not opened until the backend answers 401 |
 | `make public-url`: no link after a minute | `docker compose --profile public logs tunnel`; the tunnel needs outbound UDP 7844 or HTTPS 443 |
 | The page asks for the code again and again | The code typed differs from `.env`; after editing `.env` run `make public-up` (it recreates the backend) |
 | "bạn đã hỏi nhiều câu liên tiếp" | The rate limit for that visitor; wait, or raise `CHAT_RATE_LIMIT` |

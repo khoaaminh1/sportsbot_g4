@@ -96,7 +96,12 @@ team-data:  ## Teammates, one command: Kaggle download, start without crawler, i
 
 public-up:  ## Public link to the web app (Cloudflare Quick Tunnel); needs CHAT_ACCESS_CODE in .env
 	@test -n "$(CHAT_ACCESS_CODE)" || (echo "Set CHAT_ACCESS_CODE=<code> in .env first: visitors need it to ask questions." && exit 2)
-	$(COMPOSE) --profile core up -d --wait backend
+	$(COMPOSE) --profile core up -d --build --wait backend
+	@status=$$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:8000/chat \
+	  -H 'Content-Type: application/json' -d '{"message":"access check"}'); \
+	if [ "$$status" != "401" ]; then \
+	  echo "Backend did not ask for the access code (HTTP $$status): the public link stays closed."; exit 3; \
+	fi; echo "Access code required: ok"
 	$(COMPOSE) --profile core --profile public up -d tunnel
 	@$(MAKE) --no-print-directory public-url
 
