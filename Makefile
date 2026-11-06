@@ -1,4 +1,4 @@
-.PHONY: help setup lint format test test-integration run up-core up-bigdata up up-collect collect-once sources-check bronze-ls articles-export chat chat-no-llm down ps logs hdfs-init hdfs-ls spark-smoke clean-volumes up-stream up-ai up-tools up-demo models discover-once backfill sources-sitemaps crawl-stats dead-letters logs-stream ask ask-no-llm llm-check export-labeling reindex replay-dead-letters monitor-once alert-test db-export db-import bronze-export kaggle-export kaggle-push kaggle-pull bronze-load up-team team-data public-up public-url public-down
+.PHONY: help setup lint format test test-integration run up-core up-bigdata up up-collect collect-once sources-check bronze-ls articles-export chat chat-no-llm down ps logs hdfs-init hdfs-ls spark-smoke clean-volumes up-stream up-ai up-tools up-demo models discover-once backfill sources-sitemaps crawl-stats dead-letters logs-stream ask ask-no-llm llm-check export-labeling reindex replay-dead-letters monitor-once alert-test db-export db-import bronze-export kaggle-export kaggle-push kaggle-pull bronze-load up-team team-data public-up public-url public-down eval-pool eval-apply eval
 
 # The project virtualenv when it exists (no need to activate it), else python3.
 PYTHON ?= $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
@@ -199,6 +199,15 @@ llm-check:  ## Which Gemini models answer with your key, one tiny request each
 export-labeling:  ## Random article sample to label by hand: make export-labeling N=400 -> data/labeling/
 	mkdir -p data/labeling
 	$(COMPOSE) $(STREAM) run --rm --no-deps --user "$$(id -u):$$(id -g)" -v ./data/labeling:/app/data/labeling discover export-sample --n $(or $(N),400) --out /app/data/labeling/sample.csv
+
+eval-pool:  ## Golden questions: top 10 articles per question to judge, in data/evaluation/pool.csv
+	PYTHONPATH=agent/src:pipelines/src:evaluation $(PYTHON) evaluation/sportsbot_eval.py pool
+
+eval-apply:  ## Copy the articles marked relevant=1 in data/evaluation/pool.csv into the golden set
+	PYTHONPATH=agent/src:pipelines/src:evaluation $(PYTHON) evaluation/sportsbot_eval.py apply
+
+eval:  ## Evaluate on the golden set (Gemini answers; NO_ANSWERS=1 for retrieval only); writes a run report
+	PYTHONPATH=agent/src:pipelines/src:evaluation $(PYTHON) evaluation/sportsbot_eval.py run $(if $(NO_ANSWERS),--no-answers)
 
 ask-no-llm:  ## Retrieval only (no LLM): see which articles the RAG finds
 	PYTHONPATH=agent/src $(PYTHON) -m sportsbot_agent.ask --no-llm "$(Q)"

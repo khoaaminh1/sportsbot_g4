@@ -52,7 +52,7 @@ Presentation: **Tuesday 10 November 2026** (code freeze Monday 9 November, 12:00
 The system runs 24/7 on the team lead's PC (Windows 11, WSL2, Docker Desktop, i5-14400F, 32 GB)
 and restarts by itself after a reboot.
 
-**Last updated: 2026-11-05.** This section is the team's progress board: update it in the same
+**Last updated: 2026-11-06.** This section is the team's progress board: update it in the same
 pull request that changes the state of a component.
 
 ### Corpus (from `make crawl-stats` and the web app)
@@ -117,13 +117,13 @@ not pipeline speed. Single machine, pseudo-distributed (Docker): 1 Spark worker 
 
 | Plan task | Work | Owner | State |
 |---|---|---|---|
-| 6 | Spark Silver + Gold jobs, run reports | VNP | Done 2026-11-05: Silver (PR #28) and Gold run, PRs in review |
+| 6 | Spark Silver + Gold jobs, run reports | VNP | Done 2026-11-05: Silver (PR #28) and Gold (PR #30) merged with run reports |
 | 7 | Sport classifier: TF-IDF + logistic regression baseline vs BGE-M3 + logistic regression | VNP | Not started |
 | 9 | Scaling runs: Silver job at 3 sizes, `local[*]` vs cluster | VNP | Not started |
-| 4 | 50 golden questions (`evaluation/golden_questions.csv`) | LTN | Not started (header only) |
-| 5 | 400 hand labels for the classifier test set | LTN | Not started (fresh sample pending) |
+| 4 | 50 golden questions (`evaluation/golden_questions.csv`) | TMK | 50 drafted 2026-11-06; relevance judgements pending (`make eval-pool`) |
+| 5 | Hand labels for the classifier test set (at least 200) | TMK | Not started |
 | - | Test rounds 1-3 with reports (`docs/reports/test-report-*.md`) | LTN | Not started |
-| 8 | Retrieval and answer evaluation on the golden questions | TMK | Waits for task 4 |
+| 8 | Retrieval and answer evaluation on the golden questions | TMK | Scripts ready (`make eval`), tested; first real run pending |
 | 10 | Slides, demo script, rehearsals, backup video | All | Not started |
 | - | Answer latency (about 20-50 s per answer) | TMK | Open |
 
@@ -166,7 +166,7 @@ make crawl-stats              # articles per source, vectors
 |---|---|---|
 | Trần Minh Khoa (TMK) | Lead | Pipeline and crawler PC, RAG, API and web app, data sharing, merges, demo |
 | Võ Ngọc Phú (VNP) | Data engineering and ML | Spark Silver/Gold, near-duplicates, sport classifier, scaling experiment |
-| Lê Tấn Nguyên (LTN) | Tester and evaluation data | Test rounds with reports and bug issues, golden questions, hand labels, slides draft |
+| Lê Tấn Nguyên (LTN) | Tester | Test rounds with reports and bug issues, slides draft |
 
 **Work split with deadlines, checklists and how contributions are credited: [docs/TASKS.md](docs/TASKS.md).** Plan with daily gates: [docs/plans/2026-11-02-plan-to-presentation.md](docs/plans/2026-11-02-plan-to-presentation.md).
 

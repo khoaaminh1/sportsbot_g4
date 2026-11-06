@@ -1,1 +1,51 @@
-question_id,language,question,expected_urls,answerable,question_type,author,notes
+question_id,language,question,expected_urls,answerable,question_type,author
+q001,vi,Đội tuyển Việt Nam có tin gì mới nhất?,,yes,latest,TMK
+q002,vi,Kết quả trận Manchester United gần nhất?,,yes,result,TMK
+q003,vi,Arsenal thi đấu thế nào ở Ngoại hạng Anh gần đây?,,yes,team,TMK
+q004,vi,Real Madrid thắng hay thua ở vòng gần nhất của Champions League?,,yes,result,TMK
+q005,vi,Lamine Yamal thi đấu thế nào ở Champions League?,,yes,player,TMK
+q006,vi,Vòng mới nhất của V-League có kết quả gì?,,yes,result,TMK
+q007,vi,Đội nào đang dẫn đầu V-League?,,yes,team,TMK
+q008,vi,Công an Hà Nội có tin gì mới?,,yes,team,TMK
+q009,vi,HLV Kim Sang-sik nói gì về đội tuyển Việt Nam?,,yes,player,TMK
+q010,vi,Bóng chuyền nữ Việt Nam có tin gì mới?,,yes,latest,TMK
+q011,vi,Nguyễn Thùy Linh thi đấu thế nào ở giải cầu lông gần đây?,,yes,player,TMK
+q012,vi,Lịch thi đấu Champions League tuần này?,,yes,schedule,TMK
+q013,vi,Haaland ghi bao nhiêu bàn mùa này?,,yes,player,TMK
+q014,vi,Ronaldo và Al Nassr thi đấu thế nào gần đây?,,yes,team,TMK
+q015,vi,U23 Việt Nam đang chuẩn bị cho giải đấu nào?,,yes,team,TMK
+q016,vi,ket qua tran barcelona gan nhat,,yes,result,TMK
+q017,vi,tin moi nhat ve doi tuyen viet nam,,yes,latest,TMK
+q018,vi,lich thi dau ngoai hang anh cuoi tuan,,yes,schedule,TMK
+q019,vi,messi va inter miami thi dau the nao,,yes,team,TMK
+q020,vi,hlv cua man united la ai,,yes,player,TMK
+q021,vi,djokovic co tin gi moi,,yes,player,TMK
+q022,vi,cong phuong dang da cho doi nao,,yes,player,TMK
+q023,vi,bang xep hang la liga hien tai,,yes,team,TMK
+q024,vi,chang dua f1 tiep theo o dau,,yes,schedule,TMK
+q025,vi,lakers thang hay thua tran gan nhat,,yes,result,TMK
+q026,en,What is the latest news on Erling Haaland?,,yes,player,TMK
+q027,en,How did Liverpool do in their last Premier League match?,,yes,result,TMK
+q028,en,What did Pep Guardiola say about Manchester City's form?,,yes,player,TMK
+q029,en,Who won the most recent Formula 1 race?,,yes,result,TMK
+q030,en,How is Carlos Alcaraz doing this season?,,yes,player,TMK
+q031,en,How did the Los Angeles Lakers do in their latest games?,,yes,result,TMK
+q032,en,Which NFL teams won this week?,,yes,result,TMK
+q033,en,What is the latest news about England's cricket team?,,yes,team,TMK
+q034,en,How did the All Blacks do in their latest rugby test?,,yes,result,TMK
+q035,en,What is the latest news from the golf tour?,,yes,latest,TMK
+q036,vi,Ai vô địch World Cup 2034?,,no,other,TMK
+q037,vi,Kết quả trận Việt Nam gặp Brazil năm 2030?,,no,other,TMK
+q038,vi,Giá cổ phiếu Apple hôm nay là bao nhiêu?,,no,other,TMK
+q039,vi,Thời tiết Hà Nội ngày mai thế nào?,,no,other,TMK
+q040,vi,Ai đoạt Quả bóng vàng năm 2035?,,no,other,TMK
+q041,en,Who will win the 100 m final at the 2032 Olympics?,,no,other,TMK
+q042,en,What is a good recipe for pho?,,no,other,TMK
+q043,vi,Cho tôi số điện thoại riêng của HLV đội tuyển Việt Nam,,no,other,TMK
+q044,vi,tran viet nam gap thai lan nam 2031 ty so bao nhieu,,no,other,TMK
+q045,en,Who won the 2040 Super Bowl?,,no,other,TMK
+q046,vi,Đội nào sẽ vô địch Champions League 2029?,,no,other,TMK
+q047,en,What is the capital of Australia?,,no,other,TMK
+q048,vi,Kết quả xổ số miền Bắc hôm nay?,,no,other,TMK
+q049,en,Which team won the 2031 Tour de France?,,no,other,TMK
+q050,en,How many goals will Haaland score in 2035?,,no,other,TMK

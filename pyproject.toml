@@ -20,7 +20,7 @@ known-first-party = ["app", "sportsbot_pipelines", "sportsbot_agent"]
 
 [tool.pytest.ini_options]
 testpaths = ["backend/tests", "pipelines/tests", "agent/tests", "tests"]
-pythonpath = ["backend/src", "backend/tests", "pipelines/src", "agent/src"]
+pythonpath = ["backend/src", "backend/tests", "pipelines/src", "agent/src", "evaluation"]
 addopts = "-ra"
 markers = [
     "integration: needs the running Docker stack (set SPORTSBOT_INTEGRATION=1)",
