@@ -24,11 +24,12 @@ the corpus**, then reviewed by TMK; `expected_urls` come from human judgements (
 
 ## Workflow (on the machine with the stack)
 ```bash
-make eval-pool     # top 10 articles per answerable question -> data/evaluation/pool.csv (git-ignored)
+make eval-pool     # top 10 per answerable question, no score threshold -> data/evaluation/pool.csv
 # open pool.csv (Google Sheets / Excel), put 1 in "relevant" for each article that answers it
 make eval-apply    # copies the marked links into evaluation/golden_questions.csv
 make eval          # metrics + docs/reports/runs/eval-<run_id>.json (about 1 min per question)
 make eval NO_ANSWERS=1   # retrieval metrics only, no Gemini calls
+make eval NO_ANSWERS=1 RERANK_MIN_SCORE=-4   # compare reranker thresholds on the same judgements
 ```
 An answerable question with no relevant article in its pool: search the web app for one, or set
 `answerable` to `no` if the corpus really has nothing (write why in the PR).

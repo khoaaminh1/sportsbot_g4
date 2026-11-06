@@ -179,3 +179,45 @@ def test_run_writes_a_report_without_article_text(tmp_path, monkeypatch):
     assert data["metrics"]["retrieval"]["hit_at_1"] == 1.0
     assert data["metrics"]["answers"]["unanswerable_correct_refusal"] == 1.0
     assert "Bài viết" not in report  # numbers only, no answer or article text
+
+
+def test_pool_ignores_the_live_threshold(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+
+    seen = {}
+
+    class Retriever:
+        min_rerank_score = -2.0
+        rerank_top = 12
+
+        def search(self, q, k):
+            seen["threshold"], seen["top"] = self.min_rerank_score, self.rerank_top
+            art = SimpleNamespace(
+                title="T", source_name="S", published_at=None, url="https://a.test/1"
+            )
+            return [SimpleNamespace(article=art, score=-3.21)]
+
+    rag = SimpleNamespace(retriever=Retriever(), close=lambda: None)
+    golden = tmp_path / "g.csv"
+    ev.write_questions(
+        [
+            {
+                "question_id": "q001",
+                "language": "en",
+                "question": "Liverpool?",
+                "expected_urls": "",
+                "answerable": "yes",
+                "question_type": "result",
+                "author": "TMK",
+            }
+        ],
+        golden,
+    )
+    monkeypatch.setattr(ev, "GOLDEN", golden)
+    monkeypatch.setattr(ev, "POOL", tmp_path / "pool.csv")
+    monkeypatch.setattr(ev, "_rag", lambda use_llm: (None, rag))
+    assert ev.main(["pool"]) == 0
+    assert seen == {"threshold": float("-inf"), "top": ev.POOL_RERANK_TOP}
+    with (tmp_path / "pool.csv").open(encoding="utf-8") as f:
+        row = next(csv.DictReader(f))
+    assert row["score"] == "-3.21" and row["relevant"] == ""
