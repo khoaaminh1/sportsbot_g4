@@ -213,9 +213,7 @@ def cmd_pool(k: int) -> int:
                 print(f"{row['question_id']}: {len(hits)} candidates", file=sys.stderr)
     finally:
         rag.close()
-    print(
-        f"Wrote {POOL}. Mark relevant = 1 for the articles that answer, then make eval-apply."
-    )
+    print(f"Wrote {POOL}. Mark relevant = 1 for the articles that answer, then make eval-apply.")
     return 0
 
 
