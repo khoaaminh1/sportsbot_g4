@@ -52,7 +52,7 @@ Presentation: **Tuesday 10 November 2026** (code freeze Monday 9 November, 12:00
 The system runs 24/7 on the team lead's PC (Windows 11, WSL2, Docker Desktop, i5-14400F, 32 GB)
 and restarts by itself after a reboot.
 
-**Last updated: 2026-11-06.** This section is the team's progress board: update it in the same
+**Last updated: 2026-11-07.** This section is the team's progress board: update it in the same
 pull request that changes the state of a component.
 
 ### Corpus (from `make crawl-stats` and the web app)
@@ -81,6 +81,27 @@ Silver and Gold are batch Spark jobs that read Bronze; they are planned work, no
 pieces of the pipeline. The HDFS + Spark cluster they run on (NameNode, 2 DataNodes, Spark
 master + worker) is ready and checked by `make spark-smoke`. Specification with fixed rules:
 [docs/handoff/VNP.md](docs/handoff/VNP.md), task 6.
+
+#### Chatbot evaluation (run `eval-20261106T154709Z`, [report](docs/reports/runs/eval-20261106T154709Z.json))
+
+50 golden questions (35 answerable, 15 not; 16 in English, 11 without diacritics), drafted before
+looking at the corpus. Relevance was judged by TMK on the system's own top 10 (pooling, no
+reranker threshold); only candidates with a reranker score of 0 or more were judged, so 19 of the
+35 answerable questions have judgements. Recall is relative to that pool. Live settings:
+reranker threshold -2.0, 12 reranked candidates, 5 articles to the model.
+
+| Measure | Value |
+|---|---|
+| hit@1 / hit@5 / MRR@10 (19 judged questions) | 0.79 / 0.79 / 0.79 |
+| recall@5 (19 judged questions) | 0.54 |
+| Answerable questions answered (35) | 0.71 |
+| Answers citing an expected article (19) | 0.74 |
+| Unanswerable questions correctly refused (15) | 0.93 (q039, weather in Hanoi, was answered) |
+| Seconds per question, p50 / p90 | 15.5 / 47.4 |
+
+Known weakness: before the pool was widened, 13 of 35 answerable questions (most typed without
+diacritics, some in English) had every candidate below the reranker threshold, so the bot said it
+found nothing. Tuning the threshold on these judgements is the next retrieval step.
 
 #### Gold numbers (run `20261105T154732Z`, snapshot exported 2026-11-03T08:53Z)
 
@@ -120,12 +141,12 @@ not pipeline speed. Single machine, pseudo-distributed (Docker): 1 Spark worker 
 | 6 | Spark Silver + Gold jobs, run reports | VNP | Done 2026-11-05: Silver (PR #28) and Gold (PR #30) merged with run reports |
 | 7 | Sport classifier: TF-IDF + logistic regression baseline vs BGE-M3 + logistic regression | VNP | Not started |
 | 9 | Scaling runs: Silver job at 3 sizes, `local[*]` vs cluster | VNP | Not started |
-| 4 | 50 golden questions (`evaluation/golden_questions.csv`) | TMK | 50 drafted 2026-11-06; relevance judgements pending (`make eval-pool`) |
+| 4 | 50 golden questions (`evaluation/golden_questions.csv`) | TMK | Done 2026-11-06: 50 questions, judgements for 19 answerable ones (PR #34) |
 | 5 | Hand labels for the classifier test set (at least 200) | TMK | Not started |
 | - | Test rounds 1-3 with reports (`docs/reports/test-report-*.md`) | LTN | Not started |
-| 8 | Retrieval and answer evaluation on the golden questions | TMK | Scripts ready (`make eval`), tested; first real run pending |
+| 8 | Retrieval and answer evaluation on the golden questions | TMK | First run done 2026-11-06 (numbers below); reranker threshold not tuned yet |
 | 10 | Slides, demo script, rehearsals, backup video | All | Not started |
-| - | Answer latency (about 20-50 s per answer) | TMK | Open |
+| - | Answer latency (p50 15.5 s, p90 47.4 s in the evaluation run) | TMK | Open |
 
 Tasks 1-3 (stack running, sources checked, backfill) are done. Full plan:
 [docs/plans/2026-11-02-plan-to-presentation.md](docs/plans/2026-11-02-plan-to-presentation.md).
