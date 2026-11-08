@@ -1,4 +1,4 @@
-.PHONY: help setup lint format test test-integration run up-core up-bigdata up up-collect collect-once sources-check bronze-ls articles-export chat chat-no-llm down ps logs hdfs-init hdfs-ls spark-smoke clean-volumes up-stream up-ai up-tools up-demo models discover-once backfill sources-sitemaps crawl-stats dead-letters logs-stream ask ask-no-llm llm-check export-labeling reindex replay-dead-letters monitor-once alert-test db-export db-import bronze-export kaggle-export kaggle-push kaggle-pull bronze-load up-team team-data public-up public-url public-down eval-pool eval-apply eval spark-ml-check spark-silver spark-classifier labels-load
+.PHONY: help setup lint format test test-integration run up-core up-bigdata up up-collect collect-once sources-check bronze-ls articles-export chat chat-no-llm down ps logs hdfs-init hdfs-ls spark-smoke clean-volumes up-stream up-ai up-tools up-demo models discover-once backfill sources-sitemaps crawl-stats dead-letters logs-stream ask ask-no-llm llm-check export-labeling reindex replay-dead-letters monitor-once alert-test db-export db-import bronze-export kaggle-export kaggle-push kaggle-pull bronze-load up-team team-data public-up public-url public-down eval-pool eval-apply eval spark-ml-check spark-silver spark-gold spark-classifier labels-load
 
 # The project virtualenv when it exists (no need to activate it), else python3.
 PYTHON ?= $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
@@ -237,6 +237,13 @@ spark-silver:  ## Spark Silver job on the Bronze in HDFS (VNP's task 6); SNAPSHO
 		--master spark://spark-master:7077 /opt/sportsbot/pipelines/spark/jobs/silver_articles.py \
 		--snapshot "$(SNAPSHOT)" 2>&1 | tee data/silver.log
 	$(PYTHON) scripts/save_run_report.py SILVER_REPORT silver data/silver.log
+
+spark-gold:  ## Spark Gold job on the Silver in HDFS (run after spark-silver); SNAPSHOT="<same as silver>"
+	@mkdir -p data
+	$(COMPOSE) --profile bigdata exec -T spark-master /opt/spark/bin/spark-submit \
+		--master spark://spark-master:7077 /opt/sportsbot/pipelines/spark/jobs/gold_stats.py \
+		--snapshot "$(SNAPSHOT)" 2>&1 | tee data/gold.log
+	$(PYTHON) scripts/save_run_report.py GOLD_REPORT gold data/gold.log
 
 labels-load:  ## Copy ml/labels/sport_test_v1.csv (hand labels) into HDFS for the classifier
 	@test -f ml/labels/sport_test_v1.csv || (echo "No ml/labels/sport_test_v1.csv yet" && exit 2)
