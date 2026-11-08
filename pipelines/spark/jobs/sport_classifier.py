@@ -33,7 +33,7 @@ import os
 import sys
 import time
 import urllib.request
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 from pyspark.ml import Pipeline
 from pyspark.ml.classification import LogisticRegression
@@ -165,7 +165,7 @@ def main(argv: list[str]) -> None:
     args = parse_args(argv)
     spark = SparkSession.builder.appName("sportsbot-sport-classifier").getOrCreate()
     spark.sparkContext.addPyFile(os.path.join(JOBS_DIR, "sportlabels.py"))  # for the label UDF
-    started = datetime.now(UTC)
+    started = datetime.now(timezone.utc)  # noqa: UP017 - the Spark image runs Python 3.10
     t0 = time.perf_counter()
 
     articles = (
