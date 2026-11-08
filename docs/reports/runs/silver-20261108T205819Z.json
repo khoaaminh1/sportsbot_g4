@@ -1,0 +1,37 @@
+{
+  "accounting_ok": true,
+  "articles_in_multi_article_clusters": 204,
+  "clusters": 15078,
+  "component_iterations": 3,
+  "data_origin": "collected by SportsBot",
+  "duration_seconds": 435.44,
+  "exact_duplicates": 6,
+  "input": "hdfs://namenode:8020/sportsbot/bronze/source=extracted/*/*/*.jsonl.gz",
+  "input_rows": 15238,
+  "job": "silver_articles",
+  "lsh_candidate_pairs": 1568811,
+  "master": "spark://spark-master:7077",
+  "multi_article_clusters": 50,
+  "near_dup_compared_rows": 14331,
+  "near_dup_excluded_no_words": 0,
+  "near_dup_excluded_rss_summary": 901,
+  "near_duplicate_pairs": 1915,
+  "output": "hdfs://namenode:8020/sportsbot/silver/articles",
+  "output_rows": 15232,
+  "rejected_by_reason": {
+    "exact_duplicate": 6
+  },
+  "rejected_rows": 6,
+  "rules": {
+    "excluded_extractor": "rss_summary",
+    "jaccard_threshold": 0.8,
+    "lsh": "1 MinHash per table, candidate if any table matches",
+    "minhash_hash": "xxhash64(table_index, shingle)",
+    "minhash_num_hash_tables": 5,
+    "shingle_size": 3
+  },
+  "run_id": "20261108T205819Z",
+  "snapshot_file": "bronze.tgz exported 2026-11-09T03:56:08+07:00, 15238 articles",
+  "spark_version": "3.5.3",
+  "started_at": "2026-11-08T20:58:19.377473+00:00"
+}
