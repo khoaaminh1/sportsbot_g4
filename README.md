@@ -73,8 +73,8 @@ in each version gives its article count and time.
 |---|---|---|---|---|
 | Operational | Clean articles for search and the chatbot | PostgreSQL + Qdrant | **Done**, live | TMK |
 | **Bronze** | Raw, append-only archive: every extracted article as JSON Lines (plus raw RSS records) | Docker volume `bronze_data` on the crawler PC; `bronze.tgz` in Kaggle; loaded into HDFS with `make bronze-load` | **Done**, live | TMK |
-| **Silver** | Cleaned, de-duplicated articles: exact duplicates removed, near-duplicates grouped into story clusters (MinHashLSH), Parquet | HDFS `/sportsbot/silver/` | **Done** 2026-11-05, run `20261105T150259Z` on the Kaggle snapshot exported 2026-11-03T08:53Z: 11,573 Bronze rows in, 11,573 Silver rows out, 0 rejected, 0 exact duplicates, 1,368 near-duplicate pairs in 28 story clusters (118 articles). Checked by hand: 5 clusters (10 articles) are the same story from two outlets; 23 are within one outlet (108 articles), 17 of them VietNamNet, including one of 52 articles whose extracted text is the site's navigation menu (extractor issue, not a real story). MinHash LSH written in Spark SQL (the Spark image has no numpy). [Run report](docs/reports/runs/silver-20261105T150259Z.json). **Rerun 2026-11-09** (run `20261108T205819Z`, bronze.tgz exported 2026-11-09T03:56+07:00): 15,238 rows in, 15,232 out, 6 exact duplicates rejected, 1,915 near-duplicate pairs, 50 story clusters of 2 or more, 435 s. [Run report](docs/reports/runs/silver-20261108T205819Z.json) | VNP (rerun TMK) |
-| **Gold** | Statistics for the report: articles per source/day/language, duplicate rate, cluster sizes, freshness lag | HDFS `/sportsbot/gold/` | **Done** 2026-11-05, run `20261105T154732Z` on Silver run `20261105T150259Z`: four tables (daily_counts, duplicates, cluster_sizes, freshness), numbers below. [Run report](docs/reports/runs/gold-20261105T154732Z.json) | VNP |
+| **Silver** | Cleaned, de-duplicated articles: exact duplicates removed, near-duplicates grouped into story clusters (MinHashLSH), Parquet | HDFS `/sportsbot/silver/` | **Done** 2026-11-05, run `20261105T150259Z` on the Kaggle snapshot exported 2026-11-03T08:53Z: 11,573 Bronze rows in, 11,573 Silver rows out, 0 rejected, 0 exact duplicates, 1,368 near-duplicate pairs in 28 story clusters (118 articles). Checked by hand (first run): 5 clusters (10 articles) are the same story from two outlets; 23 are within one outlet (108 articles), 17 of them VietNamNet, including one of 52 articles whose extracted text is the site's navigation menu (extractor issue, not a real story). MinHash LSH written in Spark SQL (the Spark image has no numpy). [Run report](docs/reports/runs/silver-20261105T150259Z.json). **Rerun 2026-11-09** (run `20261108T205819Z`, bronze.tgz exported 2026-11-09T03:56+07:00): 15,238 rows in, 15,232 out, 6 exact duplicates rejected, 1,915 near-duplicate pairs, 50 story clusters of 2 or more, 435 s. [Run report](docs/reports/runs/silver-20261108T205819Z.json) | VNP (rerun TMK) |
+| **Gold** | Statistics for the report: articles per source/day/language, duplicate rate, cluster sizes, freshness lag | HDFS `/sportsbot/gold/` | **Done** 2026-11-05, run `20261105T154732Z` on Silver run `20261105T150259Z`: four tables (daily_counts, duplicates, cluster_sizes, freshness). **Rerun 2026-11-09** (run `20261108T215132Z`) on Silver `20261108T205819Z`; numbers below. [Run report](docs/reports/runs/gold-20261108T215132Z.json) | VNP (rerun TMK) |
 
 Bronze is written by the streaming pipeline itself (`consumer-archive`), so it is complete.
 Silver and Gold are batch Spark jobs that read Bronze; they are planned work, not missing
@@ -123,21 +123,26 @@ football feed. Volleyball (2 test articles) and tennis (4) are too small to judg
 weak-label holdout (1,298 articles; 0.947 / 0.974 accuracy) shares the training rules and
 overstates quality.
 
-#### Gold numbers (run `20261105T154732Z`, snapshot exported 2026-11-03T08:53Z)
+#### Gold numbers (run `20261108T215132Z`, bronze.tgz exported 2026-11-09T03:56+07:00, [report](docs/reports/runs/gold-20261108T215132Z.json))
+
+On Silver run `20261108T205819Z`, the same snapshot as the classifier. All accounting checks pass.
 
 | Measure | Value |
 |---|---|
-| Silver articles / sources | 11,573 / 45 |
-| By language | vi 7,323 · es 3,200 · en 1,021 · fr 29 |
-| Exact duplicates | 0 (the extractor already drops exact re-posts) |
-| Near-duplicate articles (story cluster of 2 or more) | 118 (1.02 %) |
-| Clusters across two or more outlets (same story) | 5 clusters, 10 articles |
-| Clusters within one outlet | 23 clusters, 108 articles (52 of them one VietNamNet cluster of menu text: extractor issue) |
-| Lag `extracted_at - published_at`, median (p90) | RSS 50.51 h (1,410.72 h) · sitemap 1,024.67 h (1,219.25 h) · section pages 1,279.89 h (2,384.75 h) |
+| Silver articles / sources | 15,232 / 45 |
+| By language | vi 8,707 · es 4,289 · en 2,207 · fr 29 |
+| Exact duplicates rejected | 6 (0.04 %) |
+| Near-duplicate articles (story cluster of 2 or more) | 204 (1.34 %) in 50 clusters |
+| Clusters across two or more outlets (same story) | 6 clusters, 12 articles |
+| Clusters within one outlet | 44 clusters, 192 articles; the largest has 62 articles (on the previous run the largest, 52 articles, was VietNamNet menu text from an extractor issue; not rechecked by hand on this run) |
+| Lag `extracted_at - published_at`, median (p90) | RSS 1.33 h (221.9 h) · sitemap 1,023.8 h (1,219.2 h) · section pages 1,405.2 h (2,841.1 h) |
+| Gold job duration | 24 s |
 
-Sitemap and section-page lags measure how old the backfilled articles were (September-November),
-not pipeline speed. Single machine, pseudo-distributed (Docker): 1 Spark worker with 2 cores,
-2 HDFS DataNodes.
+RSS lag shows the live pipeline: half of the RSS articles are stored within 1.3 hours of
+publication. Sitemap and section-page lags measure how old the backfilled articles were
+(September-November), not pipeline speed. Single machine, pseudo-distributed (Docker): 1 Spark
+worker with 2 cores, 2 HDFS DataNodes. Previous Gold run on the 2026-11-03 snapshot (11,573
+articles): [report](docs/reports/runs/gold-20261105T154732Z.json).
 
 ### Components
 
