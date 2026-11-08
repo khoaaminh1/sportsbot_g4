@@ -82,8 +82,8 @@ pseudo-distributed).
 - **Since 2026-11-09 the Spark image has numpy** (`infra/spark/Dockerfile`, image
   `sportsbot-spark:3.5.3-numpy`), so `pyspark.ml` works for task 7 (TF-IDF, LogisticRegression,
   and MinHashLSH if you want to compare it with the SQL version). After `git pull`:
-  `make up-bigdata` (rebuilds the image once), then `make spark-ml-check` prints `master ok` and
-  `worker ok`.
+  `make up-bigdata` (rebuilds the image once), then `make spark-ml-check` prints `"ok": true` with the numpy version
+  on the driver and on an executor.
 
 ## Set up (once)
 Follow `docs/TEAM_ONBOARDING.md` sections 3-4 (WSL2 + Docker on Windows, or macOS), then:

@@ -227,9 +227,9 @@ hdfs-init:  ## Create /sportsbot/{bronze,silver,gold} in HDFS (idempotent)
 hdfs-ls:  ## List /sportsbot in HDFS
 	$(COMPOSE) --profile bigdata exec -T namenode hdfs dfs -ls -R /sportsbot
 
-spark-ml-check:  ## numpy and pyspark.ml import on the Spark master and worker (MLlib for task 7)
-	$(COMPOSE) --profile bigdata exec -T spark-master python3 -c "import numpy, pyspark.ml; print('master ok', numpy.__version__)"
-	$(COMPOSE) --profile bigdata exec -T spark-worker python3 -c "import numpy, pyspark.ml; print('worker ok', numpy.__version__)"
+spark-ml-check:  ## Spark MLlib (pyspark.ml + numpy) works on the cluster: prints {"ok": true, ...}
+	$(COMPOSE) --profile bigdata exec -T spark-master /opt/spark/bin/spark-submit \
+		--master spark://spark-master:7077 /opt/sportsbot/pipelines/spark/jobs/ml_check.py
 
 spark-smoke:  ## Run a Spark job on the cluster that writes and reads Parquet on HDFS
 	$(COMPOSE) --profile bigdata exec -T spark-master /opt/spark/bin/spark-submit \

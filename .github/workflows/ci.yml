@@ -77,10 +77,12 @@ jobs:
             --master spark://spark-master:7077 \
             /opt/sportsbot/pipelines/spark/jobs/hdfs_smoke.py 2>&1 | tee spark-smoke.log
           grep -q '"ok": true' spark-smoke.log
-      - name: numpy and pyspark.ml on the Spark master and worker (MLlib, task 7)
+      - name: Spark MLlib (pyspark.ml + numpy) on the driver and executors (task 7)
         run: |
-          $COMPOSE exec -T spark-master python3 -c "import numpy, pyspark.ml; print('master', numpy.__version__)"
-          $COMPOSE exec -T spark-worker python3 -c "import numpy, pyspark.ml; print('worker', numpy.__version__)"
+          $COMPOSE exec -T spark-master /opt/spark/bin/spark-submit \
+            --master spark://spark-master:7077 \
+            /opt/sportsbot/pipelines/spark/jobs/ml_check.py 2>&1 | tee ml-check.log
+          grep -q '"ok": true' ml-check.log
       - name: Check block replication of the smoke output
         run: $COMPOSE exec -T namenode hdfs fsck /sportsbot/_smoke -files -blocks | tail -n 25
       - name: Start PostgreSQL, Qdrant and backend
