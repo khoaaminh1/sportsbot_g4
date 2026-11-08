@@ -73,7 +73,7 @@ in each version gives its article count and time.
 |---|---|---|---|---|
 | Operational | Clean articles for search and the chatbot | PostgreSQL + Qdrant | **Done**, live | TMK |
 | **Bronze** | Raw, append-only archive: every extracted article as JSON Lines (plus raw RSS records) | Docker volume `bronze_data` on the crawler PC; `bronze.tgz` in Kaggle; loaded into HDFS with `make bronze-load` | **Done**, live | TMK |
-| **Silver** | Cleaned, de-duplicated articles: exact duplicates removed, near-duplicates grouped into story clusters (MinHashLSH), Parquet | HDFS `/sportsbot/silver/` | **Done** 2026-11-05, run `20261105T150259Z` on the Kaggle snapshot exported 2026-11-03T08:53Z: 11,573 Bronze rows in, 11,573 Silver rows out, 0 rejected, 0 exact duplicates, 1,368 near-duplicate pairs in 28 story clusters (118 articles). Checked by hand: 5 clusters (10 articles) are the same story from two outlets; 23 are within one outlet (108 articles), 17 of them VietNamNet, including one of 52 articles whose extracted text is the site's navigation menu (extractor issue, not a real story). MinHash LSH written in Spark SQL (the Spark image has no numpy). [Run report](docs/reports/runs/silver-20261105T150259Z.json) | VNP |
+| **Silver** | Cleaned, de-duplicated articles: exact duplicates removed, near-duplicates grouped into story clusters (MinHashLSH), Parquet | HDFS `/sportsbot/silver/` | **Done** 2026-11-05, run `20261105T150259Z` on the Kaggle snapshot exported 2026-11-03T08:53Z: 11,573 Bronze rows in, 11,573 Silver rows out, 0 rejected, 0 exact duplicates, 1,368 near-duplicate pairs in 28 story clusters (118 articles). Checked by hand: 5 clusters (10 articles) are the same story from two outlets; 23 are within one outlet (108 articles), 17 of them VietNamNet, including one of 52 articles whose extracted text is the site's navigation menu (extractor issue, not a real story). MinHash LSH written in Spark SQL (the Spark image has no numpy). [Run report](docs/reports/runs/silver-20261105T150259Z.json). **Rerun 2026-11-09** (run `20261108T205819Z`, bronze.tgz exported 2026-11-09T03:56+07:00): 15,238 rows in, 15,232 out, 6 exact duplicates rejected, 1,915 near-duplicate pairs, 50 story clusters of 2 or more, 435 s. [Run report](docs/reports/runs/silver-20261108T205819Z.json) | VNP (rerun TMK) |
 | **Gold** | Statistics for the report: articles per source/day/language, duplicate rate, cluster sizes, freshness lag | HDFS `/sportsbot/gold/` | **Done** 2026-11-05, run `20261105T154732Z` on Silver run `20261105T150259Z`: four tables (daily_counts, duplicates, cluster_sizes, freshness), numbers below. [Run report](docs/reports/runs/gold-20261105T154732Z.json) | VNP |
 
 Bronze is written by the streaming pipeline itself (`consumer-archive`), so it is complete.
@@ -102,6 +102,26 @@ reranker threshold -2.0, 12 reranked candidates, 5 articles to the model.
 Known weakness: before the pool was widened, 13 of 35 answerable questions (most typed without
 diacritics, some in English) had every candidate below the reranker threshold, so the bot said it
 found nothing. Tuning the threshold on these judgements is the next retrieval step.
+
+#### Sport classifier (run `20261108T213620Z`, [report](docs/reports/runs/classifier-20261108T213620Z.json))
+
+Silver run `20261108T205819Z` (15,232 articles). Training: 5,393 articles with weak labels
+(feed, URL path, volleyball/badminton title keywords; `ml/README.md`). Test: 193 articles labelled
+by Claude (AI) and reviewed by TMK (`ml/labels/sport_test_v1.csv`), never used for training.
+Spark standalone in Docker, 104 s for both models.
+
+| Model | Accuracy | Macro-F1 | Macro-F1 vi (123) / en (23) / es (47) |
+|---|---|---|---|
+| Baseline: TF-IDF + logistic regression (Spark MLlib) | 0.570 | 0.544 | 0.362 / 0.639 / 1.000 |
+| Improved: BGE-M3 vectors + logistic regression | **0.927** | **0.750** | 0.663 / 0.973 / 1.000 |
+
+Findings: the baseline labels 56 of 147 football test articles as volleyball, almost all
+Vietnamese: Vietnamese feeds are general sports sections, so most Vietnamese weak labels come
+from the volleyball title rule and TF-IDF learns language instead of sport (weak-label bias).
+BGE-M3 vectors avoid it. Spanish scores 1.0 because every Spanish article comes from one
+football feed. Volleyball (2 test articles) and tennis (4) are too small to judge. The
+weak-label holdout (1,298 articles; 0.947 / 0.974 accuracy) shares the training rules and
+overstates quality.
 
 #### Gold numbers (run `20261105T154732Z`, snapshot exported 2026-11-03T08:53Z)
 
@@ -139,10 +159,10 @@ not pipeline speed. Single machine, pseudo-distributed (Docker): 1 Spark worker 
 | Plan task | Work | Owner | State |
 |---|---|---|---|
 | 6 | Spark Silver + Gold jobs, run reports | VNP | Done 2026-11-05: Silver (PR #28) and Gold (PR #30) merged with run reports |
-| 7 | Sport classifier: TF-IDF + logistic regression baseline vs BGE-M3 + logistic regression | TMK | Code ready 2026-11-09 (`make spark-classifier`, model card in `ml/README.md`); not yet run on the real corpus, needs the hand labels |
+| 7 | Sport classifier: TF-IDF + logistic regression baseline vs BGE-M3 + logistic regression | TMK | Done 2026-11-09: run `20261108T213620Z`, BGE-M3 0.927 accuracy vs baseline 0.570 on 193 test articles (numbers above) |
 | 9 | Scaling runs: Silver job at 2-3 sizes, `local[*]` vs cluster | VNP | Cut on 2026-11-09 (TMK decision): not needed for the presentation |
 | 4 | 50 golden questions (`evaluation/golden_questions.csv`) | TMK | Done 2026-11-06: 50 questions, judgements for 19 answerable ones (PR #34) |
-| 5 | Hand labels for the classifier test set (at least 200) | TMK | Not started |
+| 5 | Test labels for the classifier (at least 200) | TMK | Done 2026-11-09: 197 articles labelled by Claude, reviewed by TMK (193 in Silver) |
 | - | Test rounds 1-3 with reports (`docs/reports/test-report-*.md`) | LTN | Not started; rounds on Mon 9-Tue 10 and Wed 11 after the freeze |
 | 8 | Retrieval and answer evaluation on the golden questions | TMK | First run done 2026-11-06 (numbers below); reranker threshold not tuned yet |
 | 10 | Slides, demo script, rehearsals, backup video | All | Not started |

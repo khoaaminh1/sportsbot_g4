@@ -1,0 +1,412 @@
+{
+  "job": "sport_classifier",
+  "run_id": "20261108T213620Z",
+  "started_at": "2026-11-08T21:36:20.256143+00:00",
+  "snapshot": "bronze.tgz exported 2026-11-09T03:56:08+07:00, 15238 articles",
+  "master": "spark://spark-master:7077",
+  "input": "hdfs://namenode:8020/sportsbot/silver/articles",
+  "seed": 42,
+  "holdout_share": 0.2,
+  "counts": {
+    "silver_rows": 15232,
+    "weak_labelled": 6691,
+    "weak_by_class": {
+      "basketball": 106,
+      "football": 5166,
+      "badminton": 78,
+      "volleyball": 334,
+      "tennis": 128,
+      "other_sport": 879
+    },
+    "weak_by_rule": {
+      "title": 353,
+      "url": 249,
+      "feed": 6089
+    },
+    "hand_labelled": 193,
+    "holdout_rows": 1298
+  },
+  "models": {
+    "baseline_tfidf_lr": {
+      "train_rows": 5393,
+      "fit_seconds": 32.3,
+      "classes": [
+        "football",
+        "other_sport",
+        "volleyball",
+        "tennis",
+        "basketball",
+        "badminton"
+      ],
+      "weak_holdout": {
+        "n": 1298,
+        "accuracy": 0.9468,
+        "macro_f1": 0.8202,
+        "per_class": {
+          "badminton": {
+            "support": 17,
+            "precision": 1.0,
+            "recall": 0.6471,
+            "f1": 0.7857
+          },
+          "basketball": {
+            "support": 21,
+            "precision": 0.9167,
+            "recall": 0.5238,
+            "f1": 0.6667
+          },
+          "football": {
+            "support": 1007,
+            "precision": 0.9658,
+            "recall": 0.9811,
+            "f1": 0.9734
+          },
+          "other_sport": {
+            "support": 172,
+            "precision": 0.8713,
+            "recall": 0.8663,
+            "f1": 0.8688
+          },
+          "tennis": {
+            "support": 21,
+            "precision": 1.0,
+            "recall": 0.5714,
+            "f1": 0.7273
+          },
+          "volleyball": {
+            "support": 60,
+            "precision": 0.8406,
+            "recall": 0.9667,
+            "f1": 0.8992
+          }
+        },
+        "confusion": {
+          "badminton": {
+            "volleyball": 5,
+            "badminton": 11,
+            "other_sport": 1
+          },
+          "basketball": {
+            "other_sport": 8,
+            "basketball": 11,
+            "football": 2
+          },
+          "football": {
+            "football": 988,
+            "other_sport": 12,
+            "volleyball": 6,
+            "basketball": 1
+          },
+          "other_sport": {
+            "other_sport": 149,
+            "football": 23
+          },
+          "tennis": {
+            "football": 8,
+            "tennis": 12,
+            "other_sport": 1
+          },
+          "volleyball": {
+            "volleyball": 58,
+            "football": 2
+          }
+        },
+        "per_language": {
+          "en": {
+            "n": 384,
+            "accuracy": 0.8568,
+            "macro_f1": 0.7844
+          },
+          "es": {
+            "n": 828,
+            "accuracy": 1.0,
+            "macro_f1": 1.0
+          },
+          "vi": {
+            "n": 86,
+            "accuracy": 0.8372,
+            "macro_f1": 0.7045
+          }
+        }
+      },
+      "hand": {
+        "n": 193,
+        "accuracy": 0.5699,
+        "macro_f1": 0.5435,
+        "per_class": {
+          "badminton": {
+            "support": 6,
+            "precision": 0.7143,
+            "recall": 0.8333,
+            "f1": 0.7692
+          },
+          "basketball": {
+            "support": 5,
+            "precision": 1.0,
+            "recall": 0.4,
+            "f1": 0.5714
+          },
+          "football": {
+            "support": 147,
+            "precision": 0.9375,
+            "recall": 0.6122,
+            "f1": 0.7407
+          },
+          "other_sport": {
+            "support": 29,
+            "precision": 0.9,
+            "recall": 0.3103,
+            "f1": 0.4615
+          },
+          "tennis": {
+            "support": 4,
+            "precision": 1.0,
+            "recall": 0.5,
+            "f1": 0.6667
+          },
+          "volleyball": {
+            "support": 2,
+            "precision": 0.0263,
+            "recall": 1.0,
+            "f1": 0.0513
+          }
+        },
+        "confusion": {
+          "badminton": {
+            "badminton": 5,
+            "football": 1
+          },
+          "basketball": {
+            "volleyball": 3,
+            "basketball": 2
+          },
+          "football": {
+            "volleyball": 56,
+            "football": 90,
+            "other_sport": 1
+          },
+          "other_sport": {
+            "badminton": 2,
+            "volleyball": 14,
+            "other_sport": 9,
+            "football": 4
+          },
+          "tennis": {
+            "volleyball": 1,
+            "tennis": 2,
+            "football": 1
+          },
+          "volleyball": {
+            "volleyball": 2
+          }
+        },
+        "per_language": {
+          "en": {
+            "n": 23,
+            "accuracy": 0.7826,
+            "macro_f1": 0.6388
+          },
+          "es": {
+            "n": 47,
+            "accuracy": 1.0,
+            "macro_f1": 1.0
+          },
+          "vi": {
+            "n": 123,
+            "accuracy": 0.3659,
+            "macro_f1": 0.3624
+          }
+        }
+      }
+    },
+    "bge_m3_lr": {
+      "train_rows": 5393,
+      "fit_seconds": 33.8,
+      "classes": [
+        "football",
+        "other_sport",
+        "volleyball",
+        "tennis",
+        "basketball",
+        "badminton"
+      ],
+      "weak_holdout": {
+        "n": 1298,
+        "accuracy": 0.9738,
+        "macro_f1": 0.9391,
+        "per_class": {
+          "badminton": {
+            "support": 17,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "basketball": {
+            "support": 21,
+            "precision": 0.8889,
+            "recall": 0.7619,
+            "f1": 0.8205
+          },
+          "football": {
+            "support": 1007,
+            "precision": 0.9881,
+            "recall": 0.9861,
+            "f1": 0.9871
+          },
+          "other_sport": {
+            "support": 172,
+            "precision": 0.8895,
+            "recall": 0.936,
+            "f1": 0.9122
+          },
+          "tennis": {
+            "support": 21,
+            "precision": 1.0,
+            "recall": 0.8571,
+            "f1": 0.9231
+          },
+          "volleyball": {
+            "support": 60,
+            "precision": 1.0,
+            "recall": 0.9833,
+            "f1": 0.9916
+          }
+        },
+        "confusion": {
+          "badminton": {
+            "badminton": 17
+          },
+          "basketball": {
+            "basketball": 16,
+            "other_sport": 5
+          },
+          "football": {
+            "football": 993,
+            "other_sport": 13,
+            "basketball": 1
+          },
+          "other_sport": {
+            "other_sport": 161,
+            "football": 10,
+            "basketball": 1
+          },
+          "tennis": {
+            "tennis": 18,
+            "football": 1,
+            "other_sport": 2
+          },
+          "volleyball": {
+            "volleyball": 59,
+            "football": 1
+          }
+        },
+        "per_language": {
+          "en": {
+            "n": 384,
+            "accuracy": 0.9193,
+            "macro_f1": 0.8983
+          },
+          "es": {
+            "n": 828,
+            "accuracy": 0.9976,
+            "macro_f1": 0.9988
+          },
+          "vi": {
+            "n": 86,
+            "accuracy": 0.9884,
+            "macro_f1": 0.9797
+          }
+        }
+      },
+      "hand": {
+        "n": 193,
+        "accuracy": 0.9275,
+        "macro_f1": 0.7504,
+        "per_class": {
+          "badminton": {
+            "support": 6,
+            "precision": 0.8571,
+            "recall": 1.0,
+            "f1": 0.9231
+          },
+          "basketball": {
+            "support": 5,
+            "precision": 0.8,
+            "recall": 0.8,
+            "f1": 0.8
+          },
+          "football": {
+            "support": 147,
+            "precision": 0.9671,
+            "recall": 1.0,
+            "f1": 0.9833
+          },
+          "other_sport": {
+            "support": 29,
+            "precision": 1.0,
+            "recall": 0.6207,
+            "f1": 0.766
+          },
+          "tennis": {
+            "support": 4,
+            "precision": 1.0,
+            "recall": 0.5,
+            "f1": 0.6667
+          },
+          "volleyball": {
+            "support": 2,
+            "precision": 0.2222,
+            "recall": 1.0,
+            "f1": 0.3636
+          }
+        },
+        "confusion": {
+          "badminton": {
+            "badminton": 6
+          },
+          "basketball": {
+            "basketball": 4,
+            "volleyball": 1
+          },
+          "football": {
+            "football": 147
+          },
+          "other_sport": {
+            "volleyball": 6,
+            "other_sport": 18,
+            "football": 4,
+            "basketball": 1
+          },
+          "tennis": {
+            "tennis": 2,
+            "football": 1,
+            "badminton": 1
+          },
+          "volleyball": {
+            "volleyball": 2
+          }
+        },
+        "per_language": {
+          "en": {
+            "n": 23,
+            "accuracy": 0.9565,
+            "macro_f1": 0.9733
+          },
+          "es": {
+            "n": 47,
+            "accuracy": 1.0,
+            "macro_f1": 1.0
+          },
+          "vi": {
+            "n": 123,
+            "accuracy": 0.8943,
+            "macro_f1": 0.663
+          }
+        }
+      },
+      "articles_with_vector": 15524
+    }
+  },
+  "seconds": 103.6,
+  "note": "Weak labels from feed/URL/title rules (sportlabels.py). Hand labels, when present, are the only independent test set. Single machine, pseudo-distributed."
+}

@@ -73,9 +73,9 @@ Branch `feature/sport-classifier`. VNP finished Silver and Gold; TMK runs this t
       weak-label holdout reported separately.
 - [x] Baseline: Spark MLlib TF-IDF + logistic regression. Improved: BGE-M3 vectors (from Qdrant)
       + logistic regression. Code: `pipelines/spark/jobs/sport_classifier.py`.
-- [ ] Hand labels committed (TMK, at least 200) and loaded: `make labels-load`.
-- [ ] Run on the real Silver: `make spark-classifier SNAPSHOT="..."`, commit
-      `docs/reports/runs/classifier-<run_id>.json`.
+- [x] Test labels committed (197, labelled by Claude, reviewed by TMK) and loaded: `make labels-load`.
+- [x] Run on the real Silver: run `20261108T213620Z`, report in `docs/reports/runs/`; numbers in
+      the README Status section.
 - [ ] Optional, if time: script that fills `articles.sport_category` with the better model.
 
 ### V4. Scaling experiment (plan task 9) — **cut on 2026-11-09** (TMK decision; not needed for the presentation)
@@ -186,7 +186,7 @@ Summary: <n> pass, <n> fail. Blocking for the demo: <list or "none">.
 | L2 Golden questions | TMK (from LTN) | Sat 7 | Done 2026-11-06 (PR #34) |
 | Task 8 evaluation | TMK | Sat 7 | First run done 2026-11-06 (README Status) |
 | L3 Hand labels | TMK (from LTN) | Mon 9 | Not started |
-| V3 Classifier | TMK | Tue 10 | Code ready 2026-11-09 (synthetic smoke only); needs hand labels + real run |
+| V3 Classifier | TMK | Tue 10 | Done 2026-11-09 (run `20261108T213620Z`) |
 | V4 Scaling | VNP | - | Cut 2026-11-09 (not needed) |
 | L1 Test round 1 | LTN | Tue 10 12:00 | Not started |
 | L4 Test round 2 | LTN | Tue 10 21:00 | Not started |
