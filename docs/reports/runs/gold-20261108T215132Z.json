@@ -1,0 +1,150 @@
+{
+  "articles_by_language": {
+    "en": 2207,
+    "es": 4289,
+    "fr": 29,
+    "vi": 8707
+  },
+  "articles_without_published_day": 0,
+  "checks": {
+    "cluster_sizes_sum_equals_silver": true,
+    "daily_counts_sum_equals_silver": true,
+    "duplicates_all_equals_silver": true
+  },
+  "checks_ok": true,
+  "cluster_sizes": [
+    {
+      "articles": 15028,
+      "cluster_size": 1,
+      "clusters": 15028,
+      "cross_source": false
+    },
+    {
+      "articles": 52,
+      "cluster_size": 2,
+      "clusters": 26,
+      "cross_source": false
+    },
+    {
+      "articles": 12,
+      "cluster_size": 2,
+      "clusters": 6,
+      "cross_source": true
+    },
+    {
+      "articles": 15,
+      "cluster_size": 3,
+      "clusters": 5,
+      "cross_source": false
+    },
+    {
+      "articles": 16,
+      "cluster_size": 4,
+      "clusters": 4,
+      "cross_source": false
+    },
+    {
+      "articles": 15,
+      "cluster_size": 5,
+      "clusters": 3,
+      "cross_source": false
+    },
+    {
+      "articles": 18,
+      "cluster_size": 6,
+      "clusters": 3,
+      "cross_source": false
+    },
+    {
+      "articles": 14,
+      "cluster_size": 7,
+      "clusters": 2,
+      "cross_source": false
+    },
+    {
+      "articles": 62,
+      "cluster_size": 62,
+      "clusters": 1,
+      "cross_source": false
+    }
+  ],
+  "daily_counts_rows": 1064,
+  "data_origin": "collected by SportsBot",
+  "duplicates_all": {
+    "exact_duplicate_rate": 0.00039375246095288093,
+    "exact_duplicates": 6,
+    "excluded_rss_summary": 901,
+    "near_dup_articles": 204,
+    "near_dup_cross_source_articles": 12,
+    "near_duplicate_rate": 0.013392857142857142,
+    "silver_articles": 15232,
+    "source_id": "_all"
+  },
+  "duration_seconds": 24.02,
+  "freshness": [
+    {
+      "articles": 15232,
+      "discovered_via": "_all",
+      "lag_articles": 15229,
+      "lag_p50_hours": 855.07,
+      "lag_p90_hours": 2222.09,
+      "lag_p99_hours": 3394.46,
+      "missing_published_at": 0,
+      "negative_lag": 3
+    },
+    {
+      "articles": 6428,
+      "discovered_via": "listing",
+      "lag_articles": 6428,
+      "lag_p50_hours": 1405.18,
+      "lag_p90_hours": 2841.06,
+      "lag_p99_hours": 3370.43,
+      "missing_published_at": 0,
+      "negative_lag": 0
+    },
+    {
+      "articles": 5043,
+      "discovered_via": "rss",
+      "lag_articles": 5040,
+      "lag_p50_hours": 1.33,
+      "lag_p90_hours": 221.9,
+      "lag_p99_hours": 13895.02,
+      "missing_published_at": 0,
+      "negative_lag": 3
+    },
+    {
+      "articles": 3761,
+      "discovered_via": "sitemap",
+      "lag_articles": 3761,
+      "lag_p50_hours": 1023.81,
+      "lag_p90_hours": 1219.19,
+      "lag_p99_hours": 1415.52,
+      "missing_published_at": 0,
+      "negative_lag": 0
+    }
+  ],
+  "input": "hdfs://namenode:8020/sportsbot/silver/articles",
+  "job": "gold_stats",
+  "master": "spark://spark-master:7077",
+  "multi_article_clusters": [
+    {
+      "articles": 192,
+      "clusters": 44,
+      "cross_source": false
+    },
+    {
+      "articles": 12,
+      "clusters": 6,
+      "cross_source": true
+    }
+  ],
+  "output": "hdfs://namenode:8020/sportsbot/gold/stats",
+  "rejected_files_found": true,
+  "rejected_rows": 6,
+  "run_id": "20261108T215132Z",
+  "silver_rows": 15232,
+  "snapshot_file": "bronze.tgz exported 2026-11-09T03:56:08+07:00, 15238 articles",
+  "sources": 45,
+  "spark_version": "3.5.3",
+  "started_at": "2026-11-08T21:51:32.755716+00:00"
+}
