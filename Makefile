@@ -1,4 +1,4 @@
-.PHONY: help setup lint format test test-integration run up-core up-bigdata up up-collect collect-once sources-check bronze-ls articles-export chat chat-no-llm down ps logs hdfs-init hdfs-ls spark-smoke clean-volumes up-stream up-ai up-tools up-demo models discover-once backfill sources-sitemaps crawl-stats dead-letters logs-stream ask ask-no-llm llm-check export-labeling reindex replay-dead-letters monitor-once alert-test db-export db-import bronze-export kaggle-export kaggle-push kaggle-pull bronze-load up-team team-data public-up public-url public-down eval-pool eval-apply eval
+.PHONY: help setup lint format test test-integration run up-core up-bigdata up up-collect collect-once sources-check bronze-ls articles-export chat chat-no-llm down ps logs hdfs-init hdfs-ls spark-smoke clean-volumes up-stream up-ai up-tools up-demo models discover-once backfill sources-sitemaps crawl-stats dead-letters logs-stream ask ask-no-llm llm-check export-labeling reindex replay-dead-letters monitor-once alert-test db-export db-import bronze-export kaggle-export kaggle-push kaggle-pull bronze-load up-team team-data public-up public-url public-down eval-pool eval-apply eval spark-ml-check
 
 # The project virtualenv when it exists (no need to activate it), else python3.
 PYTHON ?= $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
@@ -42,7 +42,7 @@ up-core:  ## Start PostgreSQL, Qdrant and the backend (waits for health checks)
 	$(COMPOSE) --profile core up -d --build --wait
 
 up-bigdata:  ## Start HDFS (NameNode + 2 DataNodes) and Spark (master + worker), then create HDFS dirs
-	$(COMPOSE) --profile bigdata up -d --wait namenode datanode1 datanode2 spark-master spark-worker
+	$(COMPOSE) --profile bigdata up -d --build --wait namenode datanode1 datanode2 spark-master spark-worker
 	$(COMPOSE) --profile bigdata run --rm hdfs-init
 
 up:  ## Start everything (needs about 8-10 GB RAM, estimate)
@@ -226,6 +226,10 @@ hdfs-init:  ## Create /sportsbot/{bronze,silver,gold} in HDFS (idempotent)
 
 hdfs-ls:  ## List /sportsbot in HDFS
 	$(COMPOSE) --profile bigdata exec -T namenode hdfs dfs -ls -R /sportsbot
+
+spark-ml-check:  ## numpy and pyspark.ml import on the Spark master and worker (MLlib for task 7)
+	$(COMPOSE) --profile bigdata exec -T spark-master python3 -c "import numpy, pyspark.ml; print('master ok', numpy.__version__)"
+	$(COMPOSE) --profile bigdata exec -T spark-worker python3 -c "import numpy, pyspark.ml; print('worker ok', numpy.__version__)"
 
 spark-smoke:  ## Run a Spark job on the cluster that writes and reads Parquet on HDFS
 	$(COMPOSE) --profile bigdata exec -T spark-master /opt/spark/bin/spark-submit \
