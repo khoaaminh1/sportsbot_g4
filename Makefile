@@ -1,4 +1,4 @@
-.PHONY: help setup lint format test test-integration run up-core up-bigdata up up-collect collect-once sources-check bronze-ls articles-export chat chat-no-llm down ps logs hdfs-init hdfs-ls spark-smoke clean-volumes up-stream up-ai up-tools up-demo models discover-once backfill sources-sitemaps crawl-stats dead-letters logs-stream ask ask-no-llm llm-check export-labeling reindex replay-dead-letters monitor-once alert-test db-export db-import bronze-export kaggle-export kaggle-push kaggle-pull bronze-load up-team team-data public-up public-url public-down eval-pool eval-apply eval spark-ml-check
+.PHONY: help setup lint format test test-integration run up-core up-bigdata up up-collect collect-once sources-check bronze-ls articles-export chat chat-no-llm down ps logs hdfs-init hdfs-ls spark-smoke clean-volumes up-stream up-ai up-tools up-demo models discover-once backfill sources-sitemaps crawl-stats dead-letters logs-stream ask ask-no-llm llm-check export-labeling reindex replay-dead-letters monitor-once alert-test db-export db-import bronze-export kaggle-export kaggle-push kaggle-pull bronze-load up-team team-data public-up public-url public-down eval-pool eval-apply eval spark-ml-check spark-silver spark-classifier labels-load
 
 # The project virtualenv when it exists (no need to activate it), else python3.
 PYTHON ?= $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
@@ -230,6 +230,25 @@ hdfs-ls:  ## List /sportsbot in HDFS
 spark-ml-check:  ## Spark MLlib (pyspark.ml + numpy) works on the cluster: prints {"ok": true, ...}
 	$(COMPOSE) --profile bigdata exec -T spark-master /opt/spark/bin/spark-submit \
 		--master spark://spark-master:7077 /opt/sportsbot/pipelines/spark/jobs/ml_check.py
+
+spark-silver:  ## Spark Silver job on the Bronze in HDFS (VNP's task 6); SNAPSHOT="<kaggle version, time>"
+	@mkdir -p data
+	$(COMPOSE) --profile bigdata exec -T spark-master /opt/spark/bin/spark-submit \
+		--master spark://spark-master:7077 /opt/sportsbot/pipelines/spark/jobs/silver_articles.py \
+		--snapshot "$(SNAPSHOT)" 2>&1 | tee data/silver.log
+	$(PYTHON) scripts/save_run_report.py SILVER_REPORT silver data/silver.log
+
+labels-load:  ## Copy ml/labels/sport_test_v1.csv (hand labels) into HDFS for the classifier
+	@test -f ml/labels/sport_test_v1.csv || (echo "No ml/labels/sport_test_v1.csv yet" && exit 2)
+	$(COMPOSE) --profile bigdata cp ml/labels/sport_test_v1.csv namenode:/tmp/sport_test_v1.csv
+	$(COMPOSE) --profile bigdata exec -T namenode bash -c 'hdfs dfs -mkdir -p /sportsbot/labels && hdfs dfs -put -f /tmp/sport_test_v1.csv /sportsbot/labels/ && rm /tmp/sport_test_v1.csv'
+
+spark-classifier:  ## Task 7: train + evaluate the sport classifier on Silver; writes docs/reports/runs/classifier-*.json
+	@mkdir -p data
+	$(COMPOSE) --profile bigdata exec -T spark-master /opt/spark/bin/spark-submit \
+		--master spark://spark-master:7077 --driver-memory 2g \
+		/opt/sportsbot/pipelines/spark/jobs/sport_classifier.py --snapshot "$(SNAPSHOT)" 2>&1 | tee data/classifier.log
+	$(PYTHON) scripts/save_run_report.py CLASSIFIER_REPORT classifier data/classifier.log
 
 spark-smoke:  ## Run a Spark job on the cluster that writes and reads Parquet on HDFS
 	$(COMPOSE) --profile bigdata exec -T spark-master /opt/spark/bin/spark-submit \
