@@ -152,7 +152,10 @@ services:
     restart: "no"
 
   spark-master:
-    image: apache/spark:3.5.3-scala2.12-java17-python3-ubuntu
+    # apache/spark:3.5.3 + numpy for pyspark.ml (infra/spark/Dockerfile)
+    build:
+      context: infra/spark
+    image: sportsbot-spark:3.5.3-numpy
     profiles: [bigdata]
     hostname: spark-master
     command:
@@ -171,7 +174,9 @@ services:
       retries: 30
 
   spark-worker:
-    image: apache/spark:3.5.3-scala2.12-java17-python3-ubuntu
+    build:
+      context: infra/spark
+    image: sportsbot-spark:3.5.3-numpy
     profiles: [bigdata]
     hostname: spark-worker
     command:
