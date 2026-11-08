@@ -48,11 +48,11 @@ Design decisions are recorded as ADRs: [streaming with Kafka](docs/decisions/000
 
 ## Status
 
-Presentation: **Tuesday 10 November 2026** (code freeze Monday 9 November, 12:00).
+Presentation: **Thursday 12 November 2026** (moved from Tuesday 10; code freeze Wednesday 11 November, 12:00).
 The system runs 24/7 on the team lead's PC (Windows 11, WSL2, Docker Desktop, i5-14400F, 32 GB)
 and restarts by itself after a reboot.
 
-**Last updated: 2026-11-07.** This section is the team's progress board: update it in the same
+**Last updated: 2026-11-09.** This section is the team's progress board: update it in the same
 pull request that changes the state of a component.
 
 ### Corpus (from `make crawl-stats` and the web app)
@@ -139,11 +139,11 @@ not pipeline speed. Single machine, pseudo-distributed (Docker): 1 Spark worker 
 | Plan task | Work | Owner | State |
 |---|---|---|---|
 | 6 | Spark Silver + Gold jobs, run reports | VNP | Done 2026-11-05: Silver (PR #28) and Gold (PR #30) merged with run reports |
-| 7 | Sport classifier: TF-IDF + logistic regression baseline vs BGE-M3 + logistic regression | VNP | Not started |
-| 9 | Scaling runs: Silver job at 3 sizes, `local[*]` vs cluster | VNP | Not started |
+| 7 | Sport classifier: TF-IDF + logistic regression baseline vs BGE-M3 + logistic regression | VNP | Not started; needs numpy in the Spark image and TMK's hand labels (Mon 9) |
+| 9 | Scaling runs: Silver job at 2-3 sizes, `local[*]` vs cluster | VNP | Not started (cut first if late) |
 | 4 | 50 golden questions (`evaluation/golden_questions.csv`) | TMK | Done 2026-11-06: 50 questions, judgements for 19 answerable ones (PR #34) |
 | 5 | Hand labels for the classifier test set (at least 200) | TMK | Not started |
-| - | Test rounds 1-3 with reports (`docs/reports/test-report-*.md`) | LTN | Not started |
+| - | Test rounds 1-3 with reports (`docs/reports/test-report-*.md`) | LTN | Not started; rounds on Mon 9-Tue 10 and Wed 11 after the freeze |
 | 8 | Retrieval and answer evaluation on the golden questions | TMK | First run done 2026-11-06 (numbers below); reranker threshold not tuned yet |
 | 10 | Slides, demo script, rehearsals, backup video | All | Not started |
 | - | Answer latency (p50 15.5 s, p90 47.4 s in the evaluation run) | TMK | Open |

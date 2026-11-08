@@ -1,7 +1,7 @@
 # Team onboarding: get the code, the data, and run SportsBot
 
 For VNP and LTN (and anyone setting up a new machine). Updated 2026-11-03.
-Presentation: **Tuesday 10 November 2026**. Plan: [plans/2026-11-02-plan-to-presentation.md](plans/2026-11-02-plan-to-presentation.md).
+Presentation: **Thursday 12 November 2026** (code freeze Wednesday 11, 12:00). Plan: [plans/2026-11-02-plan-to-presentation.md](plans/2026-11-02-plan-to-presentation.md).
 
 **The short version.** Only TMK's PC crawls the news. You do not crawl: you download TMK's corpus
 from the team's **private Kaggle dataset** and run the chatbot on it with one command,

@@ -1,7 +1,8 @@
-# Work split until the presentation (Tuesday 10 November 2026)
+# Work split until the presentation (Thursday 12 November 2026)
 
 One page per person: what to deliver, where, by when, and how to know it is done.
-Updated 2026-11-04 13:45 ICT. The live progress board is the Status section of `README.md`;
+Updated 2026-11-09 (presentation moved from Tuesday 10 to Thursday 12 November; code freeze
+Wednesday 11, 12:00). Original deadlines are kept below in the done items. The live progress board is the Status section of `README.md`;
 when you finish a step, tick it here **and** update that board in the same pull request.
 
 | Person | Role | Delivers |
@@ -26,15 +27,12 @@ Only real work is committed: code, tests, run reports, test reports, golden ques
 
 ## Timeline
 
-| Day | VNP | LTN | TMK |
+| Day | VNP | LTN (tester) | TMK |
 |---|---|---|---|
-| Wed 4 | Set up HDFS/Spark, load Bronze, task 6 tests | Test round 1 (setup on own machine) | Fresh Kaggle snapshot, new labeling sample |
-| Thu 5 | **Silver job run on the cluster** | Golden questions 25, labels 200 | Answer latency |
-| Fri 6 | Gold job; classifier baseline | Golden questions 50, labels 400 | Evaluation script ready |
-| Sat 7 | Classifier improved + report; scaling runs | Test round 2 (full app) | Task 8 numbers; corpus snapshot frozen |
-| Sun 8 | Slides: Spark + classifier part | Slides draft, demo checklist | Slides: pipeline + RAG part; rehearsal 1 |
-| Mon 9 | Fixes only (code freeze 12:00) | Test round 3 (regression on the frozen build) | Backup demo video; rehearsal 2 |
-| Tue 10 | Presentation | Presentation | Presentation |
+| Mon 9 | Pull numpy image; classifier baseline on weak labels | Accounts, invitations, setup on own machine (test round 1) | 200 hand labels; numpy PR merged; fresh Kaggle snapshot; invite LTN |
+| Tue 10 | Classifier evaluated on the hand labels, report; scaling runs (2 sizes) | Round 1 report by 12:00; test round 2 (13 cases), report by 21:00 | Fix test-round bugs; slides (pipeline, RAG, evaluation) |
+| Wed 11 | Slides (Spark, classifier); fixes only after 12:00 | Test round 3 on the frozen build, report by 20:00 | **12:00 code freeze**; backup demo video; rehearsal |
+| Thu 12 | Presentation | Presentation | Presentation |
 
 If a day slips, the cut list at the end of the plan applies (scaling with a public corpus is cut first).
 
@@ -67,7 +65,7 @@ Branch `feature/vnp-gold-job`.
 - [x] Run on the cluster; commit `docs/reports/runs/gold-<run_id>.json`.
 - [x] Add one table of Gold numbers to the README Status section (with the run id).
 
-### V3. Sport classifier (plan task 7) — due **Sat 7, 18:00**
+### V3. Sport classifier (plan task 7) — due **Tue 10, 18:00**
 Branch `feature/vnp-classifier`.
 - [ ] Weak labels from `source_id` and URL paths (mapping in handoff/VNP.md); write the final
       mapping in `ml/README.md` (model card).
@@ -78,11 +76,11 @@ Branch `feature/vnp-classifier`.
       `docs/reports/runs/classifier-<run_id>.json`.
 - [ ] Optional, if time: script that fills `articles.sport_category` with the better model.
 
-### V4. Scaling experiment (plan task 9) — due **Sun 8, 12:00** (cut first if late)
+### V4. Scaling experiment (plan task 9) — due **Tue 10, 23:59** (cut first if late)
 - [ ] Silver job at 3 sizes of the real corpus (e.g. 25 %, 50 %, 100 %), `local[*]` and the cluster.
 - [ ] Table: rows, duration, rows/s, storage per layer; say "single machine, pseudo-distributed (Docker)".
 
-### V5. Slides — Sun 8
+### V5. Slides — Wed 11
 Two or three slides: Bronze → Silver → Gold with real counts, duplicate findings, classifier
 results, scaling table. Numbers only from your run reports.
 
@@ -91,9 +89,10 @@ results, scaling table. Numbers only from your run reports.
 ## LTN: tester and evaluation data
 
 LTN has no AI assistant: every step below is something to open, type, check or fill in.
+A Vietnamese step-by-step guide for LTN is shared by TMK (Claude doc "Hướng dẫn việc của LTN").
 Setup: [TEAM_ONBOARDING.md](TEAM_ONBOARDING.md) sections 1-4 (`make team-data`).
 
-### L1. Test round 1: setup on a clean machine — due **Wed 4 / Thu 5**
+### L1. Test round 1: setup on a clean machine — **Mon 9**, report by **Tue 10, 12:00**
 Testing the onboarding guide is itself a test: a teammate must be able to run the project from it.
 - [ ] Follow TEAM_ONBOARDING sections 1-4 exactly as written. Note the time each section takes.
 - [ ] Every step that fails or is unclear: open a GitHub issue with the **Bug** template (the exact
@@ -119,7 +118,7 @@ File: `evaluation/golden_questions.csv` (rules in `evaluation/README.md`).
       `ml/labels/sport_test_v1.csv` (titles and excerpts are publishers' text and must not go into
       the public repository).
 
-### L4. Test round 2: the whole app — due **Sat 7**
+### L4. Test round 2: the whole app — report by **Tue 10, 21:00**
 On http://localhost:8000/app/ after `make team-data` with the newest snapshot. For each case write
 pass/fail, the answer time shown under the answer, and a note.
 
@@ -139,14 +138,14 @@ pass/fail, the answer time shown under the answer, and a note.
 | 12 | Switch the system between light and dark mode | Both themes readable |
 | 13 | Click a source link in an answer | Opens the original article on the publisher's site |
 
-- [ ] Write the results in `docs/reports/test-report-2026-11-07.md` (template below) and open a PR.
+- [ ] Write the results in `docs/reports/test-report-2026-11-10.md` (template below) and open a PR.
 - [ ] One GitHub issue per failure (Bug template), linked in the report.
 
-### L5. Test round 3: regression on the frozen build — **Mon 9**, after 12:00
+### L5. Test round 3: regression on the frozen build — **Wed 11**, after 12:00, report by 20:00
 - [ ] Repeat the L4 table on the code-freeze version; check that every issue marked fixed is fixed.
-- [ ] `docs/reports/test-report-2026-11-09.md` via PR. This is the go/no-go input for the demo.
+- [ ] `docs/reports/test-report-2026-11-11.md` via PR. This is the go/no-go input for the demo.
 
-### L6. Slides draft and demo checklist — Sun 8
+### L6. Demo checklist — Wed 11 (optional)
 Slide skeleton (problem, architecture, data, Big Data layer, model, chatbot, evaluation, demo,
 limitations); TMK and VNP fill in the numbers.
 
@@ -166,28 +165,28 @@ Summary: <n> pass, <n> fail. Blocking for the demo: <list or "none">.
 
 ## TMK: lead
 
-- [ ] Wed 4: fresh `make kaggle-export && make kaggle-push`; `make export-labeling N=400` and send
-      `sample.csv` to LTN; invite VNP and LTN to the repository and the Kaggle dataset.
-- [ ] Thu 5: answer latency (20-50 s now): measure where the time goes, fix the largest part.
-- [ ] Fri 6: `evaluation/run_eval.py` with tests (recall@5, MRR, refusals), reading `expected_urls`.
-- [ ] Sat 7: task 8 numbers on LTN's 50 questions; freeze the corpus snapshot for the report.
-- [ ] Review and merge VNP's and LTN's PRs within a day; reply to every bug issue.
-- [ ] Sun 8 / Mon 9: demo script, rehearsals, backup video.
+- [x] Golden questions, judgements, first evaluation (PRs #32-#35, 2026-11-06).
+- [ ] Mon 9: at least 200 hand labels (`make export-labeling N=200`, label in Sheets, commit only
+      `article_id,sport_label,labeler,notes` as `ml/labels/sport_test_v1.csv`).
+- [ ] Mon 9: merge the numpy Spark image PR; `make kaggle-export && make kaggle-push`; invite LTN to
+      the repository and the Kaggle dataset.
+- [ ] Tue 10: answer test-round bugs; optional: reranker threshold with `make eval NO_ANSWERS=1
+      RERANK_MIN_SCORE=-4`, VietNamNet menu-text extraction fix.
+- [ ] Tue 10 / Wed 11: slides, demo script, 12:00 Wednesday code freeze, backup video, rehearsal.
 
 ## Progress
 
 | Item | Owner | Due | State |
 |---|---|---|---|
-| Tasks 1-3: crawler running, sources checked, backfill | TMK | Wed 4 | Done |
-| V1 Silver | VNP | Thu 5 | Run done 2026-11-05 (`silver-20261105T150259Z`), PR in review |
-| V2 Gold | VNP | Fri 6 | Run done 2026-11-05 (`gold-20261105T154732Z`), PR in review |
-| V3 Classifier | VNP | Sat 7 | Not started |
-| V4 Scaling | VNP | Sun 8 | Not started |
-| L1 Test round 1 | LTN | Thu 5 | Not started |
+| Tasks 1-3: crawler running, sources checked, backfill | TMK | Wed 4 | Done (about 15,000 articles on 2026-11-09, per TMK) |
+| V1 Silver | VNP | Thu 5 | Done 2026-11-05 (PR #28) |
+| V2 Gold | VNP | Fri 6 | Done 2026-11-05 (PR #30) |
 | L2 Golden questions | TMK (from LTN) | Sat 7 | Done 2026-11-06 (PR #34) |
-| L3 Hand labels | TMK (from LTN) | Sat 7 | Not started |
-| L4 Test round 2 | LTN | Sat 7 | Not started |
-| L5 Test round 3 | LTN | Mon 9 | Not started |
 | Task 8 evaluation | TMK | Sat 7 | First run done 2026-11-06 (README Status) |
-| Latency | TMK | Thu 5 | Open |
-| Slides, rehearsals, video | All | Mon 9 | Not started |
+| L3 Hand labels | TMK (from LTN) | Mon 9 | Not started |
+| V3 Classifier | VNP | Tue 10 | Not started (needs numpy image + labels) |
+| V4 Scaling | VNP | Tue 10 | Not started |
+| L1 Test round 1 | LTN | Tue 10 12:00 | Not started |
+| L4 Test round 2 | LTN | Tue 10 21:00 | Not started |
+| L5 Test round 3 | LTN | Wed 11 20:00 | Not started |
+| Slides, rehearsals, video | All | Wed 11 | Not started |
