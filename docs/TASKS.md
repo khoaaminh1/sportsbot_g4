@@ -78,7 +78,7 @@ Branch `feature/sport-classifier`. VNP finished Silver and Gold; TMK runs this t
       `docs/reports/runs/classifier-<run_id>.json`.
 - [ ] Optional, if time: script that fills `articles.sport_category` with the better model.
 
-### V4. Scaling experiment (plan task 9) — due **Tue 10, 23:59** (cut first if late)
+### V4. Scaling experiment (plan task 9) — **cut on 2026-11-09** (TMK decision; not needed for the presentation)
 - [ ] Silver job at 3 sizes of the real corpus (e.g. 25 %, 50 %, 100 %), `local[*]` and the cluster.
 - [ ] Table: rows, duration, rows/s, storage per layer; say "single machine, pseudo-distributed (Docker)".
 
@@ -187,7 +187,7 @@ Summary: <n> pass, <n> fail. Blocking for the demo: <list or "none">.
 | Task 8 evaluation | TMK | Sat 7 | First run done 2026-11-06 (README Status) |
 | L3 Hand labels | TMK (from LTN) | Mon 9 | Not started |
 | V3 Classifier | TMK | Tue 10 | Code ready 2026-11-09 (synthetic smoke only); needs hand labels + real run |
-| V4 Scaling | VNP | Tue 10 | Not started |
+| V4 Scaling | VNP | - | Cut 2026-11-09 (not needed) |
 | L1 Test round 1 | LTN | Tue 10 12:00 | Not started |
 | L4 Test round 2 | LTN | Tue 10 21:00 | Not started |
 | L5 Test round 3 | LTN | Wed 11 20:00 | Not started |
