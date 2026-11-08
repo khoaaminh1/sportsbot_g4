@@ -56,6 +56,14 @@ pipeline diagram (2026-11-02).
 Daily at 21:00: each member posts in the group chat what is done (with the command output or a
 screenshot), what is next, what blocks them. TMK merges at most once a day after CI is green.
 
+## Status on 2026-11-09
+
+The presentation moved to **Thursday 12 November 2026**; code freeze Wednesday 11 November, 12:00.
+The day-by-day gates below are the original schedule, kept as history; the current schedule is
+`docs/TASKS.md`. Done since 2026-11-04: task 6 (Silver + Gold, PRs #28, #30), tasks 4 and 8
+(golden set and first evaluation, PRs #32-#35). Open: task 5 (labels, TMK), task 7 and 9 (VNP),
+task 10 (all), LTN's test rounds.
+
 ## Status on 2026-11-04
 
 Done: task 1 (stack running 24/7, restarts after reboot), task 2 (45 of 48 feeds checked from

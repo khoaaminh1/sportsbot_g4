@@ -4,7 +4,7 @@ For VNP and VNP's AI assistant. Deadlines and checklists: `docs/TASKS.md` (VNP s
 `docs/TEAM_ONBOARDING.md` and tasks 6, 7, 9 of
 `docs/plans/2026-11-02-plan-to-presentation.md`.
 
-## Your outcomes before Saturday 7 November (presentation Tuesday 10 November)
+## Your outcomes (presentation moved to Thursday 12 November; deadlines in docs/TASKS.md)
 1. **Task 6 – Spark Silver/Gold** on HDFS from the Bronze snapshot: clean, exact + near-duplicate
    detection (MinHashLSH), story clusters, Gold statistics, a JSON run report per run.
 2. **Task 7 – Sport classifier**: baseline (Spark MLlib TF-IDF + logistic regression) vs improved
@@ -145,7 +145,7 @@ re-running the same command on the same snapshot.
 ## Prompt for VNP's AI assistant (Claude Code / Cursor / Copilot)
 ```
 You are helping VNP on the SportsBot project (university Big Data course, presentation
-10 November 2026). Explain to me in Vietnamese; write code, comments, commits in English.
+12 November 2026). Explain to me in Vietnamese; write code, comments, commits in English.
 Read first: docs/TASKS.md, docs/handoff/VNP.md, AGENTS.md, docs/DATA.md, docs/TEAM_ONBOARDING.md.
 Task now: V1 in docs/TASKS.md = Task 6 in docs/handoff/VNP.md (Spark Silver/Gold). Follow its fixed rules exactly.
 Work test-first for the pure-Python helpers. Keep Spark code compatible with Python 3.10.
