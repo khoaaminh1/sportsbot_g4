@@ -130,6 +130,11 @@ committed, unit tests pass (`make lint test`), and the report numbers can be rep
 re-running the same command on the same snapshot.
 
 ## Task 7 specification (short)
+
+> **2026-11-09: task 7 moved to TMK** (VNP finished Silver and Gold). Code:
+> `pipelines/spark/jobs/sport_classifier.py`, model card `ml/README.md`. VNP: no action needed;
+> the scaling runs (task 9) remain yours if there is time.
+
 - `ml/train_sport_classifier.py`, `ml/README.md` (model card), `docs/reports/runs/classifier-*.json`.
 - Training labels: weak labels from URL paths (`/bong-da/`, `/football/` → football; write the
   full mapping in the model card). Test set: LTN's hand labels **only**, never used for training.

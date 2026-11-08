@@ -65,14 +65,16 @@ Branch `feature/vnp-gold-job`.
 - [x] Run on the cluster; commit `docs/reports/runs/gold-<run_id>.json`.
 - [x] Add one table of Gold numbers to the README Status section (with the run id).
 
-### V3. Sport classifier (plan task 7) — due **Tue 10, 18:00**
-Branch `feature/vnp-classifier`.
-- [ ] Weak labels from `source_id` and URL paths (mapping in handoff/VNP.md); write the final
-      mapping in `ml/README.md` (model card).
-- [ ] Test set: LTN's labels (`ml/labels/sport_test_v1.csv`) only, never in training.
-- [ ] Baseline: Spark MLlib TF-IDF + logistic regression. Improved: BGE-M3 vectors (embedder API)
-      + logistic regression.
-- [ ] Report macro-F1, per-class and per-language F1, confusion matrix:
+### V3. Sport classifier (plan task 7) — due **Tue 10, 18:00** (taken over by TMK on 2026-11-09)
+Branch `feature/sport-classifier`. VNP finished Silver and Gold; TMK runs this task.
+- [x] Weak labels from `source_id`, URL paths and (volleyball/badminton only) title keywords;
+      final mapping in `ml/README.md` (model card).
+- [x] Test set: hand labels (`ml/labels/sport_test_v1.csv`), excluded from training; plus a
+      weak-label holdout reported separately.
+- [x] Baseline: Spark MLlib TF-IDF + logistic regression. Improved: BGE-M3 vectors (from Qdrant)
+      + logistic regression. Code: `pipelines/spark/jobs/sport_classifier.py`.
+- [ ] Hand labels committed (TMK, at least 200) and loaded: `make labels-load`.
+- [ ] Run on the real Silver: `make spark-classifier SNAPSHOT="..."`, commit
       `docs/reports/runs/classifier-<run_id>.json`.
 - [ ] Optional, if time: script that fills `articles.sport_category` with the better model.
 
@@ -184,7 +186,7 @@ Summary: <n> pass, <n> fail. Blocking for the demo: <list or "none">.
 | L2 Golden questions | TMK (from LTN) | Sat 7 | Done 2026-11-06 (PR #34) |
 | Task 8 evaluation | TMK | Sat 7 | First run done 2026-11-06 (README Status) |
 | L3 Hand labels | TMK (from LTN) | Mon 9 | Not started |
-| V3 Classifier | VNP | Tue 10 | Not started (needs numpy image + labels) |
+| V3 Classifier | TMK | Tue 10 | Code ready 2026-11-09 (synthetic smoke only); needs hand labels + real run |
 | V4 Scaling | VNP | Tue 10 | Not started |
 | L1 Test round 1 | LTN | Tue 10 12:00 | Not started |
 | L4 Test round 2 | LTN | Tue 10 21:00 | Not started |

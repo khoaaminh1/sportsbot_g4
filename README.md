@@ -139,7 +139,7 @@ not pipeline speed. Single machine, pseudo-distributed (Docker): 1 Spark worker 
 | Plan task | Work | Owner | State |
 |---|---|---|---|
 | 6 | Spark Silver + Gold jobs, run reports | VNP | Done 2026-11-05: Silver (PR #28) and Gold (PR #30) merged with run reports |
-| 7 | Sport classifier: TF-IDF + logistic regression baseline vs BGE-M3 + logistic regression | VNP | Not started; needs numpy in the Spark image and TMK's hand labels (Mon 9) |
+| 7 | Sport classifier: TF-IDF + logistic regression baseline vs BGE-M3 + logistic regression | TMK | Code ready 2026-11-09 (`make spark-classifier`, model card in `ml/README.md`); not yet run on the real corpus, needs the hand labels |
 | 9 | Scaling runs: Silver job at 2-3 sizes, `local[*]` vs cluster | VNP | Not started (cut first if late) |
 | 4 | 50 golden questions (`evaluation/golden_questions.csv`) | TMK | Done 2026-11-06: 50 questions, judgements for 19 answerable ones (PR #34) |
 | 5 | Hand labels for the classifier test set (at least 200) | TMK | Not started |
