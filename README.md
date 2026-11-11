@@ -156,7 +156,7 @@ articles): [report](docs/reports/runs/gold-20261105T154732Z.json).
 | FastAPI (`/chat`, `/chat/stream`, `/news/latest`, `/ws/news`, ...) and web app | Running |
 | Monitoring, Discord / Telegram alerts, circuit breaker per source, restart after reboot | Running |
 | Private Kaggle dataset and `make team-data` for teammates | Running |
-| Public link (`make public-up`: Quick Tunnel, access code, rate limits) | Merged and unit-tested; first live run pending |
+| Public link (`make public-up`: Quick Tunnel, access code, rate limits) | Merged and unit-tested; not used for the demo (local demo) |
 | HDFS + Spark stack | Ready (`make up-bigdata`, `make spark-smoke`) |
 
 ### What is left before the presentation
@@ -168,13 +168,25 @@ articles): [report](docs/reports/runs/gold-20261105T154732Z.json).
 | 9 | Scaling runs: Silver job at 2-3 sizes, `local[*]` vs cluster | VNP | Cut on 2026-11-09 (TMK decision): not needed for the presentation |
 | 4 | 50 golden questions (`evaluation/golden_questions.csv`) | TMK | Done 2026-11-06: 50 questions, judgements for 19 answerable ones (PR #34) |
 | 5 | Test labels for the classifier (at least 200) | TMK | Done 2026-11-09: 197 articles labelled by Claude, reviewed by TMK (193 in Silver) |
-| - | Test rounds 1-3 with reports (`docs/reports/test-report-*.md`) | LTN | Not started; rounds on Mon 9-Tue 10 and Wed 11 after the freeze |
-| 8 | Retrieval and answer evaluation on the golden questions | TMK | First run done 2026-11-06 (numbers below); reranker threshold not tuned yet |
-| 10 | Slides, demo script, rehearsals, backup video | All | Not started |
+| - | Test rounds 1-3 with reports (`docs/reports/test-report-*.md`) | LTN | Pending: no report in the repository on 2026-11-11 |
+| 8 | Retrieval and answer evaluation on the golden questions | TMK | Done 2026-11-06 (numbers above); reranker threshold tuning cut on 2026-11-09 |
+| 10 | Slides, demo script, rehearsals, backup video | All | In progress 2026-11-11 |
 | - | Answer latency (p50 15.5 s, p90 47.4 s in the evaluation run) | TMK | Open |
 
-Tasks 1-3 (stack running, sources checked, backfill) are done. Full plan:
-[docs/plans/2026-11-02-plan-to-presentation.md](docs/plans/2026-11-02-plan-to-presentation.md).
+State on 2026-11-11 (code freeze): every planned component is built and measured; task 9
+(scaling runs) and the optional tuning items were cut. Results at a glance, all from real runs
+listed below:
+
+- **Corpus**: 15,238 articles in the 2026-11-09 snapshot (45 sources, vi/es/en/fr); crawling
+  continues 24/7. Half of the RSS articles are stored within 1.3 h of publication.
+- **Spark (Silver/Gold)**: 6 exact duplicates removed, 1.34 % near-duplicates in 50 story
+  clusters (MinHash LSH); Silver 435 s, Gold 24 s on a pseudo-distributed Docker cluster.
+- **Sport classifier**: BGE-M3 + logistic regression 0.927 accuracy (macro-F1 0.750) vs TF-IDF
+  baseline 0.570 (0.544) on 193 test articles.
+- **Chatbot**: hit@1 0.79 on 19 judged questions; 93 % of unanswerable questions refused;
+  answer time p50 15.5 s.
+
+Original plan: [docs/plans/2026-11-02-plan-to-presentation.md](docs/plans/2026-11-02-plan-to-presentation.md).
 
 ## Quick start
 
@@ -210,8 +222,8 @@ make crawl-stats              # articles per source, vectors
 
 | Member | Role | Owns |
 |---|---|---|
-| Trần Minh Khoa (TMK) | Lead | Pipeline and crawler PC, RAG, API and web app, data sharing, merges, demo |
-| Võ Ngọc Phú (VNP) | Data engineering and ML | Spark Silver/Gold, near-duplicates, sport classifier, scaling experiment |
+| Trần Minh Khoa (TMK) | Lead | Pipeline and crawler PC, RAG, API and web app, evaluation, sport classifier, data sharing, merges, demo |
+| Võ Ngọc Phú (VNP) | Data engineering | Spark Silver/Gold jobs, MinHash LSH near-duplicates, Spark image |
 | Lê Tấn Nguyên (LTN) | Tester | Test rounds with reports and bug issues, slides draft |
 
 **Work split with deadlines, checklists and how contributions are credited: [docs/TASKS.md](docs/TASKS.md).** Plan with daily gates: [docs/plans/2026-11-02-plan-to-presentation.md](docs/plans/2026-11-02-plan-to-presentation.md).
@@ -254,11 +266,12 @@ make crawl-stats              # articles per source, vectors
 | [Data guide](docs/DATA.md) | What the snapshot files contain and how to load them |
 | [Streaming stack runbook](docs/runbooks/streaming-stack.md) | Operating the crawler, backfill, monitoring, troubleshooting |
 | [Public link runbook](docs/runbooks/public-access.md) | Share the web app with a free link (Cloudflare Quick Tunnel), access code, rate limits |
-| [Chat runbook](docs/runbooks/chat-prototype.md) | RAG settings, Gemini rotation, conversation memory |
-| [VNP handoff](docs/handoff/VNP.md) | Spark and classifier tasks, with rules for VNP's AI assistant |
+| [Chat runbook](docs/runbooks/chat.md) | RAG settings, Gemini rotation, conversation memory |
+| [VNP handoff](docs/handoff/VNP.md) | Fixed rules of the Spark Silver/Gold jobs and the classifier (written before the runs) |
 | [API contract](docs/contracts/api.openapi.yaml) | Endpoints; interactive docs at http://localhost:8000/docs |
 | [AGENTS.md](AGENTS.md), [CONTRIBUTING.md](CONTRIBUTING.md) | Rules for people and AI assistants working in the repository |
-| [Decisions (ADRs)](docs/decisions/), [Phase 1 assessment](docs/plan/phase-1-assessment.md), [Phase 2 report](docs/reports/phase-2.md) | History: why the design is what it is (ADR 0004 is superseded by 0006) |
+| [Run reports](docs/reports/runs/), [model card](ml/README.md), [evaluation](evaluation/README.md) | Every number in Status: command, snapshot, date |
+| [Decisions (ADRs)](docs/decisions/), [Phase 1 assessment](docs/reports/phase-1-assessment.md), [Phase 2 report](docs/reports/phase-2.md) | History: why the design is what it is (ADR 0004 is superseded by 0006) |
 
 Contributions go through pull requests to the protected `main` branch; CI runs `make lint test` and a streaming end-to-end check.
 

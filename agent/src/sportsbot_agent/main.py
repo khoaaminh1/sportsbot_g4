@@ -56,7 +56,7 @@ def run(config: AgentConfig, questions: list[str] | None = None, no_llm: bool = 
     if not articles:
         print(
             f"No stored articles found in {config.articles_dir}.\n"
-            "Collect and export them first (see docs/runbooks/chat-prototype.md):\n"
+            "Collect and export them first (see docs/runbooks/chat.md):\n"
             "  make up-collect && make collect-once && make articles-export",
             file=sys.stderr,
         )

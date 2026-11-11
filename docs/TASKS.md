@@ -1,14 +1,14 @@
 # Work split until the presentation (Thursday 12 November 2026)
 
 One page per person: what to deliver, where, by when, and how to know it is done.
-Updated 2026-11-09 (presentation moved from Tuesday 10 to Thursday 12 November; code freeze
-Wednesday 11, 12:00). Original deadlines are kept below in the done items. The live progress board is the Status section of `README.md`;
+Updated 2026-11-11 (presentation Thursday 12 November; code freeze Wednesday 11, 12:00, done:
+only docs and fixes after it). Original deadlines are kept below in the done items. The live progress board is the Status section of `README.md`;
 when you finish a step, tick it here **and** update that board in the same pull request.
 
 | Person | Role | Delivers |
 |---|---|---|
 | **TMK** (Trần Minh Khoa) | Lead, pipeline, RAG, demo | Crawler PC, data snapshots, retrieval evaluation, latency, merges, demo |
-| **VNP** (Võ Ngọc Phú) | Big Data engineer | Spark Silver + Gold, sport classifier, scaling experiment |
+| **VNP** (Võ Ngọc Phú) | Big Data engineer | Spark Silver + Gold (classifier moved to TMK, scaling cut) |
 | **LTN** (Lê Tấn Nguyên) | Tester | Test rounds with reports (Markdown via GitHub web) and bug issues |
 
 ## How work is credited (GitHub contributors)
@@ -111,7 +111,9 @@ File: `evaluation/golden_questions.csv` (rules in `evaluation/README.md`).
       article's link into `expected_urls` (several links separated by `;`).
 - [ ] Commit through a pull request (GitHub web upload is fine).
 
-### L3. Hand labels (plan task 5) — **moved to TMK** on 2026-11-06 (at least 200 labels)
+### L3. Test labels (plan task 5) — **done by TMK** on 2026-11-09
+197 labels in `ml/labels/sport_test_v1.csv`, proposed by Claude and reviewed by TMK (origin in
+`ml/README.md`). The steps below are kept for reference.
 - [ ] TMK sends a fresh `sample.csv` (400 articles from the multi-sport corpus).
 - [ ] In Google Sheets fill `sport_label` with exactly one of
       `football, volleyball, basketball, tennis, badminton, other_sport`; `labeler` = `LTN`;
@@ -168,12 +170,13 @@ Summary: <n> pass, <n> fail. Blocking for the demo: <list or "none">.
 ## TMK: lead
 
 - [x] Golden questions, judgements, first evaluation (PRs #32-#35, 2026-11-06).
-- [ ] Mon 9: at least 200 hand labels (`make export-labeling N=200`, label in Sheets, commit only
-      `article_id,sport_label,labeler,notes` as `ml/labels/sport_test_v1.csv`).
-- [ ] Mon 9: merge the numpy Spark image PR; `make kaggle-export && make kaggle-push`; invite LTN to
+- [x] Mon 9: test labels (197, AI-assisted, reviewed; `ml/labels/sport_test_v1.csv`).
+- [x] Mon 9: sport classifier, Silver and Gold reruns on one snapshot (PRs #38-#40).
+- [x] Mon 9: merge the numpy Spark image PR (#37).
+- [ ] Mon 9: `make kaggle-export && make kaggle-push`; invite LTN to
       the repository and the Kaggle dataset.
-- [ ] Tue 10: answer test-round bugs; optional: reranker threshold with `make eval NO_ANSWERS=1
-      RERANK_MIN_SCORE=-4`, VietNamNet menu-text extraction fix.
+- [ ] Tue 10: answer test-round bugs. Optional items (reranker threshold, VietNamNet menu-text
+      fix) cut on 2026-11-09.
 - [ ] Tue 10 / Wed 11: slides, demo script, 12:00 Wednesday code freeze, backup video, rehearsal.
 
 ## Progress
@@ -185,10 +188,10 @@ Summary: <n> pass, <n> fail. Blocking for the demo: <list or "none">.
 | V2 Gold | VNP | Fri 6 | Done 2026-11-05 (PR #30) |
 | L2 Golden questions | TMK (from LTN) | Sat 7 | Done 2026-11-06 (PR #34) |
 | Task 8 evaluation | TMK | Sat 7 | First run done 2026-11-06 (README Status) |
-| L3 Hand labels | TMK (from LTN) | Mon 9 | Not started |
+| L3 Test labels | TMK (from LTN) | Mon 9 | Done 2026-11-09 (197, AI-assisted, reviewed) |
 | V3 Classifier | TMK | Tue 10 | Done 2026-11-09 (run `20261108T213620Z`) |
 | V4 Scaling | VNP | - | Cut 2026-11-09 (not needed) |
-| L1 Test round 1 | LTN | Tue 10 12:00 | Not started |
-| L4 Test round 2 | LTN | Tue 10 21:00 | Not started |
-| L5 Test round 3 | LTN | Wed 11 20:00 | Not started |
-| Slides, rehearsals, video | All | Wed 11 | Not started |
+| L1 Test round 1 | LTN | Tue 10 12:00 | Pending: no report in the repository on 2026-11-11 |
+| L4 Test round 2 | LTN | Tue 10 21:00 | Pending: no report in the repository on 2026-11-11 |
+| L5 Test round 3 | LTN | Wed 11 20:00 | Pending: no report in the repository on 2026-11-11 |
+| Slides, rehearsals, video | All | Wed 11 | In progress 2026-11-11: slides (about 8) tonight |
