@@ -1,5 +1,9 @@
 # Plan to the Presentation (Tuesday 10 November 2026)
 
+> Historical plan, written 2026-11-02. The presentation moved to **Thursday 12 November**, task 9
+> and the optional items were cut, and task 7 moved to TMK. Current state: `README.md` (Status)
+> and `docs/TASKS.md`.
+
 > **For agentic workers (TMK and VNP use Claude):** implement one task at a time, test first
 > (red, then green), and do not mark a step done without the command output. Steps use
 > checkboxes (`- [ ]`). LTN works without an AI assistant: LTN's tasks are written so that each

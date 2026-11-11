@@ -17,6 +17,6 @@ the terminal (`make ask`).
 
 Layout: `rag.py` (wiring), `hybrid.py` (retrieval), `answer.py` (prompt and checks), `memory.py`
 (follow-ups), `clients/` (embeddings, reranker, Qdrant, LLM router), `config.py` (settings).
-Settings and operation: [docs/runbooks/chat-prototype.md](../docs/runbooks/chat-prototype.md).
+Settings and operation: [docs/runbooks/chat.md](../docs/runbooks/chat.md).
 Decisions: [ADR 0006](../docs/decisions/0006-llm-gemini-model-rotation.md),
 [ADR 0007](../docs/decisions/0007-bge-m3-and-reranker-gguf.md).
