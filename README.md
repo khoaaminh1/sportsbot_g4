@@ -52,7 +52,7 @@ Presentation: **Thursday 12 November 2026** (moved from Tuesday 10; code freeze 
 The system runs 24/7 on the team lead's PC (Windows 11, WSL2, Docker Desktop, i5-14400F, 32 GB)
 and restarts by itself after a reboot.
 
-**Last updated: 2026-11-09.** This section is the team's progress board: update it in the same
+**Last updated: 2026-11-12.** This section is the team's progress board: update it in the same
 pull request that changes the state of a component.
 
 ### Corpus (from `make crawl-stats` and the web app)
@@ -62,6 +62,7 @@ pull request that changes the state of a component.
 | 2026-11-03 01:41 | 963 | 2,966 | RSS only, 20 sources |
 | 2026-11-03 23:32 | 11,838 | 34,875 | after sitemap + section backfill from 2026-09-01 and 28 multi-sport feeds |
 | 2026-11-04 08:37 | 12,116 | n/a | overnight RSS only: about 30 new articles per hour |
+| 2026-11-12 04:02 | 16,806 | 50,189 | live crawler PC, 45 sources; 629 new articles in the last 24 h |
 
 45 of 48 feeds enabled (checked with `make sources-check` on 2026-11-03), 4 languages.
 The private Kaggle dataset `minhkhoa132/sportsbot-corpus` holds snapshots; `export-summary.json`
